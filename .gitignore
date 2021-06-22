@@ -1,0 +1,11 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+data_raw
+flare_tempdir
+EST
+.DS_Store
+forecast_output
+forecasted_drivers
+data_processed
