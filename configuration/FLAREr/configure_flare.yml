@@ -1,11 +1,11 @@
 file_path:
-   qaqc_data_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/bvre-forecast/data_processed
-   noaa_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/bvre-forecast/forecasted_drivers/NOAAGEFS_1hr
-   inflow_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/bvre-forecast/flare_tempdir/FLOWS-NOAAGEFS-TMWB/bvre
-   configuration_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/bvre-forecast/configuration
-   execute_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/bvre-forecast/flare_tempdir
-   forecast_output_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/bvre-forecast/forecast_output
-   run_config: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/bvre-forecast/configuration/FLAREr
+   qaqc_data_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/BVRE-forecast/data_processed
+   noaa_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/BVRE-forecast/forecasted_drivers/NOAAGEFS_1hr
+   inflow_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/BVRE-forecast/flare_tempdir/FLOWS-NOAAGEFS-TMWB/bvre
+   configuration_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/BVRE-forecast/configuration
+   execute_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/BVRE-forecast/flare_tempdir
+   forecast_output_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/BVRE-forecast/forecast_output
+   run_config: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/BVRE-forecast/configuration/FLAREr
    
 location:
    site_id: bvre

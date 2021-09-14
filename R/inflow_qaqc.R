@@ -108,7 +108,7 @@ inflow_qaqc <- function(realtime_file,
 #    select(time, FLOW, TEMP, SALT)
 
 # read in calculated inflow csv, only select some cols
-inflow_combined <- read.csv(file.path(config$data_location, "BVR_inflow_2014_2019_20200708_allfractions_2poolsDOC_withch4.csv")) %>%
+inflow_combined <- read.csv(file.path(config_obs$data_location, "BVR_inflow_2014_2019_20200708_allfractions_2poolsDOC_withch4.csv")) %>%
                     dplyr::select(time,FLOW,TEMP,SALT) %>% mutate(FLOW = FLOW/86400) #convert flow to m3/s
 inflow_combined$time <- as.Date(inflow_combined$time)
 
@@ -142,8 +142,8 @@ inflow_combined$time <- as.Date(inflow_combined$time)
       dplyr::select(time, NIT_amm, NIT_nit, PHS_frp, OGM_doc, OGM_docr, OGM_poc, OGM_don,OGM_donr, OGM_dop, OGM_dopr, OGM_pop, OGM_pon,SIL_rsi)
 
     #add temp and oxy to the inflow dataframe
-    temp <- read.csv(file.path(config$data_location,"CleanedObsTemp.csv")) %>% rename("time" = DateTime) %>%  filter(Depth==0.1)
-    oxy <- read.csv(file.path(config$data_location,"CleanedObsOxy.csv"))  %>% rename("time" = DateTime) %>%  filter(Depth==0.1)
+    temp <- read.csv(file.path(config_obs$data_location,"CleanedObsTemp.csv")) %>% rename("time" = DateTime) %>%  filter(Depth==0.1)
+    oxy <- read.csv(file.path(config_obs$data_location,"CleanedObsOxy.csv"))  %>% rename("time" = DateTime) %>%  filter(Depth==0.1)
     temp_oxy <- left_join(temp,oxy, by="time") %>%
                   mutate(time = as_date(time)) %>% dplyr::select(!c(Depth.x, Depth.y))
     inflow_combined <- left_join(inflow_combined,temp_oxy,by="time")

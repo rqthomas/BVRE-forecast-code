@@ -124,7 +124,7 @@ library(tidyverse)
   
   #Using ROANOKE RIVER AT NIAGARA, VA  usgs gage to use as a template (will write over with BVR-specific data) 
   myflowgage_id="02056000"
-  myflowgage=get_usgs_gage(myflowgage_id,begin_date = "2019-01-01",end_date = "2021-04-05")
+  myflowgage=get_usgs_gage(myflowgage_id,begin_date = "2019-01-01",end_date = "2021-04-05") #change this!
   
   #only select dates during the forecast period
   myflowgage$flowdata <- myflowgage$flowdata[myflowgage$flowdata$mdate >= run_date & myflowgage$flowdata$mdate <= run_date + 17,] 

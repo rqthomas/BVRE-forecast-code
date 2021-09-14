@@ -24,14 +24,14 @@ states_config <- readr::read_csv(file.path(configuration_directory, "FLAREr", co
 
 cleaned_observations_file_long <- file.path(config$file_path$qaqc_data_directory,"observations_postQAQC_long.csv")
 cleaned_inflow_file <- file.path(config$file_path$qaqc_data_directory, "inflow_postQAQC.csv")
-observed_met_file <- file.path(config$file_path$qaqc_data_directory,"observed-met_fcre.nc")
+observed_met_file <- file.path(config$file_path$qaqc_data_directory,"observed-met-noaa_bvre.nc") # specify whether using stacked noaa (observed-met-noaa_bvre.nc) or observed-met_fcre.nc
 
-forecast_directory <- file.path(config$file_path$noaa_directory,"bvre",as.Date(config$run_config$forecast_start_datetime),"00") #forecast_start_datetime
+forecast_directory <- file.path(config$file_path$noaa_directory,"bvre",as.Date(config$run_config$forecast_start_datetime),"00","debiased") #forecast_start_datetime, CHANGE THIS for debiased vs not debiased NOAA
 
 #Step up Drivers
 met_out <- FLAREr::generate_glm_met_files(obs_met_file = observed_met_file,
                                           out_dir = config$file_path$execute_directory,
-                                          forecast_dir = forecast_directory,
+                                          forecast_dir = forecast_directory, #null if using fcr observed met
                                           config)
 met_file_names <- met_out$filenames
 
@@ -59,7 +59,6 @@ states_config <- FLAREr::generate_states_to_obs_mapping(states_config, obs_confi
 config_file_location <- file.path(config$file_path$configuration_directory, "FLAREr")
 
 model_sd <- FLAREr::initiate_model_error(config, states_config)
-
 init <- FLAREr::generate_initial_conditions(states_config, 
                                             obs_config,
                                             pars_config,
@@ -87,7 +86,7 @@ da_forecast_output <- FLAREr::run_da_forecast(states_init = init$states,
 saved_file <- FLAREr::write_forecast_netcdf(da_forecast_output = da_forecast_output,
                                             forecast_output_directory = config$file_path$forecast_output_directory)
 
-#Create EML Metadata
+  #Create EML Metadata
 #FLAREr::create_flare_metadata(file_name = saved_file,
 #                              da_forecast_output = da_forecast_output)
 

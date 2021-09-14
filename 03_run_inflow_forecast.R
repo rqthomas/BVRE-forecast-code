@@ -32,7 +32,7 @@ source(paste0(lake_directory, "/R/forecast_inflow_outflows.R"))
 forecast_files <- list.files(noaa_forecast_path, full.names = TRUE)
 forecast_inflows_outflows(inflow_obs = file.path(config$file_path$qaqc_data_directory, "inflow_postQAQC.csv"),
                           forecast_files = forecast_files,
-                          obs_met_file = file.path(config$file_path$qaqc_data_directory,"observed-met_fcre.nc"),
+                          obs_met_file = file.path(config$file_path$qaqc_data_directory,"observed-met_fcre.nc"), #observed-met_fcre.nc, observed-met-noaa_bvre.nc
                           output_dir = config$file_path$execute_directory,
                           inflow_model = config$inflow$forecast_inflow_model,
                           inflow_process_uncertainty = FALSE,

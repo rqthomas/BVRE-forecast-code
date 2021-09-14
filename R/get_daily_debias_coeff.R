@@ -110,13 +110,13 @@ get_daily_debias_coeff <- function(obs_met_file = NULL,
   
   
   out1 <- lapply(forecast_files, function(dir) {
-    # dir = forecast_files[[16]]
+     #dir = forecast_files[[16]]
     if(length(dir) == 0) {
       return(NA)
     }
     print(dir[[1]])
     out2 <- lapply(dir, function(file) {
-      # file <- dir[[1]]
+       #file <- dir[[1]]
       ens <- dplyr::last(unlist(stringr::str_split(basename(file),"_")))
       ens <- stringr::str_sub(ens,1,5)
       noaa_met_nc <- ncdf4::nc_open(file)
@@ -168,10 +168,13 @@ get_daily_debias_coeff <- function(obs_met_file = NULL,
   })
   
   # Remove lists where there is no forecast data
-  # out1 <- out1[!is.na(out1)]
+   out1 <- out1[!is.na(out1)]
   
-  df2 <- do.call("rbind", out1)
+  df2 <- do.call("rbind", out1) 
 
+   #remove rows with no temp observations because for some reason there is noaa data but no obs
+   df2 <- df2[!is.na(df2$AirTemp_obs),] 
+   
   out3 <- lapply(2:7, function(x) {
     model <- lm(df2[[x]] ~ df2[[x + 8]])
     intercept <- model$coefficients[1]
@@ -211,5 +214,116 @@ get_daily_debias_coeff <- function(obs_met_file = NULL,
     }
   }
   
-  return(out_df)
+return(out_df)
 }
+
+#df2_average <- df2 %>% group_by(date) %>% summarise_all(mean, na.omit=T)
+#
+##visualize noaa vs obs met variables - 1 hr not debiased
+#plot(df2_average$date, df2_average$AirTemp_obs, type="l", col="orange")
+#lines(df2_average$date, df2_average$AirTemp, type="l")
+#legend("bottomright", c("obs","noaa"), pch = '', lty = 1, bty='n', col = c("orange","black"))
+#
+#plot(df2_average$date, df2_average$LongWave_obs, type="l", col="red", ylim=c(216,400))
+#lines(df2_average$date, df2_average$LongWave, type="l")
+#legend("topleft", c("obs","noaa"), pch = '', lty = 1, bty='n', col = c("red","black"))
+#
+#plot(df2_average$date, df2_average$ShortWave_obs, type="l", col="dark blue")
+#lines(df2_average$date, df2_average$ShortWave, type="l")
+#legend("topleft", c("obs","noaa"), pch = '', lty = 1, bty='n', col = c("dark blue","black"))
+#
+#plot(df2_average$date, df2_average$WindSpeed_obs, type="l", col="dark green")
+#lines(df2_average$date, df2_average$WindSpeed, type="l")
+#legend("topright", c("obs","noaa"), pch = '', lty = 1, bty='n', col = c("dark green","black"))
+#
+#plot(df2_average$date, df2_average$Rain_obs, type="l", col="light blue")
+#lines(df2_average$date, df2_average$Rain, type="l")
+#legend("topright", c("obs","noaa"), pch = '', lty = 1, bty='n', col = c("light blue","black"))
+#
+#plot(df2_average$date, df2_average$RelHum_obs, type="l", col="purple", ylim=c(0,1))
+#lines(df2_average$date, df2_average$RelHum, type="l")
+#legend("topleft", c("obs","noaa"), pch = '', lty = 1, bty='n', col = c("purple","black"))
+#
+##obs vs met
+#plot(df2_average$AirTemp_obs, df2_average$AirTemp_obs, type="p", col="orange",pch=20, cex=2.5, xlim=c(266,291),ylim=c(266,291))
+#abline(0,1,lwd=3,lty="dashed")
+#
+#plot(df2_average$LongWave, df2_average$LongWave_obs, type="p", col="red",pch=20, cex=2.5, xlim=c(200,390),ylim=c(200,390))
+#abline(0,1,lwd=3,lty="dashed")
+#
+#plot(df2_average$ShortWave, df2_average$ShortWave_obs, type="p", col="dark blue",pch=20, cex=2.5, xlim=c(50,270),ylim=c(50,270))
+#abline(0,1,lwd=3,lty="dashed")
+#
+#plot(df2_average$WindSpeed, df2_average$WindSpeed_obs, type="p", col="dark green",pch=20, cex=2.5, xlim=c(1,6),ylim=c(1,6))
+#abline(0,1,lwd=3,lty="dashed")
+#
+#plot(df2_average$Rain, df2_average$Rain_obs, type="p", col="light blue",pch=20, cex=2.5, xlim=c(0,0.009),ylim=c(0,0.009))
+#abline(0,1,lwd=3,lty="dashed")
+#
+#plot(df2_average$RelHum, df2_average$RelHum_obs, type="p", col="purple",pch=20, cex=2.5, xlim=c(0,1),ylim=c(0,1))
+#abline(0,1,lwd=3,lty="dashed")
+#
+#
+##read in debiased noaa - randomly selecting ensemble 15
+#noaa_debiased <- ncdf4::nc_open("/Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/BVRE-forecast/forecasted_drivers/NOAAGEFS_1hr/bvre/2021-03-15/00/NOAAGEFS_1hr_fcre_2021-03-15T00_2021-03-31T00_ens15.nc")
+#temp <- ncdf4::ncvar_get(noaa_debiased,"air_temperature")
+#long <- ncdf4::ncvar_get(noaa_debiased,"surface_downwelling_longwave_flux_in_air")
+#short <- ncdf4::ncvar_get(noaa_debiased,"surface_downwelling_shortwave_flux_in_air")
+#relhum<- ncdf4::ncvar_get(noaa_debiased,"relative_humidity")
+#precip <- ncdf4::ncvar_get(noaa_debiased,"precipitation_flux")
+#wind <- ncdf4::ncvar_get(noaa_debiased,"wind_speed")
+#
+##noaa 6 hr NOT debiased
+#noaa_6hr <- ncdf4::nc_open("/Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/BVRE-forecast/forecasted_drivers/NOAAGEFS_6hr/bvre/2021-03-15/00/NOAAGEFS_6hr_fcre_2021-03-15T00_2021-03-31T00_ens15.nc")
+#temp_6hr <- ncdf4::ncvar_get(noaa_6hr,"air_temperature")
+#long_6hr <- ncdf4::ncvar_get(noaa_6hr,"surface_downwelling_longwave_flux_in_air")
+#short_6hr <- ncdf4::ncvar_get(noaa_6hr,"surface_downwelling_shortwave_flux_in_air")
+#relhum_6hr <- ncdf4::ncvar_get(noaa_6hr,"relative_humidity")
+#precip_6hr <- ncdf4::ncvar_get(noaa_6hr,"precipitation_flux")
+#wind_6hr <- ncdf4::ncvar_get(noaa_6hr,"wind_speed")
+#
+#
+#dates=seq(as.POSIXct("2021-03-15 00:00:00"),max(as.POSIXct("2021-04-01")),by='1 hour')[1:385]
+#dates<- as.Date(dates)
+#
+#dates_6hr <- seq(as.POSIXct("2021-03-15 00:00:00"),max(as.POSIXct("2021-04-01")),by='6 hour')[1:65]
+#dates_6hr<- as.Date(dates_6hr)
+#
+##create df dor noaa debiased 1hr and noaa 6hr
+#noaa_debiased <- data.frame(date=dates,temp=temp, longwave=long, shortwave=short, relhum=relhum, precip=precip,wind=wind) %>% 
+#  group_by(date) %>% summarize(avg_temp=mean(temp),avg_longwave=mean(na.omit(longwave)),avg_shortwave=mean(na.omit(shortwave)),avg_relhum=mean(relhum),avg_precip=mean(na.omit(precip)),avg_wind=mean(wind))
+#
+#noaa_6hr <- data.frame(date=dates_6hr,temp=temp_6hr, longwave=long_6hr, shortwave=short_6hr, relhum=relhum_6hr, precip=precip_6hr, wind=wind_6hr) %>% 
+#  group_by(date) %>% summarize(avg_temp=mean(temp),avg_longwave=mean(na.omit(longwave)),avg_shortwave=mean(na.omit(shortwave)),avg_relhum=mean(relhum),avg_precip=mean(na.omit(precip)),avg_wind=mean(wind))
+#
+#
+##plotting observed vs noaa debiased 
+#plot(df2_average$date[df2_average$date>="2021-03-15"], df2_average$AirTemp_obs[df2_average$date>="2021-03-15"], type="l",ylim=c(273,293), xlab="",ylab="temp_degreesC")
+#lines(df2_average$date, df2_average$AirTemp, type="l", col="red") # 1hr not debiasaed 
+#lines(noaa_debiased$date,noaa_debiased$avg_temp, type="l", col="dark orange") # 1 hr debiased
+#lines(noaa_6hr$date,noaa_6hr$avg_temp, type="l", col="dark blue") # 6 hr not debiased
+#legend("topleft", c("obs", "noaa_1hr", "noaa_1hr_debiased","noaa_6hr"), pch = '', lty = 1, bty='n', col = c("black","red","dark orange","dark blue"))
+#
+#plot(df2_average$date[df2_average$date>="2021-03-15"], df2_average$LongWave_obs[df2_average$date>="2021-03-15"], type="l",ylim=c(220,381), xlab="",ylab="longwave")
+#lines(df2_average$date, df2_average$LongWave, type="l", col="red") # 1hr not debiasaed 
+#lines(noaa_debiased$date,noaa_debiased$avg_longwave, type="l", col="dark orange") # 1 hr debiased
+#lines(noaa_6hr$date,noaa_6hr$avg_longwave, type="l", col="dark blue") # 6 hr not debiased
+#legend("topleft", c("obs", "noaa_1hr", "noaa_1hr_debiased","noaa_6hr"), pch = '', lty = 1, bty='n', col = c("black","red","dark orange","dark blue"))
+#
+#plot(df2_average$date[df2_average$date>="2021-03-15"], df2_average$ShortWave_obs[df2_average$date>="2021-03-15"], type="l", xlab="",ylab="shortwave")
+#lines(df2_average$date, df2_average$ShortWave, type="l", col="red") # 1hr not debiasaed 
+#lines(noaa_debiased$date,noaa_debiased$avg_shortwave, type="l", col="dark orange") # 1 hr debiased
+#lines(noaa_6hr$date,noaa_6hr$avg_shortwave, type="l", col="dark blue") # 6 hr not debiased
+#legend("topleft", c("obs", "noaa_1hr", "noaa_1hr_debiased","noaa_6hr"), pch = '', lty = 1, bty='n', col = c("black","red","dark orange","dark blue"))
+#
+#plot(df2_average$date[df2_average$date>="2021-03-15"], df2_average$Rain_obs[df2_average$date>="2021-03-15"], type="l", xlab="",ylab="shortwave")
+#lines(df2_average$date, df2_average$Rain, type="l", col="red") # 1hr not debiasaed 
+#lines(noaa_debiased$date,noaa_debiased$avg_precip, type="l", col="dark orange") # 1 hr debiased
+#lines(noaa_6hr$date,noaa_6hr$avg_precip, type="l", col="dark blue") # 6 hr not debiased
+#legend("topright", c("obs", "noaa_1hr", "noaa_1hr_debiased","noaa_6hr"), pch = '', lty = 1, bty='n', col = c("black","red","dark orange","dark blue"))
+#
+#plot(df2_average$date[df2_average$date>="2021-03-15"], df2_average$RelHum_obs[df2_average$date>="2021-03-15"], type="l", xlab="",ylab="shortwave",ylim=c(0,1))
+#lines(df2_average$date, df2_average$RelHum, type="l", col="red") # 1hr not debiasaed 
+#lines(noaa_debiased$date,noaa_debiased$avg_relhum, type="l", col="dark orange") # 1 hr debiased
+#lines(noaa_6hr$date,noaa_6hr$avg_relhum, type="l", col="dark blue") # 6 hr not debiased
+#legend("bottomright", c("obs", "noaa_1hr", "noaa_1hr_debiased","noaa_6hr"), pch = '', lty = 1, bty='n', col = c("black","red","dark orange","dark blue"))
