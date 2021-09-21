@@ -11,5 +11,4 @@ forecasted_drivers
 data_processed
 fcr2020.RData
 localfile.nc
-data_processed/
-forecasted_drivers/
+forecasted_drivers/NOAAGEFS_1hr/bvre
