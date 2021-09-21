@@ -9,3 +9,7 @@ EST
 forecast_output
 forecasted_drivers
 data_processed
+fcr2020.RData
+localfile.nc
+data_processed/
+forecasted_drivers/

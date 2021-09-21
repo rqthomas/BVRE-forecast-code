@@ -240,7 +240,7 @@ return(out_df)
 #lines(df2_average$date, df2_average$Rain, type="l")
 #legend("topright", c("obs","noaa"), pch = '', lty = 1, bty='n', col = c("light blue","black"))
 #
-#plot(df2_average$date, df2_average$RelHum_obs, type="l", col="purple", ylim=c(0,1))
+#plot(df2_average$date, df2_average$RelHum_obs, type="l", col="purple", ylim=c(0.3,1))
 #lines(df2_average$date, df2_average$RelHum, type="l")
 #legend("topleft", c("obs","noaa"), pch = '', lty = 1, bty='n', col = c("purple","black"))
 #
@@ -260,7 +260,7 @@ return(out_df)
 #plot(df2_average$Rain, df2_average$Rain_obs, type="p", col="light blue",pch=20, cex=2.5, xlim=c(0,0.009),ylim=c(0,0.009))
 #abline(0,1,lwd=3,lty="dashed")
 #
-#plot(df2_average$RelHum, df2_average$RelHum_obs, type="p", col="purple",pch=20, cex=2.5, xlim=c(0,1),ylim=c(0,1))
+#plot(df2_average$RelHum, df2_average$RelHum_obs, type="p", col="purple",pch=20, cex=2.5, xlim=c(0.3,1),ylim=c(0.3,1))
 #abline(0,1,lwd=3,lty="dashed")
 #
 #
