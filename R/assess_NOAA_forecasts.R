@@ -90,6 +90,15 @@ forecast_hour <- lubridate::hour(forecast_start_datetime_UTC)
 if(forecast_hour < 10){forecast_hour <- paste0("0",forecast_hour)}
 forecast_path <- file.path(config$file_path$noaa_directory, config$location$site_id,lubridate::as_date(run_config$forecast_start_day_local),forecast_hour)
 
+#downscale 
+#all_files <- list.files("forecasted_drivers/NOAAGEFS_6hr", full.names = TRUE, recursive = TRUE)
+#
+#for(i in 1:length(all_files)){
+#  print(i)
+#  output_file <- stringr::str_replace_all(all_files[i], pattern = "6hr", replacement = "1hr")
+#  noaaGEFSpoint::temporal_downscale(input_file = all_files[i], output_file = output_file)
+#}
+
 source("R/get_daily_debias_coeff.R")
 
 # Returns a dataframe with intercept, slope, r2, sd_mod and plot of obs vs mod
