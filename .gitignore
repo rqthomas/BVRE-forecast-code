@@ -2,6 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
+flare_tempdir/.
+data_raw/.
 EST
 .DS_Store
 forecast_output
