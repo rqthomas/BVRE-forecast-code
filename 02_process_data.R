@@ -1,4 +1,4 @@
-lake_directory <- getwd()
+lake_directory <- here::here()
 config_obs <- yaml::read_yaml(file.path(lake_directory,"configuration/observation_processing","observation_processing.yml"))
 
 config_obs$data_location <- file.path(lake_directory,"data_raw")
@@ -63,17 +63,15 @@ if(is.null(config_obs$combined_obs_file)){
 }
 
 # get NOAA met forecasts and stack first day to use as met 'obs'
-source(file.path(lake_directory, "R", "stack_noaa_forecasts_cycle_loop.R"))
-dates <- seq.Date(as.Date('2021-02-15'), as.Date(run_config$forecast_start_datetime), by = 'day') # cycle through historical dates 
-cycle <- '00'
-outfile <- config$file_path$qaqc_data_directory
-stack_noaa_forecasts(dates = dates, 
-                     #cycle = cycle, 
-                     outfile = outfile, 
-                     config = config,
-                     model_name = "observed-met-noaa",
-                     noaa_directory = file.path(lake_directory,"forecasted_drivers/NOAAGEFS_1hr"),
-                     hist_file = "observed-met_fcre.nc")
+# format the stacked forecasts for input into flare
+source(file.path(lake_directory, "R", "average_stacked_forecasts.R"))
+average_stacked_forecasts(forecast_dates = seq.Date(as.Date(config$run_config$start_datetime), as.Date(run_config$forecast_start_datetime), by = 'day'), # cycle through historical dates
+                          site = forecast_site, #four digit name in lowercase
+                          noaa_stacked_directory = file.path(dirname(lake_directory), "drivers", "noaa", "NOAAGEFS_1hr_stacked"),
+                          output_directory = file.path(lake_directory, "data_processed"),
+                          outfile_name = paste0("observed-met-noaa_",forecast_site),
+                          noaa_hour = 1)
+
 
 #plot temp and DO during forecast period
 # obs_2021 <- read_csv(cleaned_observations_file_long) %>% filter(date>="2021-03-15" & date<= "2021-03-31")

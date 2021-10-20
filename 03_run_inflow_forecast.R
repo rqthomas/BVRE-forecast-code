@@ -1,12 +1,18 @@
 #set forecast directory
 lake_directory <- getwd()
-configuration_directory <- file.path(lake_directory,"configuration")
 
 #pacman::p_load(tidyverse, dplyr, lubridate, noaaGEFSpoint)
 
-config <- yaml::read_yaml(file.path(configuration_directory, "FLAREr","configure_flare.yml"))
-run_config <- yaml::read_yaml(file.path(configuration_directory, "FLAREr","configure_run.yml"))
-
+lake_directory <- here::here()
+run_config <- yaml::read_yaml(file.path(paste0(lake_directory,"/configuration/", "FLAREr/", "configure_run.yml")))
+forecast_site <- "bvre"
+config <- yaml::read_yaml(file.path(paste0(lake_directory,"/configuration/", "FLAREr/", "configure_flare.yml")))
+config$file_path$qaqc_data_directory <- file.path(lake_directory, "data_processed")
+config$file_path$data_directory <- file.path(lake_directory, "data_raw")
+config$file_path$noaa_directory <- file.path(dirname(lake_directory), "drivers", "noaa", config$met$forecast_met_model)
+config$file_path$configuration_directory <- file.path(lake_directory, "configuration")
+config$file_path$execute_directory <- file.path(lake_directory, "flare_tempdir")
+config$file_path$forecast_output_directory <- file.path(dirname(lake_directory), "forecasts", forecast_site)
 config$run_config <- run_config
 
 # Set up timings

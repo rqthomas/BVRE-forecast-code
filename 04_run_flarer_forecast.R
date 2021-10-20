@@ -1,10 +1,13 @@
-lake_directory <- getwd()
-configuration_directory <- file.path(lake_directory,"configuration")
-
-##### Read configuration files
-config <- yaml::read_yaml(file.path(configuration_directory, "FLAREr","configure_flare.yml"))
-run_config <- yaml::read_yaml(file.path(configuration_directory, "FLAREr","configure_run.yml"))
-
+lake_directory <- here::here()
+run_config <- yaml::read_yaml(file.path(paste0(lake_directory,"/configuration/", "FLAREr/", "configure_run.yml")))
+forecast_site <- "bvre"
+config <- yaml::read_yaml(file.path(paste0(lake_directory,"/configuration/", "FLAREr/", "configure_flare.yml")))
+config$file_path$qaqc_data_directory <- file.path(lake_directory, "data_processed")
+config$file_path$data_directory <- file.path(lake_directory, "data_raw")
+config$file_path$noaa_directory <- file.path(dirname(lake_directory), "drivers", "noaa", config$met$forecast_met_model)
+config$file_path$configuration_directory <- file.path(lake_directory, "configuration")
+config$file_path$execute_directory <- file.path(lake_directory, "flare_tempdir")
+config$file_path$forecast_output_directory <- file.path(dirname(lake_directory), "forecasts", forecast_site)
 config$run_config <- run_config
 
 #run-specific settings
@@ -90,10 +93,7 @@ saved_file <- FLAREr::write_forecast_netcdf(da_forecast_output = da_forecast_out
 #FLAREr::create_flare_metadata(file_name = saved_file,
 #                              da_forecast_output = da_forecast_output)
 
-FLAREr::plotting_general(file_name = saved_file, 
-                         qaqc_data_directory = config$file_path$qaqc_data_directory,
-                         ncore = config$model_settings$ncore,
-                         plot_profile = TRUE)
+
 
 #glmtools::plot_temp(file.path(config$execute_directory,"1", "output.nc"))
 # plot(glmtools::get_surface_height(file.path(working_directory,"1", "output.nc")))
