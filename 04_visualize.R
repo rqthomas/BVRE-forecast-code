@@ -7,14 +7,15 @@ Sys.setenv("AWS_DEFAULT_REGION" = "s3",
 lake_directory <- here::here()
 run_config <- yaml::read_yaml(file.path(lake_directory,"configuration","FLAREr","configure_run.yml"))
 forecast_site <- run_config$forecast_site
+sim_name <- run_config$sim_name
 
 s3_mode <- TRUE
 
 if(s3_mode){
-  restart_exists <- aws.s3::object_exists(object = file.path(forecast_site, "configure_run.yml"),
+  restart_exists <- aws.s3::object_exists(object = file.path(forecast_site,sim_name, "configure_run.yml"),
                                           bucket = "restart")
   if(restart_exists){
-    aws.s3::save_object(object = file.path(forecast_site, "configure_run.yml"), bucket = "restart", file = file.path(lake_directory,"configuration","FLAREr","configure_run.yml"))
+    aws.s3::save_object(object = file.path(forecast_site, sim_name, "configure_run.yml"), bucket = "restart", file = file.path(lake_directory,"configuration","FLAREr","configure_run.yml"))
   }
   run_config <- yaml::read_yaml(file.path(lake_directory,"configuration","FLAREr","configure_run.yml"))
   restart_file <- basename(run_config$restart_file)
