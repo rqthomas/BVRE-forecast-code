@@ -6,7 +6,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
                                input_file_tz,
                                focal_depths,
                                local_tzone,
-                               config){
+                               config_obs){
 
   CATDATA_COL_NAMES <- c("DateTime", "RECORD", "CR6_Batt_V", "CR6Panel_Temp_C", "ThermistorTemp_C_1",
                          "ThermistorTemp_C_2", "ThermistorTemp_C_3", "ThermistorTemp_C_4", "ThermistorTemp_C_5",
@@ -374,17 +374,17 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   }
 
 
-  d$fDOM_1_5 <- config$exo_sensor_2_grab_sample_fdom[1] + config$exo_sensor_2_grab_sample_fdom[2] * d$fDOM_1_5
+  d$fDOM_1_5 <- config_obs$exo_sensor_2_grab_sample_fdom[1] + config_obs$exo_sensor_2_grab_sample_fdom[2] * d$fDOM_1_5
 
   #oxygen unit conversion
   d$doobs_1_5 <- d$doobs_1_5*1000/32  #mg/L (obs units) -> mmol/m3 (glm units)
   d$doobs_6 <- d$doobs_6*1000/32  #mg/L (obs units) -> mmol/m3 (glm units)
   d$doobs_13 <- d$doobs_13*1000/32  #mg/L (obs units) -> mmol/m3 (glm units)
 
-  d$Chla_1_5 <-  config$exo_sensor_2_ctd_chla[1] +  d$Chla_1_5 *  config$exo_sensor_2_ctd_chla[2]
-  d$doobs_1_5 <- config$exo_sensor_2_ctd_do_1_5[1]  +   d$doobs_1_5 * config$exo_sensor_2_ctd_do_1[2]
-  d$doobs_6 <- config$do_sensor_2_ctd_do_6[1] +   d$doobs_6 * config$do_sensor_2_ctd_do_6[2]
-  d$doobs_13 <- config$do_sensor_2_ctd_do_13[1] +   d$doobs_13 * config$do_sensor_2_ctd_do_13[2]
+  d$Chla_1_5 <-  config_obs$exo_sensor_2_ctd_chla[1] +  d$Chla_1_5 *  config_obs$exo_sensor_2_ctd_chla[2]
+  d$doobs_1_5 <- config_obs$exo_sensor_2_ctd_do_1_5[1]  +   d$doobs_1_5 * config_obs$exo_sensor_2_ctd_do_1[2]
+  d$doobs_6 <- config_obs$do_sensor_2_ctd_do_6[1] +   d$doobs_6 * config_obs$do_sensor_2_ctd_do_6[2]
+  d$doobs_13 <- config_obs$do_sensor_2_ctd_do_13[1] +   d$doobs_13 * config_obs$do_sensor_2_ctd_do_13[2]
 
   d <- d %>%
     dplyr::mutate(day = day(TIMESTAMP),
@@ -484,7 +484,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
            method = "exo_sensor",
            value = ifelse(is.nan(value), NA, value))
 
-  if(config$variable_obsevation_depths == TRUE){
+  if(config_obs$variable_obsevation_depths == TRUE){
 
     d_depth <- d %>% mutate(wtr_surface = depth_1_5 - 0.5 - 0.9,
                             wtr_1 = depth_1_5 - 0.5,

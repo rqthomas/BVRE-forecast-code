@@ -3,10 +3,10 @@ library(lubridate)
 
 #load packages
 if (!require("pacman"))install.packages("pacman")
-pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,raster,soilDB,rgdal,lattice,lubridate
+pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,raster,soilDB,rgdal,lattice,lubridate)
 
-files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
-sapply(files.sources, source)
+#files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
+#sapply(files.sources, source)
 
 lake_directory <- here::here()
 s3_mode <- TRUE
@@ -20,7 +20,7 @@ if(file.exists("~/.aws")){
                 "Consider renaming these so that automated upload will work"))
 }
 
-Sys.setenv("AWS_DEFAULT_REGION" = "data",
+Sys.setenv("AWS_DEFAULT_REGION" = "s3",
            "AWS_S3_ENDPOINT" = "flare-forecast.org")
 
 #Note: lake_directory need to be set prior to running this script
@@ -109,3 +109,4 @@ if(config$run_config$forecast_horizon > 0){
                                                   config = config,
                                                   s3_mode = s3_mode,
                                                   bucket = "drivers")
+}

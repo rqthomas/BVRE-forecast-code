@@ -90,8 +90,8 @@ target_variables:
 
 
 averaging_period:
-    - "1 day"
-    - "1 day"
+    - "1 hour"
+    - "1 hour"
     
 averaging_period_starting_hour: "00:00:00"
 

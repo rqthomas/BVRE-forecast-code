@@ -86,17 +86,21 @@ if(is.null(config_obs$met_file)){
 cleaned_observations_file_long <- file.path(config$file_path$qaqc_data_directory, 
                                             paste0(forecast_site, "-targets-insitu.csv"))
 
+source(file.path(lake_directory,"R/combine_bvre_insitu.R"))
+
+combine_bvre_insitu(lake_directory, config_obs)
+
 config_obs$data_location <- config$file_path$data_directory
 if(is.null(config_obs$combined_obs_file)){
-  in_situ_qaqc(insitu_obs_fname = file.path(config_obs$data_location,config_obs$insitu_obs_fname),
+  in_situ_qaqc(insitu_obs_fname = file.path(config_obs$data_location, "bvrewaterquality.csv"),
                data_location = config_obs$data_location,
                maintenance_file = file.path(config_obs$data_location,config_obs$maintenance_file),
                ctd_fname = NA,
                nutrients_fname =  NA,
-               secchi_fname = file.path(config_obs$data_location, config_obs$secchi_fname),
+               secchi_fname = NA,
                cleaned_observations_file_long = cleaned_observations_file_long,
                lake_name_code = config_obs$lake_name_code,
-               config = config_obs)
+               config_obs = config_obs)
 }else{
   file.copy(file.path(config$file_path$data_directory,config_obs$combined_obs_file), cleaned_observations_file_long, overwrite = TRUE)
 }
