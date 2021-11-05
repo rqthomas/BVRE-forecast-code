@@ -2,14 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
-flare_tempdir/.
-data_raw/.
 EST
 .DS_Store
-forecast_output
-forecasted_drivers
-data_processed
-data_processed/observations_postQAQC_long.csv
-fcr2020.RData
-localfile.nc
-forecasted_drivers/NOAAGEFS_1hr/bvre

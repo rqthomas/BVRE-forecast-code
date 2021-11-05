@@ -1,6 +1,6 @@
 met_qaqc <- function(realtime_file,
                      qaqc_file,
-                     cleaned_met_file_dir,
+                     cleaned_met_file,
                      input_file_tz,
                      nldas = NULL){
 
@@ -260,19 +260,13 @@ met_qaqc <- function(realtime_file,
              wind_speed = imputeTS::na_interpolation(wind_speed, option = "linear"))
   }
 
-  model_name <- "observed-met"
-  site <- "fcre"
   lat <- 37.27
   lon <- 360-79.9
   start_time <- dplyr::first((d$time))
   end_time <- dplyr::last((d$time))
   cf_units <- cf_var_units1
 
-  identifier <- paste(model_name, site,sep="_")
-
-  fname <- paste0(identifier,".nc")
-
-  output_file <- file.path(cleaned_met_file_dir, fname)
+  output_file <- cleaned_met_file
 
   start_time <- min(d$time)
   end_time <- max(d$time)
@@ -298,7 +292,7 @@ met_qaqc <- function(realtime_file,
     nc_var_list[[i]] <- ncdf4::ncvar_def(cf_var_names[i], cf_units[i], dimensions_list, missval=NaN)
   }
 
-  nc_flptr <- ncdf4::nc_create(output_file, nc_var_list, verbose = FALSE, )
+  nc_flptr <- ncdf4::nc_create(output_file, nc_var_list, verbose = FALSE)
 
   #For each variable associated with that ensemble
   for (j in 1:ncol(data)) {

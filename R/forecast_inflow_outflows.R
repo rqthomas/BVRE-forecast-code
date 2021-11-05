@@ -1,6 +1,13 @@
-forecast_inflows_outflows <- function(inflow_obs, forecast_files, obs_met_file, output_dir, inflow_model, inflow_process_uncertainty, forecast_location){
-
-  config <- yaml::read_yaml(file.path(config$file_path$configuration_directory,"FLAREr","configure_flare.yml"))
+forecast_inflows_outflows <- function(inflow_obs, 
+                                      forecast_files, 
+                                      obs_met_file, 
+                                      output_dir, 
+                                      inflow_model, 
+                                      inflow_process_uncertainty, 
+                                      forecast_location,
+                                      config,
+                                      s3_mode = FALSE,
+                                      bucket = NULL){
 
   inflow <- readr::read_csv(inflow_obs, col_types = readr::cols()) 
 
@@ -10,16 +17,13 @@ forecast_inflows_outflows <- function(inflow_obs, forecast_files, obs_met_file, 
 
   curr_all_days <- NULL
 
-  noaa_met_nc <- ncdf4::nc_open(forecast_files[18]) #paste0(noaa_forecast_path,"/not_debiased/NOAAGEFS_1hr_fcre_2021-03-15T12_2021-03-31T12_ens29.nc")
+  #CURRENTLY JUST PICKING 1 ENSEMBLE MEMBER
+  noaa_met_nc <- ncdf4::nc_open(forecast_files[18]) 
   noaa_met_time <- ncdf4::ncvar_get(noaa_met_nc, "time")
   origin <- stringr::str_sub(ncdf4::ncatt_get(noaa_met_nc, "time")$units, 13, 28) 
   origin <- lubridate::ymd_hm(origin)  
   noaa_met_time <- origin + lubridate::hours(noaa_met_time)
   AirTemp_n <- ncdf4::ncvar_get(noaa_met_nc, "air_temperature")
-  # Rain_n <- ncdf4::ncvar_get(noaa_met_nc, "precipitation_flux")
-  # Shortwave_n = ncdf4::ncvar_get(noaa_met_nc, "surface_downwelling_shortwave_flux_in_air")
-  # Longwave_n = ncdf4::ncvar_get(noaa_met_nc, "surface_downwelling_longwave_flux_in_air")
-  # Wind_n = ncdf4::ncvar_get(noaa_met_nc, "wind_speed")
   
   obs_met_nc <- ncdf4::nc_open(obs_met_file)
   obs_met_time <- ncdf4::ncvar_get(obs_met_nc, "time")
@@ -28,9 +32,6 @@ forecast_inflows_outflows <- function(inflow_obs, forecast_files, obs_met_file, 
   obs_met_time <- origin + lubridate::hours(obs_met_time)
   AirTemp <- ncdf4::ncvar_get(obs_met_nc, "air_temperature")
   Rain <- ncdf4::ncvar_get(obs_met_nc, "precipitation_flux")
-  # Shortwave = ncdf4::ncvar_get(obs_met_nc, "surface_downwelling_shortwave_flux_in_air")
-  # Longwave = ncdf4::ncvar_get(obs_met_nc, "surface_downwelling_longwave_flux_in_air")
-  # Wind = ncdf4::ncvar_get(obs_met_nc, "wind_speed")
 
   run_date <- lubridate::as_date(noaa_met_time[1])
   run_cycle <- lubridate::hour(noaa_met_time[1])
@@ -46,19 +47,7 @@ forecast_inflows_outflows <- function(inflow_obs, forecast_files, obs_met_file, 
 
   met <- tibble::tibble(time = obs_met_time,
                         AirTemp = AirTemp,
-                        Rain = Rain)#,
-                        #Shortwave = Shortwave,
-                        #Longwave = Longwave,
-                        #Wind = Wind)
-
- # noaa <- tibble::tibble(time = noaa_met_time,
- #                       AirTemp = AirTemp_n,
- #                       Rain = Rain_n,
- #                       Shortwave = Shortwave_n,
- #                       Longwave = Longwave_n,
- #                       Wind = Wind_n)
-
-library(tidyverse)
+                        Rain = Rain)
   obs_met <- met %>% 
     dplyr::filter(time >= (noaa_met_time[1] - lubridate::days(1)) & time < noaa_met_time[1]) 
     #dplyr::filter(time %in% noaa_met_time)
@@ -108,10 +97,6 @@ library(tidyverse)
 #------------------------------------------------------------------------------#
 #      Thornthwaite-Mather Water Balance Model for Forecasting Inflow          #
 #------------------------------------------------------------------------------#      
-  
-  #load packages
-  if (!require("pacman"))install.packages("pacman")
-  pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,raster,soilDB,rgdal,lattice,lubridate)
   
   #soil data
   #url= "https://websoilsurvey.sc.egov.usda.gov/DSD/Download/AOI/wfu1odcjhsdqqd4capo2doux/wss_aoi_2021-03-22_13-16-30.zip"
@@ -400,8 +385,17 @@ library(tidyverse)
 
     readr::write_csv(x = curr_met_daily_output,
                      file = outflow_file_name)
+    
+    if(s3_mode){
+      aws.s3::put_object(file = local_inflow_file_name,
+                         object = file.path(run_dir, paste0(identifier_inflow,"_", ens, ".csv")),
+                         bucket = bucket)
+      aws.s3::put_object(file = local_outflow_file_name,
+                         object = file.path(run_dir, paste0(identifier_outflow,"_", ens, ".csv")),
+                         bucket = bucket)
+    }
 
   }
-  return(run_dir)
+  return(list(run_dir_full, run_dir))
 }
 
