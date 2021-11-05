@@ -4,3 +4,7 @@
 .Ruserdata
 EST
 .DS_Store
+flare_tempdir/*
+forecasts/*
+data_raw/*
+data_processed/*
