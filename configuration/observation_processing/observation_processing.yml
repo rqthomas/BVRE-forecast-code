@@ -19,7 +19,7 @@ local_tzone: "EST"
 noaa_location: BVRE 
 
 met_raw_obs_fname:
-    - FCRmet.csv
+    - fcre-metstation-data/FCRmet.csv
     - Met_final_2015_2020.csv
 #specified_metfile: .na #NA #paste0(manual_data_location, "/met_full_postQAQC.csv")
 
@@ -56,8 +56,8 @@ depths_bins_top: [0.1, 0.33, 0.66, 1,
 
 obs_config_file: field_gases.csv
 
-realtime_insitu_location: bjorn-data
-realtime_met_station_location: carina-data
+realtime_insitu_location: bvre-platform-data
+realtime_met_station_location: fcre-metstation-data
 manual_data_location: BVR-GLM/inputs
 #realtime_inflow_data_location: diana-data
 
@@ -80,7 +80,7 @@ ctd_2_exo_sensor_chla: [0, 1]  #c(-2.0430, 2.5314) #c(-1.582, 1.335)
 ctd_2_exo_sensor_do: [0, 1] #c(-10.770, 1.061)
 exo_sensor_2_grab_sample_fdom: [-38.95, 22.47]
 focal_depths: .na
-maintenance_file: BVR_maintenance_log.txt
+maintenance_file: bvre-platform-data/BVR_maintenance_log.txt
 
 pull_from_git: TRUE
 
@@ -90,8 +90,8 @@ target_variables:
 
 
 averaging_period:
-    - "1 day"
-    - "1 day"
+    - "1 hour"
+    - "1 hour"
     
 averaging_period_starting_hour: "00:00:00"
 

@@ -1,8 +1,7 @@
 met_qaqc <- function(realtime_file,
                      qaqc_file,
-                     cleaned_met_file_dir,
+                     cleaned_met_file,
                      input_file_tz,
-                     local_tzone,
                      nldas = NULL){
 
   if(!is.na(qaqc_file)){
@@ -26,12 +25,12 @@ met_qaqc <- function(realtime_file,
                             IR01UpCo_Avg = readr::col_double(),
                             IR01DnCo_Avg = readr::col_double(),
                             NR01TK_Avg = readr::col_double(),
-                            Albedo_Avg = readr::col_double())) %>%
-      dplyr::slice(-c(1,2,3,4))
+                            Albedo_Avg = readr::col_double()), skip = 4)
+    #d1 <- d1[-85572, ]
 
     TIMESTAMP_in <- lubridate::force_tz(d1$TIMESTAMP, tzone = input_file_tz)
 
-    d1$TIMESTAMP <- lubridate::with_tz(TIMESTAMP_in,tz = local_tzone)
+    d1$TIMESTAMP <- lubridate::with_tz(TIMESTAMP_in,tz = "UTC")
 
     d2 <- readr::read_csv(qaqc_file,
                           col_types = list(Reservoir = readr::col_character(),
@@ -83,12 +82,22 @@ met_qaqc <- function(realtime_file,
 
     TIMESTAMP_in <- lubridate::force_tz(d2$DateTime, tzone = input_file_tz)
 
-    d2$TIMESTAMP <- lubridate::with_tz(TIMESTAMP_in,tz = local_tzone)
+    d2$TIMESTAMP <- lubridate::with_tz(TIMESTAMP_in,tz = "UTC")
+
+    #d3 <- read.csv( fname[3])
+    #TIMESTAMP_in <- as.POSIXct(d3$time,
+    #                           format= "%Y-%m-%d %H:%M",
+    #                           tz = input_file_tz)
+
+
+    #d3$TIMESTAMP <- with_tz(TIMESTAMP_in,tz = local_tzone)
 
     d1 <- data.frame(time = d1$TIMESTAMP, ShortWave = d1$SR01Up_Avg, LongWave = d1$IR01UpCo_Avg, AirTemp = d1$AirTC_Avg, RelHum = d1$RH, WindSpeed = d1$WS_ms_Avg, Rain = d1$Rain_mm_Tot, pressure = d1$BP_kPa_Avg)
     d2 <- data.frame(time = d2$TIMESTAMP, ShortWave = d2$ShortwaveRadiationUp_Average_W_m2, LongWave = d2$InfaredRadiationUp_Average_W_m2, AirTemp = d2$AirTemp_Average_C, RelHum = d2$RH_percent, WindSpeed = d2$WindSpeed_Average_m_s, Rain = d2$Rain_Total_mm, pressure = d2$BP_Average_kPa)
 
-    d1 <- d1[which(d1$time > d2$time[nrow(d2)] | d1$time < d2$time[1]), ] 
+    d1 <- d1[which(d1$time > d2$time[nrow(d2)] | d1$time < d2$time[1]), ]
+
+    #d3 <- d3[which(d3$TIMESTAMP < d2$TIMESTAMP[1])]
 
     d <- rbind(d2, d1)
 
@@ -123,7 +132,7 @@ met_qaqc <- function(realtime_file,
                                format= "%Y-%m-%d %H:%M",
                                tz = input_file_tz)
 
-    d1$TIMESTAMP <- with_tz(TIMESTAMP_in,tz = local_tzone)
+    d1$TIMESTAMP <- with_tz(TIMESTAMP_in,tz = "UTC")
 
     d <- data.frame(time = d1$TIMESTAMP, ShortWave = d1$SR01Up_Avg, LongWave = d1$IR01UpCo_Avg, AirTemp = d1$AirTC_Avg, RelHum = d1$RH, WindSpeed = d1$WS_ms_Avg, Rain = d1$Rain_mm_Tot, pressure = d1$BP_kPa_Avg)
   }
@@ -163,7 +172,7 @@ met_qaqc <- function(realtime_file,
            hour = as.numeric(hour)) %>%
     mutate(day = ifelse(as.numeric(day) < 10, paste0("0",day),day),
            hour = ifelse(as.numeric(hour) < 10, paste0("0",hour),hour)) %>%
-    mutate(time = lubridate::as_datetime(paste0(year,"-",month,"-",day," ",hour,":00:00"),tz = local_tzone)) %>%
+    mutate(time = lubridate::as_datetime(paste0(year,"-",month,"-",day," ",hour,":00:00"),tz = "UTC")) %>%
     dplyr::select(time,ShortWave,LongWave,AirTemp,RelHum,WindSpeed,Rain,pressure) %>%
     arrange(time)
 
@@ -186,12 +195,12 @@ met_qaqc <- function(realtime_file,
 
   d$air_pressure <- d$air_pressure * 1000
 
-  d$specific_humidity <-  noaaGEFSpoint:::rh2qair(rh = d$relative_humidity,
+  d$specific_humidity <-  Rnoaa4cast:::rh2qair(rh = d$relative_humidity,
                                                   T = d$air_temperature,
                                                   press = d$air_pressure)
 
   d <- d %>%
-    dplyr::select(time, air_temperature, air_pressure, relative_humidity, surface_downwelling_longwave_flux_in_air, surface_downwelling_shortwave_flux_in_air, precipitation_flux, specific_humidity, wind_speed)
+    select(time, air_temperature, air_pressure, relative_humidity, surface_downwelling_longwave_flux_in_air, surface_downwelling_shortwave_flux_in_air, precipitation_flux, specific_humidity, wind_speed)
 
   cf_var_names1 <- c("air_temperature", "air_pressure", "relative_humidity", "surface_downwelling_longwave_flux_in_air",
                      "surface_downwelling_shortwave_flux_in_air", "precipitation_flux","specific_humidity","wind_speed")
@@ -203,7 +212,7 @@ met_qaqc <- function(realtime_file,
   d <- d %>%
     tidyr::drop_na()
 
-   if(!is.null(nldas)){
+  if(!is.null(nldas)){
 
     print("Gap filling with NLDAS")
     d_nldas <- readr::read_csv(nldas, col_type = readr::cols())
@@ -220,7 +229,7 @@ met_qaqc <- function(realtime_file,
              air_temperature = air_temperature + 273.15,
              relative_humidity = relative_humidity/ 100,
              precipitation_flux = precipitation_flux * 1000 / (60 * 60 * 24)) %>%
-      dplyr::select(all_of(names(d)))
+      select(all_of(names(d)))
 
     d_nldas$time <- lubridate::with_tz(d_nldas$time, tzone = "UTC")
 
@@ -251,19 +260,13 @@ met_qaqc <- function(realtime_file,
              wind_speed = imputeTS::na_interpolation(wind_speed, option = "linear"))
   }
 
-  model_name <- "observed-met"
-  site <- "fcre"
-  lat <- 37.31
+  lat <- 37.27
   lon <- 360-79.9
   start_time <- dplyr::first((d$time))
   end_time <- dplyr::last((d$time))
   cf_units <- cf_var_units1
 
-  identifier <- paste(model_name, site,sep="_")
-
-  fname <- paste0(identifier,".nc")
-
-  output_file <- file.path(cleaned_met_file_dir, fname)
+  output_file <- cleaned_met_file
 
   start_time <- min(d$time)
   end_time <- max(d$time)
@@ -289,7 +292,7 @@ met_qaqc <- function(realtime_file,
     nc_var_list[[i]] <- ncdf4::ncvar_def(cf_var_names[i], cf_units[i], dimensions_list, missval=NaN)
   }
 
-  nc_flptr <- ncdf4::nc_create(output_file, nc_var_list, verbose = FALSE, )
+  nc_flptr <- ncdf4::nc_create(output_file, nc_var_list, verbose = FALSE)
 
   #For each variable associated with that ensemble
   for (j in 1:ncol(data)) {

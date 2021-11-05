@@ -2,7 +2,7 @@ extract_CTD <- function(fname,
                         input_file_tz,
                         local_tzone,
                         focal_depths,
-                        config){
+                        config_obs){
 
   d_ctd <- read_csv(fname,
                 col_types = list(
@@ -39,8 +39,8 @@ extract_CTD <- function(fname,
            "oxygen" = DO_mgL,
            "chla" = Chla_ugL) %>%
     mutate(oxygen = oxygen * 1000/32,
-           chla = config$ctd_2_exo_sensor_chla[1] + config$ctd_2_exo_sensor_chla[2] * chla,
-           oxygen = config$ctd_2_exo_sensor_do[1] + config$ctd_2_exo_sensor_do[2] * oxygen) %>%
+           chla = config_obs$ctd_2_exo_sensor_chla[1] + config_obs$ctd_2_exo_sensor_chla[2] * chla,
+           oxygen = config_obs$ctd_2_exo_sensor_do[1] + config_obs$ctd_2_exo_sensor_do[2] * oxygen) %>%
     pivot_longer(cols = c("temperature", "oxygen", "chla"), names_to = "variable", values_to = "value") %>%
     mutate(method = "ctd") %>%
     mutate(timestamp = lubridate::as_datetime(timestamp, tz = "UTC")) %>%
