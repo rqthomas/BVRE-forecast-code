@@ -1,7 +1,6 @@
-restart_file: /home/rstudio/BVRE-forecast-code/forecasts/bvre-2020-10-18-bvre.nc
-start_datetime: 2020-10-17 00:00:00
+restart_file: .na
+start_datetime: 2021-10-21 00:00:00
 end_datetime: .na
-forecast_start_datetime: 2020-10-18 00:00:00
+forecast_start_datetime: 2021-10-22 00:00:00
 forecast_horizon: 16.0
-sim_name: bvre
-forecast_site: bvre
+sim_name: bvre_test

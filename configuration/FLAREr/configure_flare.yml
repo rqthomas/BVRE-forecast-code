@@ -1,12 +1,10 @@
 file_path:
-   qaqc_data_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/BVRE-forecast/data_processed
-   noaa_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/BVRE-forecast/forecasted_drivers/NOAAGEFS_1hr
-   inflow_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/BVRE-forecast/flare_tempdir/FLOWS-NOAAGEFS-TMWB/bvre
-   configuration_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/BVRE-forecast/configuration
-   execute_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/BVRE-forecast/flare_tempdir
-   forecast_output_directory: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/BVRE-forecast/forecast_output
-   run_config: /Users/heatherwander/Documents/VirginiaTech/research/BVR_GLM/BVRE-forecast/configuration/FLAREr
-   
+   qaqc_data_directory: .na
+   noaa_directory: .na
+   inflow_directory: .na
+   configuration_directory: .na
+   execute_directory: .na
+   forecast_output_directory: .na
 location:
    site_id: bvre
    name: Beaverdam Reservoir
@@ -63,11 +61,10 @@ default_init:
    blue_ice_thickness: 0.0
 inflow:
    use_forecasted_inflow: TRUE
-   forecast_inflow_model: FLOWS-NOAAGEFS-TMWB
+   forecast_inflow_model: inflow/FLOWS-NOAAGEFS-TMWB
 met:
    use_forecasted_met: FALSE
-   forecast_met_model: NOAAGEFS_1hr
-   hist_met_file: observed-met_bvre.nc
+   forecast_met_model: noaa/NOAAGEFS_1hr
 uncertainty:
    observation_uncertainty: TRUE
    process_uncertainty: TRUE
