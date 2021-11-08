@@ -4,7 +4,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
                          ctd_fname,
                          nutrients_fname,
                          secchi_fname,
-                         cleaned_observations_file_long,
+                         cleaned_insitu_file,
                          lake_name_code,
                          config_obs){
 
@@ -103,7 +103,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
 
   if(!is.na(secchi_fname)){
 
-    d_secchi <- extract_secchi(fname = file.path(config_obs$data_location, secchi_fname),
+    d_secchi <- extract_secchi(fname = secchi_fname,
                                input_file_tz = "EST",
                                local_tzone  = config_obs$local_tzone,
                                focal_depths = config_obs$focal_depths)
@@ -120,9 +120,9 @@ in_situ_qaqc <- function(insitu_obs_fname,
   
   d_clean$value <- round(d_clean$value, digits = 4)
 
-  readr::write_csv(d_clean, cleaned_observations_file_long)
+  readr::write_csv(d_clean, cleaned_insitu_file)
+  
+  return(cleaned_insitu_file)
 
-  #rm(d_clean, d, d_secchi, d_ch4, d_nutrients, d_ctd)
-  #gc()
 }
        
