@@ -11,6 +11,9 @@ pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,raster,soilDB,rgdal,lattice,
 lake_directory <- here::here()
 s3_mode <- TRUE
 
+Sys.setenv("AWS_DEFAULT_REGION" = "s3",
+           "AWS_S3_ENDPOINT" = "flare-forecast.org")
+
 configuration_file <- "configure_flare.yml"
 run_config <- yaml::read_yaml(file.path(lake_directory,"configuration","FLAREr","configure_run.yml"))
 forecast_site <- run_config$forecast_site
