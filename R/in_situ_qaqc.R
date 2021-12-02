@@ -21,7 +21,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
   if(exists("ctd_fname")){
     if(!is.na(ctd_fname)){
       print("QAQC CTD")
-      d_ctd <- extract_CTD(fname = ctd_fname,
+      d_ctd <- extract_CTD(fname = file.path(config_obs$file_path$data_directory,config_obs$ctd_fname),
                            input_file_tz = "EST",
                            local_tzone = config_obs$local_tzone,
                            focal_depths = config_obs$focal_depths,
@@ -34,7 +34,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
   if(exists("nutrients_fname")){
     if(!is.na(nutrients_fname)){
       print("QAQC Nutrients")
-      d_nutrients <- extract_nutrients(fname = nutrients_fname,
+      d_nutrients <- extract_nutrients(fname = file.path(config_obs$file_path$data_directory,config_obs$nutrients_fname),
                                        input_file_tz = "EST",
                                        local_tzone = config_obs$local_tzone,
                                        focal_depths = config_obs$focal_depths)
@@ -46,7 +46,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
   if(exists("ch4_fname")){
     if(!is.na(ch4_fname)){
       print("QAQC CH4")
-      d_ch4 <- extract_ch4(fname = ch4_fname,
+      d_ch4 <- extract_ch4(fname = file.path(config_obs$file_path$data_directory,config_obs$ch4_fname),
                            input_file_tz = "EST",
                            local_tzone  = config_obs$local_tzone,
                            focal_depths = config_obs$focal_depths)

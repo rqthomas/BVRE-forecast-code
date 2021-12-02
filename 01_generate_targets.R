@@ -5,7 +5,7 @@ message("Beginning generate targets")
 
 #' Set the lake directory to the repository directory
 
-lake_directory <- here::here()
+lake_directory <- getwd()
 
 Sys.setenv("AWS_DEFAULT_REGION" = "s3",
            "AWS_S3_ENDPOINT" = "flare-forecast.org")
@@ -17,7 +17,9 @@ source(file.path(lake_directory, "R", "in_situ_qaqc.R"))
 source(file.path(lake_directory, "R", "temp_oxy_chla_qaqc.R"))
 source(file.path(lake_directory, "R", "extract_CTD.R"))
 source(file.path(lake_directory, "R", "extract_secchi.R"))
-source(file.path(lake_directory,"R" ,"combine_bvre_insitu.R"))
+source(file.path(lake_directory, "R", "extract_nutrients.R"))
+source(file.path(lake_directory, "R", "extract_ch4.R"))
+#source(file.path(lake_directory,"R" ,"combine_bvre_insitu.R"))
 
 
 #' Generate the `config_obs` object and create directories if necessary
@@ -32,8 +34,21 @@ FLAREr::get_git_repo(lake_directory,
              git_repo = "https://github.com/FLARE-forecast/BVRE-data.git")
 
 FLAREr::get_git_repo(lake_directory,
+             directory = config_obs$realtime_insitu_location,
+             git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
+
+download.file("https://github.com/FLARE-forecast/FCRE-data/blob/fcre-metstation-data/FCRmet.csv?raw=true",
+              "data_raw/fcre-metstation-data/FCRmet.csv")
+
+FLAREr::get_git_repo(lake_directory,
              directory = config_obs$realtime_met_station_location,
              git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
+
+#' Download various files from the BVR-GLM repo
+
+download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/field_data/field_gases.csv?raw=true",
+              "data_raw/field_gasses.csv") 
+
 
 #' Download files from EDI
 
@@ -57,34 +72,31 @@ FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi
              file = config_obs$nutrients_fname,
              lake_directory)
 
-#' Clean up observed meterology
+#' Clean up observed meteorology
 
 cleaned_met_file <- met_qaqc(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[1]),
                              qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[2]),
-                             cleaned_met_file = file.path(config_obs$file_path$targets_directory, config$location$site_id, paste0("observed-met_",config_obs$site_id,".nc")),
+                             cleaned_met_file = file.path(config_obs$file_path$targets_directory, paste0("observed-met_",config_obs$lake_name_code,".nc")),
                              input_file_tz = "EST",
                              nldas = NULL)
 
 #' Clean up observed insitu measurements
  
-
-combine_bvre_insitu(lake_directory, config_obs)
-
-cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(config_obs$file_path$data_directory, "bvrewaterquality.csv"),
+cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(config_obs$file_path$data_directory, "bvre-waterquality.csv"),
              data_location = config_obs$file_path$data_directory,
              maintenance_file = file.path(config_obs$file_path$data_directory,config_obs$maintenance_file),
              ctd_fname = NA,
              nutrients_fname =  NA,
              secchi_fname = NA,
-             cleaned_insitu_file = file.path(config_obs$file_path$targets_directory, config$location$site_id, paste0(config_obs$site_id,"-targets-insitu.csv")),
-             lake_name_code = config_obs$site_id,
+             cleaned_insitu_file = file.path(config_obs$file_path$targets_directory, paste0(config_obs$lake_name_code,"-targets-insitu.csv")),
+             lake_name_code = config_obs$lake_name_code,
              config_obs = config_obs)
 
 #' Move targets to s3 bucket
 
 message("Successfully generated targets")
 
-FLAREr::put_targets(site_id = config_obs$site_id,
+FLAREr::put_targets(site_id = config_obs$lake_name_code,
             cleaned_insitu_file,
             cleaned_met_file,
             cleaned_inflow_file,
