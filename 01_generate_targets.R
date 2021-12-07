@@ -5,7 +5,7 @@ message("Beginning generate targets")
 
 #' Set the lake directory to the repository directory
 
-lake_directory <- getwd()
+lake_directory <- here::here()
 
 Sys.setenv("AWS_DEFAULT_REGION" = "s3",
            "AWS_S3_ENDPOINT" = "flare-forecast.org")
@@ -44,10 +44,21 @@ FLAREr::get_git_repo(lake_directory,
              directory = config_obs$realtime_met_station_location,
              git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
 
-#' Download various files from the BVR-GLM repo
+#' Download various files from the BVR-GLM repo - get these onto the s3 bucket??
 
 download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/field_data/field_gases.csv?raw=true",
               "data_raw/field_gasses.csv") 
+
+#INFLOW - currently using a file on my local bvr_glm repo - could go in s3 bucket as "bvre-targets-inflow.csv" 
+
+#OUTFLOW
+download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/BVR_spillway_outflow_2014_2019_20200917_nldasInflow.csv?raw=true",
+              "data_raw/BVR_spillway_outflow_2014_2019_20200917_nldasInflow.csv")
+
+
+#download NLDAS data (note: will need to grab new one once appended with 2020/2021 data) - only need this for filling in missing met days in bvr inflow file
+download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/BVR_GLM_NLDAS_010113_123119_GMTadjusted.csv?raw=true",
+              "data_raw/BVR_GLM_NLDAS_010113_123119_GMTadjusted.csv")
 
 
 #' Download files from EDI

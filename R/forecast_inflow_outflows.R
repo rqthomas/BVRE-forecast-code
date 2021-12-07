@@ -99,9 +99,9 @@ forecast_inflows_outflows <- function(inflow_obs,
 #------------------------------------------------------------------------------#      
   
   #soil data
-  #url= "https://websoilsurvey.sc.egov.usda.gov/DSD/Download/AOI/wfu1odcjhsdqqd4capo2doux/wss_aoi_2021-03-22_13-16-30.zip"
+  #url= "https://websoilsurvey.sc.egov.usda.gov/DSD/Download/AOI/4e4n0gmowbc20zgidprgwjdf/wss_aoi_2021-12-02_14-40-00.zip"
   #download.file(url,"mysoil.zip") #Note: will probably have to update wss_aoi date if it's been a while - go to wss homepage and click on start wss link on right of page
-  #unzip("mysoil.zip")            #zoom in to site, use define aoi tool to select desired area, go to download soils data tab, click "create download link", right click and copy link address, paste on line 10
+  #unzip("mysoil.zip")            #zoom in to site, use define aoi tool to select desired area, go to download soils data tab, click "create download link", right click and copy link address, paste on url line above
   list.files()
   
   list.files(paste0(lake_directory, "/data_raw/TMWB_data/wss_aoi_2021-03-22_13-16-30/spatial/"),pattern = "shp")
@@ -109,7 +109,7 @@ forecast_inflows_outflows <- function(inflow_obs,
   
   #Using ROANOKE RIVER AT NIAGARA, VA  usgs gage to use as a template (will write over with BVR-specific data) 
   myflowgage_id="02056000"
-  myflowgage=get_usgs_gage(myflowgage_id,begin_date = "2019-01-01",end_date = "2021-04-05") #change this!
+  myflowgage=get_usgs_gage(myflowgage_id,begin_date = "2019-01-01",end_date = "2021-11-08") #change this!
   
   #only select dates during the forecast period
   myflowgage$flowdata <- myflowgage$flowdata[myflowgage$flowdata$mdate >= run_date & myflowgage$flowdata$mdate <= run_date + 17,] 
@@ -134,11 +134,11 @@ forecast_inflows_outflows <- function(inflow_obs,
     myflowgage$declat - degdist, myflowgage$declat + degdist), 
     ncol = 2, byrow = TRUE)
   
-  streams=readOGR(paste0(lake_directory, "/data_raw/TMWB_data/03010101/Shape/NHDFlowline.dbf")) 
+  streams=readOGR(paste0(lake_directory, "/drivers/inflow/03010101/Shape/NHDFlowline.dbf")) 
   
   #mysoil <- mapunit_geom_by_ll_bbox(mybbox)
   #writeOGR(obj=mysoil, dsn="soils", layer="mysoil", driver="ESRI Shapefile")
-  mysoil <- readOGR(paste0(lake_directory, "/data_raw/TMWB_data/soils"))
+  mysoil <- readOGR(paste0(lake_directory, "/drivers/inflow/soils"))
   
   # Associate mukey with cokey from component
   mukey_statement = format_SQL_in_statement(unique(mysoil$mukey))
@@ -224,7 +224,7 @@ forecast_inflows_outflows <- function(inflow_obs,
                     TEMP = NA)
     
     
-    #curr_met_daily$TEMP[1] <- init_flow_temp$TEMP
+    curr_met_daily$TEMP[1] <- init_flow_temp$TEMP
 
     if(inflow_process_uncertainty == TRUE){
       inflow_error <- rnorm(nrow(curr_met_daily), 0, config$future_inflow_flow_error)

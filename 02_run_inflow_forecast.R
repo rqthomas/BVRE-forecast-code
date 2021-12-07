@@ -16,7 +16,7 @@ Sys.setenv("AWS_DEFAULT_REGION" = "s3",
 
 configuration_file <- "configure_flare.yml"
 run_config <- yaml::read_yaml(file.path(lake_directory,"configuration","FLAREr","configure_run.yml"))
-forecast_site <- run_config$forecast_site
+forecast_site <- "bvre"
 sim_name <- run_config$sim_name
 
 if(file.exists("~/.aws")){
@@ -70,8 +70,8 @@ if(config$run_config$forecast_horizon > 0){
   noaa_forecast_path <- file.path(config$file_path$noaa_directory, config$met$forecast_met_model,config$location$site_id,lubridate::as_date(forecast_start_datetime),forecast_hour)
   
   if(s3_mode){
-    aws.s3::save_object(object = file.path(forecast_site, "fcre-targets-inflow.csv"), bucket = "targets", file = file.path(config$file_path$qaqc_data_directory, "fcre-targets-inflow.csv"))
-    aws.s3::save_object(object = file.path(forecast_site, "observed-met_fcre.nc"), bucket = "targets", file = file.path(config$file_path$qaqc_data_directory, "observed-met_fcre.nc"))
+    aws.s3::save_object(object = file.path(forecast_site, "bvre-targets-insitu.csv"), bucket = "targets", file = file.path(config$file_path$qaqc_data_directory, "bvre-targets-insitu.csv"))
+    aws.s3::save_object(object = "fcre/observed-met_fcre.nc", bucket = "targets", file = file.path(config$file_path$qaqc_data_directory, "observed-met_fcre.nc"))
     
     if(config$run_config$forecast_horizon > 0){
       noaa_forecast_path <- file.path(lake_directory,"drivers/noaa", config$met$forecast_met_model,config$location$site_id,lubridate::as_date(forecast_start_datetime),forecast_hour)
@@ -93,10 +93,10 @@ if(config$run_config$forecast_horizon > 0){
   #Data needed for inflow model
   
   #soil data
-  url= "https://websoilsurvey.sc.egov.usda.gov/DSD/Download/AOI/wfu1odcjhsdqqd4capo2doux/wss_aoi_2021-03-22_13-16-30.zip"
+  url= "https://websoilsurvey.sc.egov.usda.gov/DSD/Download/AOI/ntsbjrhm1t3gzam4ck5ilqdy/wss_aoi_2021-12-02_12-24-04.zip"
   download.file(url,
-                destfile = file.path(config$file_path$data_directory,"mysoil.zip")) #Note: will probably have to update wss_aoi date if it's been a while - go to wss homepage and click on start wss link on right of page
-  unzip("mysoil.zip")            #zoom in to site, use define aoi tool to select desired area, go to download soils data tab, click "create download link", right click and copy link address, paste on line 10
+                destfile = file.path(lake_directory, "drivers/inflow/mysoil.zip")) #Note: will probably have to update wss_aoi date if it's been a while - go to wss homepage and click on start wss link on right of page
+  unzip(file.path(lake_directory, "drivers/inflow/mysoil.zip"))                    #zoom in to site, use define aoi tool to select desired area, go to download soils data tab, click "create download link", right click and copy link address, paste on url line above
   
   message("Forecasting inflow and outflows")
   # Forecast Inflows
@@ -105,7 +105,7 @@ if(config$run_config$forecast_horizon > 0){
   if(length(forecast_files) == 0){
     stop(paste0("missing forecast files at: ", noaa_forecast_path))
   }
-  temp_flow_forecast <- forecast_inflows_outflows(inflow_obs = file.path(config$file_path$qaqc_data_directory, "fcre-targets-inflow.csv"),
+  temp_flow_forecast <- forecast_inflows_outflows(inflow_obs = file.path(config$file_path$qaqc_data_directory, "bvre-targets-inflow.csv"),
                                                   forecast_files = forecast_files,
                                                   obs_met_file = file.path(config$file_path$qaqc_data_directory,"observed-met_fcre.nc"),
                                                   output_dir = config$file_path$inflow_directory,
@@ -116,3 +116,4 @@ if(config$run_config$forecast_horizon > 0){
                                                   s3_mode = s3_mode,
                                                   bucket = "drivers")
 }
+
