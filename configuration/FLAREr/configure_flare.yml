@@ -60,7 +60,7 @@ inflow:
    use_forecasted_inflow: TRUE
    forecast_inflow_model: inflow/FLOWS-NOAAGEFS-TMWB
 met:
-   use_forecasted_met: FALSE
+   use_forecasted_met: TRUE
    forecast_met_model: noaa/NOAAGEFS_1hr
 uncertainty:
    observation_uncertainty: TRUE

@@ -52,10 +52,15 @@ states_config <- readr::read_csv(file.path(config$file_path$configuration_direct
 
 FLAREr::get_stacked_noaa(lake_directory, config, averaged = TRUE)
 
+
 met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_path$noaa_directory, "noaa", "NOAAGEFS_1hr_stacked_average", config$location$site_id, paste0("observed-met-noaa_",config$location$site_id,".nc")),
                                           out_dir = config$file_path$execute_directory,
                                           forecast_dir = forecast_dir,
                                           config = config)
+
+#Need to remove the 00 ensemble member because it only goes 16-days in the future
+met_out$filenames <- met_out$filenames[!stringr::str_detect(met_out$filenames, "ens00")]
+
 
 #met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".nc")),
 #                                          out_dir = config$file_path$execute_directory,
@@ -115,7 +120,7 @@ FLAREr::put_forecast(saved_file, eml_file_name, config)
 rm(da_forecast_output)
 gc()
 
-FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = 16, day_advance = 1)
+FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = 35, day_advance = 1)
 
 setwd(lake_directory)
 unlink(config$run_config$restart_file)
