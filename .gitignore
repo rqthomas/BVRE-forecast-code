@@ -9,3 +9,5 @@ forecasts/*
 data_raw/*
 data_processed/*
 drivers/*
+targets/*
+restart/*

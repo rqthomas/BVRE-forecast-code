@@ -2,7 +2,7 @@
 # Lake information
 ###########################
 
-lake_name_code: bvre
+site_id: bvre
 lake_name: Beaverdam Reservoir
 lake_latitude: 37.31276   #Degrees North
 lake_longitude: -79.81607  #Degrees West
@@ -64,7 +64,7 @@ manual_data_location: BVR-GLM/inputs
 specified_inflow1: BVR_inflow_2014_2019_20200917_allfractions_2poolsDOC_withch4_nldasInflow.csv
 specified_outflow1: BVR_spillway_outflow_2014_2019_20200917_nldasInflow.csv
 
-insitu_obs_fname: bvre-platform-data/BVRplatform.csv
+insitu_obs_fname: bvre-platform-data/bvre-waterquality.csv
 # BVR_EDI_2020.csv #getting rid of this for forecasts after EDI publication
 
 secchi_fname: Secchi_depth_2013_2020.csv

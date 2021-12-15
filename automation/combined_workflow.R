@@ -18,7 +18,7 @@ if(noaa_ready){
   setwd(lake_directory)
   
   message("Generating inflow forecast")
-  source(file.path("02_run_inflow_forecast.R"))
+  #source(file.path("02_run_inflow_forecast.R"))
   
   setwd(lake_directory)
   
