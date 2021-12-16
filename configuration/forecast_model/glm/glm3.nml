@@ -20,7 +20,7 @@
    coef_mix_shear = 0.3
    coef_mix_turb = 0.51
    coef_mix_KH = 0.3
-   coef_mix_hyp = 0.5
+   coef_mix_hyp = 0.6
    deep_mixing = 2
 /
 &morphometry
@@ -112,7 +112,7 @@
    benthic_mode = 2
    sed_heat_model = 1
    n_zones = 2
-   zone_heights = 8.0, 15.0
+   zone_heights = 6.0, 15.0
    sed_heat_Ksoil = 1.2, 1.2
    sed_temp_depth = 0.5, 0.5
    sed_temp_mean = 6.85118961409541, 8.55391440004643
