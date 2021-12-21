@@ -9,6 +9,8 @@ if(file.exists("~/.aws")){
 Sys.setenv("AWS_DEFAULT_REGION" = "s3",
            "AWS_S3_ENDPOINT" = "flare-forecast.org")
 
+#code to delete restart config file - useful when running multiple different forecast horizons instead of consecutive forecast days
+unlink(file.path(getwd(),"restart/bvre/bvre_test/configure_run.yml"))
 
 lake_directory <- here::here()
 update_run_config <- TRUE
@@ -27,7 +29,6 @@ noaa_forecast_path <- FLAREr::get_driver_forecast_path(config,
 #inflow_forecast_path <- FLAREr::get_driver_forecast_path(config,
 #                                                 forecast_model = config$inflow$forecast_inflow_model)
 inflow_forecast_path <- NULL
-
 
 if(!is.null(noaa_forecast_path)){
   FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
@@ -50,12 +51,18 @@ states_config <- readr::read_csv(file.path(config$file_path$configuration_direct
 
 #Download and process observations (already done)
 
+FLAREr::get_stacked_noaa(lake_directory, config, averaged = TRUE)
 
-
-met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".nc")),
+met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_path$noaa_directory, "noaa", "NOAAGEFS_1hr_stacked_average", config$location$site_id, paste0("observed-met-noaa_",config$location$site_id,".nc")),
                                           out_dir = config$file_path$execute_directory,
                                           forecast_dir = forecast_dir,
                                           config = config)
+
+#met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".nc")),
+#                                          out_dir = config$file_path$execute_directory,
+#                                          forecast_dir = forecast_dir,
+#                                          config = config)
+
 
 #Create observation matrix
 obs <- FLAREr::create_obs_matrix(cleaned_observations_file_long = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-insitu.csv")),
@@ -111,6 +118,11 @@ rm(da_forecast_output)
 gc()
 
 FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = 16, day_advance = 1)
+
+setwd(lake_directory)
+unlink(config$run_config$restart_file)
+unlink(forecast_dir, recursive = TRUE)
+unlink(file.path(lake_directory, "flare_tempdir", config$location$site_id, config$run_config$sim_name), recursive = TRUE)
 
 message(paste0("successfully generated flare forecats for: ", basename(saved_file)))
 

@@ -5,7 +5,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
                          nutrients_fname,
                          secchi_fname,
                          cleaned_insitu_file,
-                         lake_name_code,
+                         site_id,
                          config_obs){
 
   print("QAQC BVR sensors")
@@ -53,10 +53,13 @@ in_situ_qaqc <- function(insitu_obs_fname,
       d <- rbind(d,d_ch4)
     }
   }
-
+  
+  #drop NA rows
+  d <- d[!is.na(d$value),]
+  
   #make hour forecast hour
   #d <- d %>%   dplyr::mutate(hour = 7) 
-
+  
   first_day  <- lubridate::as_datetime(paste0(lubridate::as_date(min(d$timestamp)), " ", config_obs$averaging_period_starting_hour))
   first_day <- lubridate::force_tz(first_day, tzone = "UTC")
 

@@ -11,7 +11,7 @@ forecast_inflows_outflows <- function(inflow_obs,
 
   inflow <- readr::read_csv(inflow_obs, col_types = readr::cols()) 
 
-  lake_name_code <- config$location$site_id
+  site_id <- config$location$site_id
   
   lake_directory <- getwd()
 
@@ -37,7 +37,7 @@ forecast_inflows_outflows <- function(inflow_obs,
   run_cycle <- lubridate::hour(noaa_met_time[1])
   if(run_cycle < 10){run_cycle <- paste0("0",run_cycle)}
 
-  run_dir <- file.path(output_dir, inflow_model, lake_name_code, run_date, run_cycle) 
+  run_dir <- file.path(output_dir, inflow_model, site_id, run_date, run_cycle) 
 
   if(!dir.exists(run_dir)){
     dir.create(run_dir, recursive = TRUE)
@@ -48,35 +48,33 @@ forecast_inflows_outflows <- function(inflow_obs,
   met <- tibble::tibble(time = obs_met_time,
                         AirTemp = AirTemp,
                         Rain = Rain)
+  
   obs_met <- met %>% 
-    dplyr::filter(time >= (noaa_met_time[1] - lubridate::days(1)) & time < noaa_met_time[1]) 
-    #dplyr::filter(time %in% noaa_met_time)
-    #dplyr::filter(time>="2020-08-01" & time <= "2020-09-16")
-    
-  # met_2019 <- met %>% dplyr::filter(time>="2019-08-01" & time <= "2019-09-16") 
-  # 
-  # plot(obs_met$AirTemp~obs_met$time, type="l",col="dark red", ylim=c(285,310), xaxt = "n")
-  # axis.POSIXct(1,obs_met$time, at=seq(obs_met$time[1],obs_met$time[1105], "days"))
+    dplyr::filter((time >= noaa_met_time[1] - lubridate::days(1)) & time < noaa_met_time[1])
+   # dplyr::filter(time %in% noaa_met_time)
+
+ # stacked_met <- ncdf4::nc_open(file.path(config$file_path$noaa_directory,"NOAAGEFS_1hr_stacked_average/bvre/observed-met-noaa_bvre.nc"))
+ # obs_met_time <- ncdf4::ncvar_get(stacked_met, "time")
+ # origin <- stringr::str_sub(ncdf4::ncatt_get(stacked_met, "time")$units, 13, 28)
+ # origin <- lubridate::ymd_hm(origin)
+ # obs_met_time <- origin + lubridate::hours(obs_met_time)
+ # AirTemp <- ncdf4::ncvar_get(stacked_met, "air_temperature")
+ # Rain <- ncdf4::ncvar_get(stacked_met, "precipitation_flux")
+  
+ # stacked_met <- tibble::tibble(time = obs_met_time,
+ #                      AirTemp = AirTemp,
+ #                      Rain = Rain)
+  
+  
+  # met <- met %>% dplyr::filter(time>="2020-09-25" & time <= "2021-11-07") 
+  #  
+  # plot(stacked_met$AirTemp~stacked_met$time, type="l",col="dark red", ylim=c(255,310), xaxt = "n")
+  # axis.POSIXct(1,stacked_met$time, at=seq(stacked_met$time[1],tail(stacked_met$time, n=1), "days"))
   # plot(met_2019$AirTemp~met_2019$time, type="l", col="darkblue", ylim=c(285,310), xaxt='n')
   # axis.POSIXct(1,met_2019$time, at=seq(met_2019$time[1],met_2019$time[1105], "days"))
-  # 
-  # plot(obs_met$Shortwave~obs_met$time, type="l", col="dark red", xaxt = "n")
-  # axis.POSIXct(1,obs_met$time, at=seq(obs_met$time[1],obs_met$time[1105], "days"))
-  # plot(met_2019$Shortwave~met_2019$time, type="l", col="dark blue", xaxt = "n")
-  # axis.POSIXct(1,met_2019$time, at=seq(met_2019$time[1],met_2019$time[1105], "days"))
-  # 
-  # plot(obs_met$Longwave~obs_met$time, type="l", col="dark red", ylim=c(300,500), xaxt = "n")
-  # axis.POSIXct(1,obs_met$time, at=seq(obs_met$time[1],obs_met$time[1105], "days"))
-  # plot(met_2019$Longwave~met_2019$time, type="l", col="dark blue", ylim=c(300,500), xaxt = "n")
-  # axis.POSIXct(1,met_2019$time, at=seq(met_2019$time[1],met_2019$time[1105], "days"))
-  # 
-  # plot(obs_met$Wind~obs_met$time, type="l", col="dark red", ylim=c(0,8), xaxt = "n")
-  # axis.POSIXct(1,obs_met$time, at=seq(obs_met$time[1],obs_met$time[1105], "days"))
-  # plot(met_2019$Wind~met_2019$time, type="l", col="dark blue", ylim=c(0,8), xaxt = "n")
-  # axis.POSIXct(1,met_2019$time, at=seq(met_2019$time[1],met_2019$time[1105], "days"))
-  # 
-  # plot(obs_met$Rain~obs_met$time, type="l", col="dark red",xaxt = "n", ylim=c(0,0.008))
-  # axis.POSIXct(1,obs_met$time, at=seq(obs_met$time[1],obs_met$time[1105], "days"))
+  #
+  # plot(stacked_met$Rain~stacked_met$time, type="l", col="dark red",xaxt = "n", ylim=c(0,0.008))
+  # axis.POSIXct(1,stacked_met$time, at=seq(stacked_met$time[1],tail(stacked_met$time, n=1), "days"))
   # plot(met_2019$Rain~met_2019$time, type="l", col="dark blue", ylim=c(0,0.008), xaxt = "n")
   # axis.POSIXct(1,met_2019$time, at=seq(met_2019$time[1],met_2019$time[1105], "days"))
 
@@ -371,10 +369,10 @@ forecast_inflows_outflows <- function(inflow_obs,
     end_date <- dplyr::last(curr_met_daily$time)
 
 
-    identifier_inflow <- paste0("INFLOW-", inflow_model,"_", lake_name_code, "_", format(run_date, "%Y-%m-%d"),"_",
+    identifier_inflow <- paste0("INFLOW-", inflow_model,"_", site_id, "_", format(run_date, "%Y-%m-%d"),"_",
                                 format(end_date, "%Y-%m-%d"))
 
-    identifier_outflow <- paste0("OUTFLOW-", inflow_model, "_", lake_name_code, "_", format(run_date, "%Y-%m-%d"), "_",
+    identifier_outflow <- paste0("OUTFLOW-", inflow_model, "_", site_id, "_", format(run_date, "%Y-%m-%d"), "_",
                                  format(end_date, "%Y-%m-%d"))
     
     inflow_file_name <- file.path(run_dir, paste0(identifier_inflow,"_", ens, ".csv"))

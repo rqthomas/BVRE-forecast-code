@@ -19,12 +19,11 @@ source(file.path(lake_directory, "R", "extract_CTD.R"))
 source(file.path(lake_directory, "R", "extract_secchi.R"))
 source(file.path(lake_directory, "R", "extract_nutrients.R"))
 source(file.path(lake_directory, "R", "extract_ch4.R"))
-#source(file.path(lake_directory,"R" ,"combine_bvre_insitu.R"))
-
 
 #' Generate the `config_obs` object and create directories if necessary
 
 config_obs <- FLAREr::initialize_obs_processing(lake_directory, observation_yml = "observation_processing.yml")
+dir.create(file.path(lake_directory, "targets", config_obs$site_id), showWarnings = FALSE)
 use_s3 <- TRUE
 
 #' Clone or pull from data repositories
@@ -87,7 +86,7 @@ FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi
 
 cleaned_met_file <- met_qaqc(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[1]),
                              qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[2]),
-                             cleaned_met_file = file.path(config_obs$file_path$targets_directory, paste0("observed-met_",config_obs$lake_name_code,".nc")),
+                             cleaned_met_file = file.path(config_obs$file_path$targets_directory, paste0("bvre/observed-met_",config_obs$site_id,".nc")),
                              input_file_tz = "EST",
                              nldas = NULL)
 
@@ -96,18 +95,18 @@ cleaned_met_file <- met_qaqc(realtime_file = file.path(config_obs$file_path$data
 cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(config_obs$file_path$data_directory, "bvre-waterquality.csv"),
              data_location = config_obs$file_path$data_directory,
              maintenance_file = file.path(config_obs$file_path$data_directory,config_obs$maintenance_file),
-             ctd_fname = NA,
-             nutrients_fname =  NA,
-             secchi_fname = NA,
-             cleaned_insitu_file = file.path(config_obs$file_path$targets_directory, paste0(config_obs$lake_name_code,"-targets-insitu.csv")),
-             lake_name_code = config_obs$lake_name_code,
+             ctd_fname = file.path(config_obs$file_path$data_directory,config_obs$ctd_fname),
+             nutrients_fname =  file.path(config_obs$file_path$data_directory,config_obs$nutrients_fname),
+             secchi_fname = file.path(config_obs$file_path$data_directory,config_obs$secchi_fname),
+             cleaned_insitu_file = file.path(config_obs$file_path$targets_directory, paste0("bvre/",config_obs$site_id,"-targets-insitu.csv")),
+             site_id = config_obs$site_id,
              config_obs = config_obs)
 
 #' Move targets to s3 bucket
 
 message("Successfully generated targets")
 
-FLAREr::put_targets(site_id = config_obs$lake_name_code,
+FLAREr::put_targets(site_id = config_obs$site_id,
             cleaned_insitu_file,
             cleaned_met_file,
             cleaned_inflow_file,
