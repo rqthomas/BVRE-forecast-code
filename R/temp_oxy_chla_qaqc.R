@@ -247,7 +247,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
     mutate(Flag_Temp_1= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",2,Flag_Temp_1))%>%
     mutate(ThermistorTemp_C_1= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",NA,ThermistorTemp_C_1))%>%
     mutate(Flag_Temp_1= ifelse(!is.na(depth_1) & depth_1<0 ,2,Flag_Temp_1))%>%
-    mutate(ThermistorTemp_C_1=ifelse(!is.na(depth_1) & depth_1<0,NA,ThermistorTemp_C_1))
+    mutate(ThermistorTemp_C_1=ifelse(!is.na(depth_1) & depth_1<0 | is.na(Lvl_psi_13),NA,ThermistorTemp_C_1))
   
   
   #for thermistor at position 2 when it was out of the water 
@@ -255,7 +255,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
     mutate(Flag_Temp_2= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",2,Flag_Temp_2)) %>% #this is when the pressure sensor was unplugged
     mutate(ThermistorTemp_C_2= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",NA,ThermistorTemp_C_2)) %>%
     mutate(Flag_Temp_2= ifelse(!is.na(depth_2) & depth_2<0 ,2,Flag_Temp_2))%>%
-    mutate(ThermistorTemp_C_2=ifelse(!is.na(depth_2) & depth_2<0,NA,ThermistorTemp_C_2))
+    mutate(ThermistorTemp_C_2=ifelse(!is.na(depth_2) & depth_2<0 | is.na(Lvl_psi_13),NA,ThermistorTemp_C_2))
   
   
   #for thermistor at position 3 when it was out of the water 
@@ -263,21 +263,21 @@ temp_oxy_chla_qaqc <- function(realtime_file,
     mutate(Flag_Temp_3= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",2,Flag_Temp_3))%>%#this is when the pressure sensor was unplugged
     mutate(ThermistorTemp_C_3= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",NA,ThermistorTemp_C_3))%>%
     mutate(Flag_Temp_3= ifelse(!is.na(depth_3) & depth_3<0 ,2,Flag_Temp_3))%>%
-    mutate(ThermistorTemp_C_3=ifelse(!is.na(depth_3) & depth_3<0,NA,ThermistorTemp_C_3))
+    mutate(ThermistorTemp_C_3=ifelse(!is.na(depth_3) & depth_3<0 | is.na(Lvl_psi_13),NA,ThermistorTemp_C_3))
   
   #for thermistor at position 4 when it was out of the water 
   catdata=catdata%>%
     mutate(Flag_Temp_4= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",2,Flag_Temp_4))%>%#this is when the pressure sensor was unplugged
     mutate(ThermistorTemp_C_4= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",NA,ThermistorTemp_C_4))%>%
     mutate(Flag_Temp_4= ifelse(!is.na(depth_4) & depth_4<0 ,2,Flag_Temp_4))%>%
-    mutate(ThermistorTemp_C_4=ifelse(!is.na(depth_4) & depth_4<0,NA,ThermistorTemp_C_4))
+    mutate(ThermistorTemp_C_4=ifelse(!is.na(depth_4) & depth_4<0 | is.na(Lvl_psi_13),NA,ThermistorTemp_C_4))
   
   #for thermistor at position 5 when it was out of the water 
   catdata=catdata%>%
     mutate(Flag_Temp_5= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",2,Flag_Temp_5))%>%#this is when the pressure sensor was unplugged
     mutate(ThermistorTemp_C_5= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",NA,ThermistorTemp_C_5))%>%
     mutate(Flag_Temp_5= ifelse(!is.na(depth_5) & depth_5<0 ,2,Flag_Temp_5))%>%
-    mutate(ThermistorTemp_C_5=ifelse(!is.na(depth_5) & depth_5<0,NA,ThermistorTemp_C_5))
+    mutate(ThermistorTemp_C_5=ifelse(!is.na(depth_5) & depth_5<0 | is.na(Lvl_psi_13),NA,ThermistorTemp_C_5))
   
   #take out the depth columns for thermisotrs 1-5 after you set the values to NA
   catdata=catdata%>%

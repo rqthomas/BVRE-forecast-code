@@ -7,7 +7,7 @@ extract_secchi <- function(fname,
                 col_types = readr::cols()) %>%
     filter(Reservoir == "BVR" & Site == 50) %>%
     dplyr::select(DateTime, Secchi_m) %>%
-    mutate(DateTime = mdy_hm(DateTime),
+    mutate(DateTime = ymd_hms(DateTime),
            DateTime = force_tz(DateTime, input_file_tz),
            DateTime = with_tz(DateTime, "UTC")) %>%
     group_by(DateTime) %>%

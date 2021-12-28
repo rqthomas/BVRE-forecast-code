@@ -26,28 +26,20 @@ FLAREr::get_targets(lake_directory, config)
 noaa_forecast_path <- FLAREr::get_driver_forecast_path(config,
                                                forecast_model = config$met$forecast_met_model)
 
-#inflow_forecast_path <- FLAREr::get_driver_forecast_path(config,
-#                                                 forecast_model = config$inflow$forecast_inflow_model)
-inflow_forecast_path <- NULL
-
-if(!is.null(noaa_forecast_path)){
-  FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
-  forecast_dir <- file.path(config$file_path$noaa_directory, noaa_forecast_path)
-}else{
-  forecast_dir <- NULL
-}
-
-if(!is.null(inflow_forecast_path)){
-  FLAREr::get_driver_forecast(lake_directory, forecast_path = inflow_forecast_path)
-  inflow_file_dir <- file.path(config$file_path$noaa_directory,inflow_forecast_path)
-}else{
-  inflow_file_dir <- NULL
-}
+inflow_forecast_path <- FLAREr::get_driver_forecast_path(config,
+                                                 forecast_model = config$inflow$forecast_inflow_model)
+#inflow_forecast_path <- NULL
 
 pars_config <- readr::read_csv(file.path(config$file_path$configuration_directory, "FLAREr", config$model_settings$par_config_file), col_types = readr::cols())
 obs_config <- readr::read_csv(file.path(config$file_path$configuration_directory, "FLAREr", config$model_settings$obs_config_file), col_types = readr::cols())
 states_config <- readr::read_csv(file.path(config$file_path$configuration_directory, "FLAREr", config$model_settings$states_config_file), col_types = readr::cols())
 
+#set forecast directory
+if(!is.null(noaa_forecast_path)){
+  forecast_dir <- file.path(config$file_path$noaa_directory, noaa_forecast_path)
+}else{
+  forecast_dir <- NULL
+}
 
 #Download and process observations (already done)
 

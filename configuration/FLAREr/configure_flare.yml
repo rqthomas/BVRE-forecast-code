@@ -62,7 +62,7 @@ default_init:
    blue_ice_thickness: 0.0
 inflow:
    use_forecasted_inflow: TRUE
-   forecast_inflow_model: FLOWS-NOAAGEFS-TMWB
+   forecast_inflow_model: inflow/FLOWS-NOAAGEFS-TMWB
 met:
    use_forecasted_met: FALSE
    forecast_met_model: noaa/NOAAGEFS_1hr

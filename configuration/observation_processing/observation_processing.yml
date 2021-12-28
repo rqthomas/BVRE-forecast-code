@@ -98,10 +98,8 @@ averaging_period_starting_hour: "00:00:00"
 measurement_methods: 
     temperature:
         - thermistor
-        - ctd
     oxygen:
         - do_sensor
         - exo_sensor
-        - ctd
     
 

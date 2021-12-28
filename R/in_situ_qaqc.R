@@ -113,7 +113,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
 
     d_secchi <- d_secchi %>%
       dplyr::mutate(date = lubridate::as_date(timestamp)) %>%
-      dplyr::mutate(hour = NA) %>%
+      dplyr::mutate(hour = 0) %>%
       dplyr::select(-timestamp)
 
     d_clean <- rbind(d_clean,d_secchi) 
