@@ -1,9 +1,6 @@
-library(tidyverse)
-library(lubridate)
-
 #load packages
 if (!require("pacman"))install.packages("pacman")
-pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,raster,soilDB,rgdal,lattice,lubridate)
+pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,soilDB,rgdal,lattice,tidyverse,lubridate,raster)
 
 #files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
 #sapply(files.sources, source)
@@ -18,7 +15,7 @@ Sys.setenv("AWS_DEFAULT_REGION" = "s3",
 unlink(file.path(getwd(),"restart/bvre/bvre_test/configure_run.yml"))
 
 configure_run_file <- "configure_run.yml"
-run_config <- FLAREr::set_configuration(configure_run_file,lake_directory)
+run_config <- yaml::read_yaml(file.path(lake_directory,"configuration","FLAREr",configure_run_file))
 forecast_site <- "bvre"
 sim_name <- run_config$sim_name
 
@@ -32,7 +29,7 @@ Sys.setenv("AWS_DEFAULT_REGION" = "s3",
 
 #Note: lake_directory need to be set prior to running this script
 configuration_file <- "configure_flare.yml"
-config <- yaml::read_yaml(file.path(lake_directory,"configuration","FLAREr",configuration_file))
+config <- FLAREr::set_configuration(configure_run_file,lake_directory)
 config$file_path <- run_config$file_path
 
 if(s3_mode){

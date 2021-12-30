@@ -113,3 +113,4 @@ FLAREr::put_targets(site_id = config_obs$site_id,
             use_s3)
 
 message("Successfully moved targets to s3 bucket")
+
