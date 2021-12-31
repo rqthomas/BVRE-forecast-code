@@ -131,7 +131,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
   fortnightly_dates <- dates[seq(1, length(dates), 14)]
   monthly_dates <- dates[seq(1, length(dates), 30)]
   
-  d_clean <- d_clean[d_clean$variable=="temperature" & d_clean$date %in% monthly_dates | d_clean$variable!="temperature",]
+  #d_clean <- d_clean[d_clean$variable=="temperature" & d_clean$date %in% every_other_dates | d_clean$variable!="temperature",]
 
   readr::write_csv(d_clean, cleaned_insitu_file)
   
