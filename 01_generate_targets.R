@@ -17,8 +17,8 @@ source(file.path(lake_directory, "R", "in_situ_qaqc.R"))
 source(file.path(lake_directory, "R", "temp_oxy_chla_qaqc.R"))
 source(file.path(lake_directory, "R", "extract_CTD.R"))
 source(file.path(lake_directory, "R", "extract_secchi.R"))
-source(file.path(lake_directory,"R" ,"combine_bvre_insitu.R"))
-
+source(file.path(lake_directory, "R", "extract_nutrients.R"))
+source(file.path(lake_directory, "R", "extract_ch4.R"))
 
 #' Generate the `config_obs` object and create directories if necessary
 
@@ -33,8 +33,32 @@ FLAREr::get_git_repo(lake_directory,
              git_repo = "https://github.com/FLARE-forecast/BVRE-data.git")
 
 FLAREr::get_git_repo(lake_directory,
+             directory = config_obs$realtime_insitu_location,
+             git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
+
+download.file("https://github.com/FLARE-forecast/FCRE-data/blob/fcre-metstation-data/FCRmet.csv?raw=true",
+              "data_raw/fcre-metstation-data/FCRmet.csv")
+
+FLAREr::get_git_repo(lake_directory,
              directory = config_obs$realtime_met_station_location,
              git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
+
+#' Download various files from the BVR-GLM repo - get these onto the s3 bucket??
+
+download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/field_data/field_gases.csv?raw=true",
+              "data_raw/field_gasses.csv") 
+
+#INFLOW - currently using a file on my local bvr_glm repo - could go in s3 bucket as "bvre-targets-inflow.csv" 
+
+#OUTFLOW
+download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/BVR_spillway_outflow_2014_2019_20200917_nldasInflow.csv?raw=true",
+              "data_raw/BVR_spillway_outflow_2014_2019_20200917_nldasInflow.csv")
+
+
+#download NLDAS data (note: will need to grab new one once appended with 2020/2021 data) - only need this for filling in missing met days in bvr inflow file
+download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/BVR_GLM_NLDAS_010113_123119_GMTadjusted.csv?raw=true",
+              "data_raw/BVR_GLM_NLDAS_010113_123119_GMTadjusted.csv")
+
 
 #' Download files from EDI
 
@@ -58,8 +82,7 @@ FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi
              file = config_obs$nutrients_fname,
              lake_directory)
 
-#' Clean up observed meterology
-
+#' Clean up observed meteorology
 cleaned_met_file <- met_qaqc(realtime_file = file.path(lake_directory, "data_raw", config_obs$met_raw_obs_fname[1]),
                              qaqc_file = file.path(lake_directory, "data_raw", config_obs$met_raw_obs_fname[2]),
                              cleaned_met_file = file.path(lake_directory, "targets", config_obs$site_id, paste0("observed-met_",config_obs$site_id,".nc")),
@@ -67,7 +90,6 @@ cleaned_met_file <- met_qaqc(realtime_file = file.path(lake_directory, "data_raw
                              nldas = NULL)
 
 #' Clean up observed insitu measurements
-
 cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(lake_directory,"data_raw", config_obs$insitu_obs_fname),
                                     data_location = file.path(lake_directory,"data_raw"),
              maintenance_file = file.path(lake_directory, "data_raw", config_obs$maintenance_file),
@@ -88,3 +110,4 @@ FLAREr::put_targets(site_id = config_obs$site_id,
             use_s3 = TRUE)
 
 message("Successfully moved targets to s3 bucket")
+

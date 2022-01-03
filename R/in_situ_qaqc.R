@@ -5,7 +5,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
                          nutrients_fname,
                          secchi_fname,
                          cleaned_insitu_file,
-                         lake_name_code,
+                         site_id,
                          config_obs){
 
   print("QAQC BVR sensors")
@@ -21,7 +21,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
   if(exists("ctd_fname")){
     if(!is.na(ctd_fname)){
       print("QAQC CTD")
-      d_ctd <- extract_CTD(fname = ctd_fname,
+      d_ctd <- extract_CTD(fname = file.path(config_obs$file_path$data_directory,config_obs$ctd_fname),
                            input_file_tz = "EST",
                            local_tzone = config_obs$local_tzone,
                            focal_depths = config_obs$focal_depths,
@@ -34,7 +34,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
   if(exists("nutrients_fname")){
     if(!is.na(nutrients_fname)){
       print("QAQC Nutrients")
-      d_nutrients <- extract_nutrients(fname = nutrients_fname,
+      d_nutrients <- extract_nutrients(fname = file.path(config_obs$file_path$data_directory,config_obs$nutrients_fname),
                                        input_file_tz = "EST",
                                        local_tzone = config_obs$local_tzone,
                                        focal_depths = config_obs$focal_depths)
@@ -46,17 +46,20 @@ in_situ_qaqc <- function(insitu_obs_fname,
   if(exists("ch4_fname")){
     if(!is.na(ch4_fname)){
       print("QAQC CH4")
-      d_ch4 <- extract_ch4(fname = ch4_fname,
+      d_ch4 <- extract_ch4(fname = file.path(config_obs$file_path$data_directory,config_obs$ch4_fname),
                            input_file_tz = "EST",
                            local_tzone  = config_obs$local_tzone,
                            focal_depths = config_obs$focal_depths)
       d <- rbind(d,d_ch4)
     }
   }
-
+  
+  #drop NA rows
+  d <- d[!is.na(d$value),]
+  
   #make hour forecast hour
   #d <- d %>%   dplyr::mutate(hour = 7) 
-
+  
   first_day  <- lubridate::as_datetime(paste0(lubridate::as_date(min(d$timestamp)), " ", config_obs$averaging_period_starting_hour))
   first_day <- lubridate::force_tz(first_day, tzone = "UTC")
 
@@ -110,7 +113,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
 
     d_secchi <- d_secchi %>%
       dplyr::mutate(date = lubridate::as_date(timestamp)) %>%
-      dplyr::mutate(hour = NA) %>%
+      dplyr::mutate(hour = 0) %>%
       dplyr::select(-timestamp)
 
     d_clean <- rbind(d_clean,d_secchi) 
@@ -119,6 +122,16 @@ in_situ_qaqc <- function(insitu_obs_fname,
   d_clean <- d_clean %>% dplyr::select(date, hour, depth, value, variable)
   
   d_clean$value <- round(d_clean$value, digits = 4)
+  
+  #selectively witholding obs to test effects on DA/forecast skill
+  dates <- unique(d_clean$date[d_clean$variable=="temperature"])
+  every_other_dates <- dates[seq(1, length(dates), 2)]
+  every_5_dates <- dates[seq(1, length(dates), 5)]
+  weekly_dates <- dates[seq(1, length(dates), 7)]
+  fortnightly_dates <- dates[seq(1, length(dates), 14)]
+  monthly_dates <- dates[seq(1, length(dates), 30)]
+  
+  #d_clean <- d_clean[d_clean$variable=="temperature" & d_clean$date %in% every_other_dates | d_clean$variable!="temperature",]
 
   readr::write_csv(d_clean, cleaned_insitu_file)
   

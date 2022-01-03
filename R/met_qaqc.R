@@ -200,7 +200,7 @@ met_qaqc <- function(realtime_file,
                                   press = d$air_pressure)
   
   d <- d %>%
-    select(time, air_temperature, air_pressure, relative_humidity, surface_downwelling_longwave_flux_in_air, surface_downwelling_shortwave_flux_in_air, precipitation_flux, specific_humidity, wind_speed)
+    dplyr::select(time, air_temperature, air_pressure, relative_humidity, surface_downwelling_longwave_flux_in_air, surface_downwelling_shortwave_flux_in_air, precipitation_flux, specific_humidity, wind_speed)
   
   cf_var_names1 <- c("air_temperature", "air_pressure", "relative_humidity", "surface_downwelling_longwave_flux_in_air",
                      "surface_downwelling_shortwave_flux_in_air", "precipitation_flux","specific_humidity","wind_speed")
@@ -292,7 +292,7 @@ met_qaqc <- function(realtime_file,
     nc_var_list[[i]] <- ncdf4::ncvar_def(cf_var_names[i], cf_units[i], dimensions_list, missval=NaN)
   }
   
-  nc_flptr <- ncdf4::nc_create(output_file, nc_var_list, verbose = FALSE, )
+  nc_flptr <- ncdf4::nc_create(output_file, nc_var_list, verbose = FALSE)
   
   #For each variable associated with that ensemble
   for (j in 1:ncol(data)) {

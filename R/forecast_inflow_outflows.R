@@ -5,13 +5,13 @@ forecast_inflows_outflows <- function(inflow_obs,
                                       inflow_model, 
                                       inflow_process_uncertainty, 
                                       forecast_location,
-                                      config,
+                                      config, 
                                       s3_mode = FALSE,
                                       bucket = NULL){
 
   inflow <- readr::read_csv(inflow_obs, col_types = readr::cols()) 
 
-  lake_name_code <- config$location$site_id
+  site_id <- config$location$site_id
   
   lake_directory <- getwd()
 
@@ -37,7 +37,7 @@ forecast_inflows_outflows <- function(inflow_obs,
   run_cycle <- lubridate::hour(noaa_met_time[1])
   if(run_cycle < 10){run_cycle <- paste0("0",run_cycle)}
 
-  run_dir <- file.path(output_dir, inflow_model, lake_name_code, run_date, run_cycle) 
+  run_dir <- file.path(output_dir, inflow_model, site_id, run_date, run_cycle) 
 
   if(!dir.exists(run_dir)){
     dir.create(run_dir, recursive = TRUE)
@@ -48,35 +48,33 @@ forecast_inflows_outflows <- function(inflow_obs,
   met <- tibble::tibble(time = obs_met_time,
                         AirTemp = AirTemp,
                         Rain = Rain)
+  
   obs_met <- met %>% 
-    dplyr::filter(time >= (noaa_met_time[1] - lubridate::days(1)) & time < noaa_met_time[1]) 
-    #dplyr::filter(time %in% noaa_met_time)
-    #dplyr::filter(time>="2020-08-01" & time <= "2020-09-16")
-    
-  # met_2019 <- met %>% dplyr::filter(time>="2019-08-01" & time <= "2019-09-16") 
-  # 
-  # plot(obs_met$AirTemp~obs_met$time, type="l",col="dark red", ylim=c(285,310), xaxt = "n")
-  # axis.POSIXct(1,obs_met$time, at=seq(obs_met$time[1],obs_met$time[1105], "days"))
+    dplyr::filter((time >= noaa_met_time[1] - lubridate::days(2)) & time < noaa_met_time[1])
+   # dplyr::filter(time %in% noaa_met_time)
+
+ # stacked_met <- ncdf4::nc_open(file.path(config$file_path$noaa_directory,"NOAAGEFS_1hr_stacked_average/bvre/observed-met-noaa_bvre.nc"))
+ # obs_met_time <- ncdf4::ncvar_get(stacked_met, "time")
+ # origin <- stringr::str_sub(ncdf4::ncatt_get(stacked_met, "time")$units, 13, 28)
+ # origin <- lubridate::ymd_hm(origin)
+ # obs_met_time <- origin + lubridate::hours(obs_met_time)
+ # AirTemp <- ncdf4::ncvar_get(stacked_met, "air_temperature")
+ # Rain <- ncdf4::ncvar_get(stacked_met, "precipitation_flux")
+  
+ # stacked_met <- tibble::tibble(time = obs_met_time,
+ #                      AirTemp = AirTemp,
+ #                      Rain = Rain)
+  
+  
+  # met <- met %>% dplyr::filter(time>="2020-09-25" & time <= "2021-11-07") 
+  #  
+  # plot(stacked_met$AirTemp~stacked_met$time, type="l",col="dark red", ylim=c(255,310), xaxt = "n")
+  # axis.POSIXct(1,stacked_met$time, at=seq(stacked_met$time[1],tail(stacked_met$time, n=1), "days"))
   # plot(met_2019$AirTemp~met_2019$time, type="l", col="darkblue", ylim=c(285,310), xaxt='n')
   # axis.POSIXct(1,met_2019$time, at=seq(met_2019$time[1],met_2019$time[1105], "days"))
-  # 
-  # plot(obs_met$Shortwave~obs_met$time, type="l", col="dark red", xaxt = "n")
-  # axis.POSIXct(1,obs_met$time, at=seq(obs_met$time[1],obs_met$time[1105], "days"))
-  # plot(met_2019$Shortwave~met_2019$time, type="l", col="dark blue", xaxt = "n")
-  # axis.POSIXct(1,met_2019$time, at=seq(met_2019$time[1],met_2019$time[1105], "days"))
-  # 
-  # plot(obs_met$Longwave~obs_met$time, type="l", col="dark red", ylim=c(300,500), xaxt = "n")
-  # axis.POSIXct(1,obs_met$time, at=seq(obs_met$time[1],obs_met$time[1105], "days"))
-  # plot(met_2019$Longwave~met_2019$time, type="l", col="dark blue", ylim=c(300,500), xaxt = "n")
-  # axis.POSIXct(1,met_2019$time, at=seq(met_2019$time[1],met_2019$time[1105], "days"))
-  # 
-  # plot(obs_met$Wind~obs_met$time, type="l", col="dark red", ylim=c(0,8), xaxt = "n")
-  # axis.POSIXct(1,obs_met$time, at=seq(obs_met$time[1],obs_met$time[1105], "days"))
-  # plot(met_2019$Wind~met_2019$time, type="l", col="dark blue", ylim=c(0,8), xaxt = "n")
-  # axis.POSIXct(1,met_2019$time, at=seq(met_2019$time[1],met_2019$time[1105], "days"))
-  # 
-  # plot(obs_met$Rain~obs_met$time, type="l", col="dark red",xaxt = "n", ylim=c(0,0.008))
-  # axis.POSIXct(1,obs_met$time, at=seq(obs_met$time[1],obs_met$time[1105], "days"))
+  #
+  # plot(stacked_met$Rain~stacked_met$time, type="l", col="dark red",xaxt = "n", ylim=c(0,0.008))
+  # axis.POSIXct(1,stacked_met$time, at=seq(stacked_met$time[1],tail(stacked_met$time, n=1), "days"))
   # plot(met_2019$Rain~met_2019$time, type="l", col="dark blue", ylim=c(0,0.008), xaxt = "n")
   # axis.POSIXct(1,met_2019$time, at=seq(met_2019$time[1],met_2019$time[1105], "days"))
 
@@ -92,27 +90,26 @@ forecast_inflows_outflows <- function(inflow_obs,
  # abline(0,1, lty=2)
 
   init_flow_temp <- inflow %>%
-    dplyr::filter(time == lubridate::as_date(noaa_met_time[1]) - lubridate::days(1))
+    dplyr::filter(time == lubridate::as_date(noaa_met_time[1]) - lubridate::days(2))
   
 #------------------------------------------------------------------------------#
 #      Thornthwaite-Mather Water Balance Model for Forecasting Inflow          #
 #------------------------------------------------------------------------------#      
   
   #soil data
-  #url= "https://websoilsurvey.sc.egov.usda.gov/DSD/Download/AOI/wfu1odcjhsdqqd4capo2doux/wss_aoi_2021-03-22_13-16-30.zip"
-  #download.file(url,"mysoil.zip") #Note: will probably have to update wss_aoi date if it's been a while - go to wss homepage and click on start wss link on right of page
-  #unzip("mysoil.zip")            #zoom in to site, use define aoi tool to select desired area, go to download soils data tab, click "create download link", right click and copy link address, paste on line 10
-  list.files()
+  #url= "https://websoilsurvey.sc.egov.usda.gov/DSD/Download/AOI/4e4n0gmowbc20zgidprgwjdf/wss_aoi_2021-12-02_14-40-00.zip"
+  #download.file(url,"/drivers/inflow/mysoil.zip") #Note: will probably have to update wss_aoi date if it's been a while - go to wss homepage and click on start wss link on right of page
+  #unzip("/drivers/inflow/mysoil.zip")            #zoom in to site, use define aoi tool to select desired area, go to download soils data tab, click "create download link", right click and copy link address, paste on url line above
   
-  list.files(paste0(lake_directory, "/data_raw/TMWB_data/wss_aoi_2021-03-22_13-16-30/spatial/"),pattern = "shp")
-  list.files(paste0(lake_directory, "/data_raw/TMWB_data/wss_aoi_2021-03-22_13-16-30/tabular/"))
+  list.files(paste0(lake_directory, "/drivers/inflow/wss_aoi_2021-12-02_12-24-04/spatial/"),pattern = "shp")
+  list.files(paste0(lake_directory, "/drivers/inflow/wss_aoi_2021-12-02_12-24-04/tabular/"))
   
   #Using ROANOKE RIVER AT NIAGARA, VA  usgs gage to use as a template (will write over with BVR-specific data) 
   myflowgage_id="02056000"
-  myflowgage=get_usgs_gage(myflowgage_id,begin_date = "2019-01-01",end_date = "2021-04-05") #change this!
+  myflowgage=get_usgs_gage(myflowgage_id,begin_date = "2019-01-01",end_date = "2021-11-08") #change this!
   
   #only select dates during the forecast period
-  myflowgage$flowdata <- myflowgage$flowdata[myflowgage$flowdata$mdate >= run_date & myflowgage$flowdata$mdate <= run_date + 17,] 
+  myflowgage$flowdata <- myflowgage$flowdata[myflowgage$flowdata$mdate >= run_date-1 & myflowgage$flowdata$mdate <= run_date + 35,] 
   
   #change coordinates and area for entire BVR watershed
   myflowgage$area<- 2.27 #km
@@ -134,11 +131,11 @@ forecast_inflows_outflows <- function(inflow_obs,
     myflowgage$declat - degdist, myflowgage$declat + degdist), 
     ncol = 2, byrow = TRUE)
   
-  streams=readOGR(paste0(lake_directory, "/data_raw/TMWB_data/03010101/Shape/NHDFlowline.dbf")) 
+  streams=readOGR(paste0(lake_directory, "/drivers/inflow/03010101/Shape/NHDFlowline.dbf")) 
   
   #mysoil <- mapunit_geom_by_ll_bbox(mybbox)
   #writeOGR(obj=mysoil, dsn="soils", layer="mysoil", driver="ESRI Shapefile")
-  mysoil <- readOGR(paste0(lake_directory, "/data_raw/TMWB_data/soils"))
+  mysoil <- readOGR(paste0(lake_directory, "/drivers/inflow/soils"))
   
   # Associate mukey with cokey from component
   mukey_statement = format_SQL_in_statement(unique(mysoil$mukey))
@@ -194,7 +191,7 @@ forecast_inflows_outflows <- function(inflow_obs,
     noaa_met_nc <- ncdf4::nc_open(forecast_files[j])
     noaa_met_time <- ncdf4::ncvar_get(noaa_met_nc, "time")
     origin <- stringr::str_sub(ncdf4::ncatt_get(noaa_met_nc, "time")$units, 13, 28)
-    origin <- lubridate::ymd_hm(origin)
+    origin <- lubridate::ymd_hm(origin) 
     noaa_met_time <- origin + lubridate::hours(noaa_met_time)
     AirTemp <- ncdf4::ncvar_get(noaa_met_nc, "air_temperature")
     Rain <- ncdf4::ncvar_get(noaa_met_nc, "precipitation_flux")
@@ -224,7 +221,7 @@ forecast_inflows_outflows <- function(inflow_obs,
                     TEMP = NA)
     
     
-    #curr_met_daily$TEMP[1] <- init_flow_temp$TEMP
+    curr_met_daily$TEMP[1] <- init_flow_temp$TEMP
 
     if(inflow_process_uncertainty == TRUE){
       inflow_error <- rnorm(nrow(curr_met_daily), 0, config$future_inflow_flow_error)
@@ -326,20 +323,21 @@ forecast_inflows_outflows <- function(inflow_obs,
       # run the TMWBModel
       TMWBsol=TMWBModel(myflowgage)
       # Convert area from km to m (10^6) and Qpred from mm to m (10^-3) 
-      TMWBsol$TMWB$Qpred_m3pd=TMWBsol$TMWB$Qpred*TMWBsol$area*10^3 #* 0.05 #trying to manually scale down just to get glm to run - will eventually calibrate pars to get better inflow estimates
+      TMWBsol$TMWB$Qpred_m3pd=TMWBsol$TMWB$Qpred*TMWBsol$area*10^3 #think about manually calibrating pars to get better inflow estimates
       # Convert Qpred_m3pd to Qpred_m3ps (1m3/s = 86400 m3/d)
       TMWBsol$TMWB$Qpred_m3ps=TMWBsol$TMWB$Qpred_m3pd/86400
             
       plot(TMWBsol$TMWB$mdate,TMWBsol$TMWB$Qpred_m3ps,col="red", type='l')
 
      #forecasted inflow
-     curr_met_daily$FLOW = TMWBsol$TMWB$Qpred_m3ps
+     # curr_met_daily$FLOW[1] <- 
+      curr_met_daily$FLOW = TMWBsol$TMWB$Qpred_m3ps
      
-     curr_met_daily$TEMP[1] <- curr_met_daily$AirTemp[1]  #pulled coeffs from old config file - should actually calculate these for bvr (not fcr)
+     curr_met_daily$TEMP[1] <- curr_met_daily$AirTemp[1]  #pulled coeffs from nimble model in bvr_glm repo
      for(i in 2:nrow(curr_met_daily)){                                                  
-       curr_met_daily$TEMP[i] = 0.20291 +
-         0.94214 * curr_met_daily$AirTemp[i-1] +
-         0.04278 * curr_met_daily$AirTemp_lag1[i] + 0.943
+       curr_met_daily$TEMP[i] = 0.07702 +
+         0.80405 * curr_met_daily$AirTemp[i-1] +
+         0.05872 * curr_met_daily$AirTemp_lag1[i] + 0.97773
      }
      
      #add in oxygen data from obs file
@@ -371,10 +369,10 @@ forecast_inflows_outflows <- function(inflow_obs,
     end_date <- dplyr::last(curr_met_daily$time)
 
 
-    identifier_inflow <- paste0("INFLOW-", inflow_model,"_", lake_name_code, "_", format(run_date, "%Y-%m-%d"),"_",
+    identifier_inflow <- paste0("INFLOW-FLOWS-NOAAGEFS-TMWB","_", site_id, "_", format(run_date, "%Y-%m-%d"),"_",
                                 format(end_date, "%Y-%m-%d"))
 
-    identifier_outflow <- paste0("OUTFLOW-", inflow_model, "_", lake_name_code, "_", format(run_date, "%Y-%m-%d"), "_",
+    identifier_outflow <- paste0("OUTFLOW-FLOWS-NOAAGEFS-TMWB", "_", site_id, "_", format(run_date, "%Y-%m-%d"), "_",
                                  format(end_date, "%Y-%m-%d"))
     
     inflow_file_name <- file.path(run_dir, paste0(identifier_inflow,"_", ens, ".csv"))
@@ -386,7 +384,7 @@ forecast_inflows_outflows <- function(inflow_obs,
     readr::write_csv(x = curr_met_daily_output,
                      file = outflow_file_name)
     
-    if(s3_mode){
+     if(s3_mode){
       aws.s3::put_object(file = local_inflow_file_name,
                          object = file.path(run_dir, paste0(identifier_inflow,"_", ens, ".csv")),
                          bucket = bucket)
@@ -396,6 +394,6 @@ forecast_inflows_outflows <- function(inflow_obs,
     }
 
   }
-  return(list(run_dir_full, run_dir))
+  return(list(run_dir))
 }
 
