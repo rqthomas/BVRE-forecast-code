@@ -449,7 +449,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
 
   #dynamic depths here
   d_therm$offset <-  13-d_therm$Depth_m_13
-  d_therm$depth <- round(as.numeric(d_therm$depth)- d_therm$offset)
+  d_therm$depth <- round(as.numeric(d_therm$depth)- d_therm$offset, 2)
 
   d_do_temp <- d %>% #need to make this dynamic too but first need to confirm the depths of the do sensors...
     dplyr::select(timestamp, wtr_6_do, wtr_13_do, Depth_m_13) %>%
@@ -462,7 +462,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
 
   #dynamic depths for DO temp
   d_do_temp$offset <-  13-d_do_temp$Depth_m_13
-  d_do_temp$depth <- round(as.numeric(d_do_temp$depth)- d_do_temp$offset)
+  d_do_temp$depth <- round(as.numeric(d_do_temp$depth)- d_do_temp$offset, 2)
 
   
   d_exo_temp <- d %>%
@@ -474,7 +474,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
            value = ifelse(is.nan(value), NA, value))
  #dynamic depths for exo 
   d_exo_temp$offset <-  13-d_exo_temp$Depth_m_13
-  d_exo_temp$depth <- round(as.numeric(d_exo_temp$depth)- d_exo_temp$offset)
+  d_exo_temp$depth <- round(as.numeric(d_exo_temp$depth)- d_exo_temp$offset, 2)
 
   
   d_do_do <- d %>%
@@ -489,7 +489,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
 
   #dynamic depths for DO
   d_do_do$offset <-  13-d_do_do$Depth_m_13
-  d_do_do$depth <- round(as.numeric(d_do_do$depth)- d_do_do$offset)
+  d_do_do$depth <- round(as.numeric(d_do_do$depth)- d_do_do$offset, 2)
 
   d_exo_do <- d %>%
     dplyr::select(timestamp, doobs_1_5, Depth_m_13) %>%
@@ -501,7 +501,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   
   #dynamic depths for exo DO
   d_exo_do$offset <-  13-d_exo_do$Depth_m_13
-  d_exo_do$depth <- round(as.numeric(d_exo_do$depth)- d_exo_do$offset)
+  d_exo_do$depth <- round(as.numeric(d_exo_do$depth)- d_exo_do$offset, 2)
 
   
   d_exo_fdom <- d %>%
@@ -515,7 +515,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
 
   #dynamic depths for exo fdom
   d_exo_fdom$offset <-  13-d_exo_fdom$Depth_m_13
-  d_exo_fdom$depth <- round(as.numeric(d_exo_fdom$depth)- d_exo_fdom$offset)
+  d_exo_fdom$depth <- round(as.numeric(d_exo_fdom$depth)- d_exo_fdom$offset, 2)
 
   d_exo_chla <- d %>%
     dplyr::select(timestamp, Chla_1_5, Depth_m_13) %>%
@@ -527,7 +527,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   
   #dynamic depths for exo chla
   d_exo_chla$offset <-  13-d_exo_chla$Depth_m_13
-  d_exo_chla$depth <- round(as.numeric(d_exo_chla$depth)- d_exo_chla$offset)
+  d_exo_chla$depth <- round(as.numeric(d_exo_chla$depth)- d_exo_chla$offset, 2)
 
   d_exo_bgapc <- d %>%
     dplyr::select(timestamp, bgapc_1_5, Depth_m_13) %>%
@@ -539,7 +539,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   
   #dynamic depths for exo chla
   d_exo_bgapc$offset <-  13-d_exo_bgapc$Depth_m_13
-  d_exo_bgapc$depth <- round(as.numeric(d_exo_bgapc$depth)- d_exo_bgapc$offset)
+  d_exo_bgapc$depth <- round(as.numeric(d_exo_bgapc$depth)- d_exo_bgapc$offset, 2)
   
   d <- rbind(d_therm,d_do_temp,d_exo_temp,d_do_do,d_exo_do,d_exo_fdom,
              d_exo_chla,d_exo_bgapc)

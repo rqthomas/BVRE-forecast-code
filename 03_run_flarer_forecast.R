@@ -34,8 +34,8 @@ pars_config <- readr::read_csv(file.path(config$file_path$configuration_director
 obs_config <- readr::read_csv(file.path(config$file_path$configuration_directory, "FLAREr", config$model_settings$obs_config_file), col_types = readr::cols())
 states_config <- readr::read_csv(file.path(config$file_path$configuration_directory, "FLAREr", config$model_settings$states_config_file), col_types = readr::cols())
 
-#set forecast directory
 if(!is.null(noaa_forecast_path)){
+  FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
   forecast_dir <- file.path(config$file_path$noaa_directory, noaa_forecast_path)
 }else{
   forecast_dir <- NULL

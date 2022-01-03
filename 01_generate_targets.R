@@ -36,9 +36,6 @@ FLAREr::get_git_repo(lake_directory,
              directory = config_obs$realtime_insitu_location,
              git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
 
-download.file("https://github.com/FLARE-forecast/FCRE-data/blob/fcre-metstation-data/FCRmet.csv?raw=true",
-              "data_raw/fcre-metstation-data/FCRmet.csv")
-
 FLAREr::get_git_repo(lake_directory,
              directory = config_obs$realtime_met_station_location,
              git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
@@ -92,13 +89,13 @@ cleaned_met_file <- met_qaqc(realtime_file = file.path(lake_directory, "data_raw
 #' Clean up observed insitu measurements
 cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(lake_directory,"data_raw", config_obs$insitu_obs_fname),
                                     data_location = file.path(lake_directory,"data_raw"),
-             maintenance_file = file.path(lake_directory, "data_raw", config_obs$maintenance_file),
-             ctd_fname = NA,
-             nutrients_fname =  NA,
-             secchi_fname = NA,
-             cleaned_insitu_file = file.path(lake_directory,"targets", config_obs$site_id, paste0(config_obs$site_id,"-targets-insitu.csv")),
-             lake_name_code = config_obs$site_id,
-             config_obs = config_obs)
+                                    maintenance_file = file.path(lake_directory, "data_raw", config_obs$maintenance_file),
+                                    ctd_fname = NA,
+                                    nutrients_fname =  NA,
+                                    secchi_fname = NA,
+                                    cleaned_insitu_file = file.path(lake_directory,"targets", config_obs$site_id, paste0(config_obs$site_id,"-targets-insitu.csv")),
+                                    site_id = config_obs$site_id,
+                                    config_obs = config_obs)
 
 #' Move targets to s3 bucket
 

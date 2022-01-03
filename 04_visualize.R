@@ -16,7 +16,9 @@ FLAREr::get_targets(lake_directory, config)
 
 source(file.path(lake_directory,"R/plot_and_save.R")) #function that saves csv of all forecasted days (not just days w/ obs)
 
-pdf_file <- plot_and_save(file_name = config$run_config$restart_file , obs_csv = TRUE, #FLAREr::plotting_general_2
+pdf_file <- plot_and_save(file_name = config$run_config$restart_file , 
+                          target_file = file.path(lake_directory, "targets", config$location$site_id, paste0(config$location$site_id, "-targets-insitu.csv")),
+                          obs_csv = TRUE) #FLAREr::plotting_general_2
 
 #pdf_file <- FLAREr::plotting_general_2(file_name = config$run_config$restart_file,
 #                                       target_file = file.path(lake_directory, "targets", config$location$site_id, paste0(config$location$site_id, "-targets-insitu.csv")))

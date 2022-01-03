@@ -145,8 +145,7 @@ met_qaqc <- function(realtime_file,
   maxTempC = 41 # an upper bound of realistic temperature for the study site in deg C
   minTempC = -24 # an lower bound of realistic temperature for the study site in deg C
   
-  d <- d %>%
-    dplyr::mutate(ShortWave = ifelse(ShortWave < 0, 0, ShortWave),
+  d <- d %>% dplyr::mutate(ShortWave = ifelse(ShortWave < 0, 0, ShortWave),
                   RelHum = ifelse(RelHum < 0, 0, RelHum),
                   RelHum = ifelse(RelHum > 100, 100, RelHum),
                   AirTemp = ifelse(AirTemp> maxTempC, NA, AirTemp),
@@ -200,7 +199,7 @@ met_qaqc <- function(realtime_file,
                                   press = d$air_pressure)
   
   d <- d %>%
-    dplyr::select(time, air_temperature, air_pressure, relative_humidity, surface_downwelling_longwave_flux_in_air, surface_downwelling_shortwave_flux_in_air, precipitation_flux, specific_humidity, wind_speed)
+    select(time, air_temperature, air_pressure, relative_humidity, surface_downwelling_longwave_flux_in_air, surface_downwelling_shortwave_flux_in_air, precipitation_flux, specific_humidity, wind_speed)
   
   cf_var_names1 <- c("air_temperature", "air_pressure", "relative_humidity", "surface_downwelling_longwave_flux_in_air",
                      "surface_downwelling_shortwave_flux_in_air", "precipitation_flux","specific_humidity","wind_speed")
@@ -268,6 +267,10 @@ met_qaqc <- function(realtime_file,
   
   output_file <- cleaned_met_file
   
+  if(!dir.exists(dirname(cleaned_met_file))){
+    dir.create(dirname(cleaned_met_file), recursive = TRUE)
+  }
+  
   start_time <- min(d$time)
   end_time <- max(d$time)
   
@@ -292,7 +295,7 @@ met_qaqc <- function(realtime_file,
     nc_var_list[[i]] <- ncdf4::ncvar_def(cf_var_names[i], cf_units[i], dimensions_list, missval=NaN)
   }
   
-  nc_flptr <- ncdf4::nc_create(output_file, nc_var_list, verbose = FALSE)
+  nc_flptr <- ncdf4::nc_create(output_file, nc_var_list, verbose = FALSE, )
   
   #For each variable associated with that ensemble
   for (j in 1:ncol(data)) {
@@ -325,4 +328,3 @@ rh2qair <- function(rh, T, press = 101325) {
   ## qair <- rh * 2.541e6 * exp(-5415.0 / T) * 18/29
   return(qair)
 } # rh2qair
-

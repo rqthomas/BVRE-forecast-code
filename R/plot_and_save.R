@@ -47,10 +47,8 @@ plot_and_save <- function (file_name, target_file, ncore = 1, plot_profile = FAL
       for (ii in 1:length(depths)) {
         mean_var[ii, j] <- mean(curr_var[j, ii, ], na.rm = TRUE)
         sd_var[ii, j] <- sd(curr_var[j, ii, ], na.rm = TRUE)
-        upper_var[ii, j] <- quantile(curr_var[j, ii, 
-        ], 0.1, na.rm = TRUE)
-        lower_var[ii, j] <- quantile(curr_var[j, ii, 
-        ], 0.9, na.rm = TRUE)
+        upper_var[ii, j] <- quantile(curr_var[j, ii,], 0.1, na.rm = TRUE)
+        lower_var[ii, j] <- quantile(curr_var[j, ii, ], 0.9, na.rm = TRUE)
       }
     }
     date <- c()
