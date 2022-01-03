@@ -10,8 +10,8 @@ data_raw/*
 data_processed/*
 drivers/*
 targets/*
-03010101
 wss_aoi_2021-12-02_12-24-04
 Shape
 wss_aoi_2021-12-02_14-40-00
 restart/*
+automation/bvre.log

@@ -50,11 +50,12 @@ met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_p
                                           forecast_dir = forecast_dir,
                                           config = config)
 
+met_out$filenames <- met_out$filenames[!stringr::str_detect(met_out$filenames, "ens00")]
+
 #met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".nc")),
 #                                          out_dir = config$file_path$execute_directory,
 #                                          forecast_dir = forecast_dir,
 #                                          config = config)
-
 
 #Create observation matrix
 obs <- FLAREr::create_obs_matrix(cleaned_observations_file_long = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-insitu.csv")),
@@ -109,7 +110,13 @@ FLAREr::put_forecast(saved_file, eml_file_name, config)
 rm(da_forecast_output)
 gc()
 
-FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = 16, day_advance = 1)
+FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = 35, day_advance = 1)
+
+setwd(lake_directory)
+unlink(config$run_config$restart_file)
+unlink(forecast_dir, recursive = TRUE)
+unlink(file.path(lake_directory, "flare_tempdir", config$location$site_id, config$run_config$sim_name), recursive = TRUE)
+
 
 setwd(lake_directory)
 unlink(config$run_config$restart_file)
