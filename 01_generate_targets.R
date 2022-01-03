@@ -56,7 +56,6 @@ download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/BVR_spil
 download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/BVR_GLM_NLDAS_010113_123119_GMTadjusted.csv?raw=true",
               "data_raw/BVR_GLM_NLDAS_010113_123119_GMTadjusted.csv")
 
-
 #' Download files from EDI
 
 FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/389/5/3d1866fecfb8e17dc902c76436239431",

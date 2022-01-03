@@ -1,0 +1,7 @@
+|||"Colluvium"||"16182884"|"22905018"
+|||"Residuum"|"Granite and gneiss"|"16182877"|"22905011"
+|||"Residuum"|"Granite and gneiss"|"16182876"|"22905010"
+|||"Residuum"|"Granite and gneiss"|"16182866"|"22905000"
+|||"Residuum"|"Granite and gneiss"|"16182865"|"22904999"
+|||"Residuum"|"Granite and gneiss"|"16182864"|"22904998"
+|||"Residuum"|"Granite and gneiss"|"16182861"|"22904995"

@@ -1,6 +1,6 @@
 #load packages
-if (!require("pacman"))install.packages("pacman")
-pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,soilDB,rgdal,lattice,tidyverse,lubridate,raster)
+#if (!require("pacman"))install.packages("pacman")
+#pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,soilDB,rgdal,lattice,tidyverse,lubridate,raster)
 
 #files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
 #sapply(files.sources, source)
@@ -12,7 +12,7 @@ Sys.setenv("AWS_DEFAULT_REGION" = "s3",
            "AWS_S3_ENDPOINT" = "flare-forecast.org")
 
 #delete restart file so correct noaa data can be downloaded 
-unlink(file.path(getwd(),"restart/bvre/bvre_test/configure_run.yml"))
+#unlink(file.path(getwd(),"restart/bvre/bvre_test/configure_run.yml"))
 
 configure_run_file <- "configure_run.yml"
 run_config <- yaml::read_yaml(file.path(lake_directory,"configuration","FLAREr",configure_run_file))
