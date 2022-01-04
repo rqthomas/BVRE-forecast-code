@@ -19,6 +19,8 @@ source(file.path(lake_directory, "R", "extract_CTD.R"))
 source(file.path(lake_directory, "R", "extract_secchi.R"))
 source(file.path(lake_directory, "R", "extract_nutrients.R"))
 source(file.path(lake_directory, "R", "extract_ch4.R"))
+source(file.path(lake_directory, "R", "inflow_qaqc.R"))
+source(file.path(lake_directory, "R", "TMWB_inflow_model.R"))
 
 #' Generate the `config_obs` object and create directories if necessary
 
@@ -40,21 +42,25 @@ FLAREr::get_git_repo(lake_directory,
              directory = config_obs$realtime_met_station_location,
              git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
 
+
 #' Download various files from the BVR-GLM repo - get these onto the s3 bucket??
 
 download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/field_data/field_gases.csv?raw=true",
               "data_raw/field_gasses.csv") 
 
-#INFLOW - currently using a file on my local bvr_glm repo - could go in s3 bucket as "bvre-targets-inflow.csv" 
-
-#OUTFLOW
-download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/BVR_spillway_outflow_2014_2019_20200917_nldasInflow.csv?raw=true",
-              "data_raw/BVR_spillway_outflow_2014_2019_20200917_nldasInflow.csv")
-
-
 #download NLDAS data (note: will need to grab new one once appended with 2020/2021 data) - only need this for filling in missing met days in bvr inflow file
 download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/BVR_GLM_NLDAS_010113_123119_GMTadjusted.csv?raw=true",
               "data_raw/BVR_GLM_NLDAS_010113_123119_GMTadjusted.csv")
+
+download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/inflow_for_EDI_2013_06Mar2020.csv?raw=true",
+              "data_raw/inflow_for_EDI_2013_06Mar2020.csv")
+
+download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/FCR2014_Chemistry.csv?raw=true",
+              "data_raw/FCR2014_Chemistry.csv")
+
+download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/BVR_GHG_Inflow_20200619.csv?raw=true",
+              "data_raw/BVR_GHG_Inflow_20200619.csv")
+
 
 #' Download files from EDI
 
@@ -77,6 +83,29 @@ FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi
 FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/199/8/da174082a3d924e989d3151924f9ef98",
              file = config_obs$nutrients_fname,
              lake_directory)
+
+#' INFLOW 
+
+create_inflow_file(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[1]),
+                      qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[2]),
+                      nldas_file = file.path(config_obs$file_path$data_directory, config_obs$nldas))
+
+inflow_qaqc(inflow_file = file.path(lake_directory,"data_processed/BVR_flow_calcs_obs_met_2015_2021.csv"),
+            qaqc_file = file.path(config_obs$file_path$data_directory, "inflow_for_EDI_2013_06Mar2020.csv"),
+            realtime_file = file.path(config_obs$file_path$data_directory, "2021_YSI_PAR_profiles.csv"), #will need to change to pressure transducer sensor when available (currently ysi temp on local computer)
+            nutrients_file = file.path(config_obs$file_path$data_directory, config_obs$nutrients_fname),
+            silica_file = file.path(config_obs$file_path$data_directory, "FCR2014_Chemistry.csv"),
+            ghg_file = file.path(config_obs$file_path$data_directory, "BVR_GHG_Inflow_20200619.csv"),
+            cleaned_inflow_file = file.path(config_obs$file_path$targets_directory, "bvre/bvre-targets-inflow.csv"))
+
+
+
+
+#' OUTFLOW
+download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/BVR_spillway_outflow_2014_2019_20200917_nldasInflow.csv?raw=true",
+              "data_raw/BVR_spillway_outflow_2014_2019_20200917_nldasInflow.csv")
+
+
 
 #' Clean up observed meteorology
 cleaned_met_file <- met_qaqc(realtime_file = file.path(lake_directory, "data_raw", config_obs$met_raw_obs_fname[1]),

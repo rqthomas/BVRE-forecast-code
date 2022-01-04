@@ -66,7 +66,7 @@ if(config$run_config$forecast_horizon > 0){
   
   
   #Weather Drivers
-  noaa_forecast_path <- FLAREr::get_driver_forecast_path(config,forecast_model = config$met$forecast_met_model)
+  noaa_forecast_path <- FLAREr::get_driver_forecast_path(config,forecast_model =  config$met$forecast_met_model)
   inflow_forecast_path <- FLAREr::get_driver_forecast_path(config, forecast_model = config$inflow$forecast_inflow_model)
   
   #download noaa driver data
@@ -105,18 +105,6 @@ if(config$run_config$forecast_horizon > 0){
     }
   }
   
-  
-  #Data needed for inflow model
-  
-  #soil data
-  #url= "https://websoilsurvey.sc.egov.usda.gov/DSD/Download/AOI/ntsbjrhm1t3gzam4ck5ilqdy/wss_aoi_2021-12-02_12-24-04.zip"
-  #download.file(url,
-  #              destfile = file.path(lake_directory, "drivers/inflow/mysoil.zip")) #Note: will probably have to update wss_aoi date if it's been a while - go to wss homepage and click on start wss link on right of page
-  #unzip(file.path(lake_directory, "drivers/inflow/mysoil.zip"))                    #zoom in to site, use define aoi tool to select desired area, go to download soils data tab, click "create download link", right click and copy link address, paste on url line above
-  #
-  #message("Forecasting inflow and outflows")
-  # Forecast Inflows
-  
   forecast_files <- list.files(noaa_forecast_path, full.names = TRUE)
   
   if(length(forecast_files) == 0){
@@ -131,7 +119,6 @@ if(config$run_config$forecast_horizon > 0){
                                                   output_dir = config$file_path$inflow_directory,
                                                   inflow_model = config$inflow$forecast_inflow_model,
                                                   inflow_process_uncertainty = FALSE,
-                                                  forecast_location = config$file_path$forecast_output_directory,
                                                   config = config,
                                                   s3_mode = s3_mode,
                                                   bucket = "drivers")

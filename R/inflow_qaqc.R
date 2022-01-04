@@ -1,223 +1,163 @@
-###Information and extra lines that might be helpful###
-#####
-### This function aggregates historical and real time inflow data at FCR,
-### converts flow to cms. This creates one output file named "inflow_postQAQC.csv"
-
-#Inputs to function:
-#  Historical flow data. Here, I need two historical files from github to fill all of the time from 2013 until diana was launched ('hist1' and hist2').
-#  Diana data ('FCRweir.csv' from git)
-#  Local timezone
-#  Timezone of input files (just to be similar to other FLARE fucntions)
-
-#Units:
-#  flow = cms
-#  wtr_temp = degC
-#  Timestep = daily
-#Missing data is assigned the prior days flow
-
-##These lines may be useful for getting this into FLARE
-#     data_location <- paste0("/Users/heatherwander/Documents/VirginiaTech/research/SCC_data")
-#     diana_location <- paste0(data_location, "/", "diana_data")
-#
-#     if(!file.exists(diana_location)){
-#       setwd(data_location)
-#       system("git clone -b diana-data --single-branch https://github.com/CareyLabVT/SCCData.git diana-data/")
-#     }
-#
-#
-#     setwd(diana_location)
-#     system(paste0("git pull"))
-
-########################################
-inflow_qaqc <- function(realtime_file,
+inflow_qaqc <- function(inflow_file,
                         qaqc_file,
+                        realtime_file,
                         nutrients_file,
+                        silica_file,
+                        ghg_file,
                         cleaned_inflow_file,
                         local_tzone,
                         input_file_tz){
 
-#  ##Step 1: Pull required data from GitHub ##
-#  carina_location <- realtime_file
-#
-#  ##Step 2: Read in historical flow data, clean, and aggregate to daily mean##
-#
-#  flow <- readr::read_csv(qaqc_file, guess_max = 1000000, col_types = readr::cols()) %>%
-#    dplyr::rename("timestamp" = DateTime) %>%
-#    dplyr::select(timestamp, WVWA_Flow_cms, WVWA_Temp_C, VT_Flow_cms, VT_Temp_C) %>%
-#    dplyr::mutate(day = day(timestamp),
-#           year = year(timestamp),
-#           month = month(timestamp)) %>%
-#    dplyr::group_by(day, year, month) %>%
-#    dplyr:: summarize(Flow_cms = mean(Flow_cms, na.rm = TRUE),
-#              WVWA_Temp_C = mean(WVWA_Temp_C, na.rm = TRUE),
-#              VT_Temp_C = mean(VT_Temp_C, na.rm = TRUE), .groups = "drop") %>%
-#    dplyr::ungroup() %>%
-#    dplyr::mutate(day = as.numeric(day)) %>%
-#    dplyr::mutate(day = ifelse(as.numeric(day) < 10, paste0("0",day),day)) %>%
-#    dplyr::mutate(time = as_date(paste0(year,"-",month,"-",day))) %>%
-#    dplyr::select(time,Flow_cms,WVWA_Temp_C,VT_Temp_C) %>% #VT_Flow_cms,
-#    dplyr::mutate(VT_Temp_C = ifelse(is.nan(VT_Temp_C), NA, VT_Temp_C),
-#           Flow_cms = ifelse(is.nan(Flow_cms), NA, Flow_cms),
-#           WVWA_Temp_C = ifelse(is.nan(WVWA_Temp_C), NA, WVWA_Temp_C)) %>%
-#    dplyr::arrange(time)
-#
-#  inflow_temp_flow <- tibble(time = seq(first(flow$time), last(flow$time), by = "1 day")) %>%
-#    left_join(flow, by = "time") %>%
-#    mutate(TEMP = ifelse(is.na(VT_Temp_C), WVWA_Temp_C, VT_Temp_C),
-#           FLOW = Flow_cms,
-#           SALT = 0) %>%
-#    mutate(TEMP = imputeTS::na_interpolation(TEMP),
-#           FLOW = imputeTS::na_interpolation(FLOW)) %>%
-#    select(time, FLOW, TEMP, SALT)
-#
-#  ##Step 3: Read in diana data, convert flow from PSI to CSM, calculations to
-#  #account for building new weir in June 2019 (FCR Specific), and
-#  #aggregate to daily mean.##
-#
-#  inflow_realtime <- read_csv(diana_location, skip=4, col_names = F, col_types = readr::cols())
-#  inflow_realtime_headers <- read.csv(diana_location, skip=1, header = F, nrows= 1, as.is=T)
-#  colnames(inflow_realtime) <- inflow_realtime_headers
-#  inflow_realtime <- inflow_realtime %>%
-#    select(TIMESTAMP, Lvl_psi, wtr_weir) %>%
-#    rename("psi_corr" = Lvl_psi,
-#           "time" = TIMESTAMP,
-#           "TEMP" = wtr_weir) %>%
-#    mutate(time = force_tz(time, tzone = input_file_tz),
-#           time = with_tz(time, tzone = local_tzone)) %>%
-#    filter(time > last(inflow_temp_flow$time)) %>%
-#    mutate(head = ((65.822 * psi_corr) - 4.3804) / 100,
-#           FLOW = 2.391 * (head^2.5)) %>%
-#    mutate(day = day(time),
-#           year = year(time),
-#           month = month(time)) %>%
-#    group_by(day, year, month) %>%
-#    summarize(FLOW = mean(FLOW, na.rm = TRUE),
-#              TEMP = mean(TEMP, na.rm = TRUE), .groups = "drop") %>%
-#    ungroup() %>%
-#    mutate(day = as.numeric(day)) %>%
-#    mutate(day = ifelse(as.numeric(day) < 10, paste0("0",day),day)) %>%
-#    mutate(time = as_date(paste0(year,"-",month,"-",day))) %>%
-#    select(time, FLOW, TEMP) %>%
-#    mutate(FLOW = 0.003122 + 0.662914*FLOW, #Convert Diana to WVWA
-#           SALT = 0.0)
-#
-#  inflow_combined <- full_join(inflow_temp_flow, inflow_realtime, by = "time") %>%
-#    mutate(FLOW = ifelse(is.na(FLOW.x), FLOW.y, FLOW.x),
-#           TEMP = ifelse(is.na(TEMP.x), TEMP.y, TEMP.x),
-#           SALT = ifelse(is.na(SALT.x), SALT.y, SALT.x)) %>%
-#    select(time, FLOW, TEMP, SALT)
-
+  #load packages
+  pacman::p_load(dplyr,zoo,EcoHydRology,rMR,tidyverse,lubridate)
+  
 # read in calculated inflow csv, only select some cols
-inflow_combined <- read.csv(file.path(config_obs$data_location, "BVR_inflow_2014_2019_20200708_allfractions_2poolsDOC_withch4.csv")) %>%
-                    dplyr::select(time,FLOW,TEMP,SALT) %>% mutate(FLOW = FLOW/86400) #convert flow to m3/s
-inflow_combined$time <- as.Date(inflow_combined$time)
+  # Updated inflow model using FCR met station precip and temp data: units in m3/d - need to convert to m3/s
+  inflow <- read_csv(inflow_file) %>% 
+    mutate(FLOW = Q_BVR_m3pd/86400) %>% select(-c(Q_BVR_m3pd,...1)) #convert flow to m3/s
+  inflow$time = as.POSIXct(strptime(inflow$time,"%Y-%m-%d", tz="EST"))
 
+  temp <- read.csv(qaqc_file) 
+  temp$DateTime = as.POSIXct(strptime(temp$DateTime,"%Y-%m-%d", tz="EST"))
+  temp <- temp %>% select(DateTime, WVWA_Temp_C) %>% 
+    rename(time=DateTime, TEMP=WVWA_Temp_C) %>%
+    dplyr::filter(time > as.POSIXct("2015-07-07") & time < as.POSIXct("2021-01-07")) %>% 
+    group_by(time) %>% 
+    summarise(TEMP=mean(TEMP)) #gives averaged daily temp in C
+  
+  #read in 2021 temp data 
+  temp_21 <- read.csv(realtime_file) 
+  temp_21$DateTime = as.POSIXct(strptime(temp_21$DateTime,"%Y-%m-%d", tz="EST"))
+  temp_21 <- temp_21 %>% dplyr::filter(Reservoir =="FCR") %>%
+    dplyr::filter(Site=="100") %>%
+    select(DateTime, Temp_C) %>% 
+    rename(time=DateTime, TEMP=Temp_C) %>%
+    dplyr::filter(time > as.POSIXct("2021-01-06") & time < as.POSIXct("2021-12-01")) %>% 
+    group_by(time) %>% 
+    summarise(TEMP=mean(TEMP)) #gives averaged daily temp in C
+  
+  #now take the ysi temp and adjust based on lm of fcr ysi 100 vs fcr pressure transducer at weir
+  temp_21$TEMP <-(0.824 *temp_21$TEMP) +2.91
+  
+  #combine both temp datasets
+  temp <- rbind(temp,temp_21)
+  
+  # Merge inflow and inflow temp datasets
+  inflow <- merge(inflow,temp,by="time",all=TRUE) 
+  
+  #only select data until last inflow obs so can infill the missing days
+  inflow <- inflow[inflow$time<=last(temp$time),]
+  
+  #fill in missing days
+  inflow <- inflow %>% mutate(TEMP=na.fill(na.approx(TEMP),"extend")) 
+  
+  # Add SALT column (salinty = 0 for all time points)
+  inflow <- inflow %>% mutate(SALT = rep(0,length(inflow$time)))
+  
+  
   #### BRING IN THE NUTRIENTS
 
   if(!is.na(nutrients_file)){
 
-    nutrients <- read_csv(nutrients_file, guess_max = 100000, col_types = readr::cols()) %>%
-      filter(Reservoir == "BVR" & (Site == "100" | Site == "200")) %>%
-      group_by(DateTime) %>% summarise(across(c("TN_ugL":"DN_mgL"),mean)) %>%
-      rename("time" = DateTime)  %>%
-      mutate(time = as_date(time)) %>%
-      mutate(NIT_amm = NH4_ugL*1000*0.001*(1/18.04),
-             NIT_nit =  NO3NO2_ugL*1000*0.001*(1/62.00),
-             PHS_frp = SRP_ugL*1000*0.001*(1/94.9714),
-             #PHS_frp_ads = PHS_frp,
-             OGM_doc = DOC_mgL*1000*(1/12.01)* 0.10,
-             OGM_docr = DOC_mgL*1000*(1/12.01)* 0.90,
-             OGM_poc = 0.1*(OGM_doc+OGM_docr),
-             TN = TN_ugL*1000*0.001*(1/14),
-             TP = TP_ugL*1000*0.001*(1/30.97),
-             OGM_don = (5/6)*(TN-(NIT_amm+NIT_nit)) * 0.1,
-             OGM_donr = (5/6)*(TN-(NIT_amm+NIT_nit)) * 0.9,
-             OGM_dop = 0.3*(TP - PHS_frp) *0.1,
-             OGM_dopr = 0.3*(TP - PHS_frp) * 0.9,
-             OGM_pon = (1/6)*(TN -(NIT_amm+NIT_nit)),
-             OGM_pop = 0.7*(TP - PHS_frp),
-             #CAR_dic = DIC_mgL*1000*(1/52.515),
-             #CAR_ch4 = 0.0,
-             SIL_rsi = 126.3866) %>%
-      dplyr::select(time, NIT_amm, NIT_nit, PHS_frp, OGM_doc, OGM_docr, OGM_poc, OGM_don,OGM_donr, OGM_dop, OGM_dopr, OGM_pop, OGM_pon,SIL_rsi)
-
-    #add temp and oxy to the inflow dataframe
-    temp <- read.csv(file.path(config_obs$data_location,"CleanedObsTemp.csv")) %>% rename("time" = DateTime) %>%  filter(Depth==0.1)
-    oxy <- read.csv(file.path(config_obs$data_location,"CleanedObsOxy.csv"))  %>% rename("time" = DateTime) %>%  filter(Depth==0.1)
-    temp_oxy <- left_join(temp,oxy, by="time") %>%
-                  mutate(time = as_date(time)) %>% dplyr::select(!c(Depth.x, Depth.y))
-    inflow_combined <- left_join(inflow_combined,temp_oxy,by="time")
+    nutrients <- read_csv(nutrients_file) %>%
+      select(Reservoir:DIC_mgL) %>%
+      dplyr::filter(Reservoir=="BVR") %>%
+      dplyr::filter(Site==100 | Site==200) %>%
+      mutate(DateTime = as.POSIXct(strptime(DateTime, "%Y-%m-%d", tz="EST"))) %>%
+      rename(time = DateTime)
+      
+    # Create nuts (randomly sampled from a normal distribution) for total inflow
+    bvr_nuts <- as.data.frame(seq.Date(as.Date("2015/07/07"),as.Date("2021/12/01"), "days"))
+    names(bvr_nuts)[1] <- "time"
+    bvr_nuts$time<-as.POSIXct(strptime(bvr_nuts$time, "%Y-%m-%d", tz="EST"))
+    bvr_nuts <- bvr_nuts %>% 
+      mutate(TN_ugL = rnorm(2340,mean=mean(nutrients$TN_ugL, na.rm=TRUE),sd=sd(nutrients$TN_ugL, na.rm=TRUE))) %>% 
+      mutate(TP_ugL = rnorm(2340,mean=mean(nutrients$TP_ugL, na.rm=TRUE),sd=sd(nutrients$TP_ugL, na.rm=TRUE))) %>% 
+      mutate(NH4_ugL = rnorm(2340,mean=mean(nutrients$NH4_ugL, na.rm=TRUE),sd=sd(nutrients$NH4_ugL, na.rm=TRUE))) %>% 
+      mutate(NO3NO2_ugL = rnorm(2340,mean=mean(nutrients$NO3NO2_ugL, na.rm=TRUE),sd=sd(nutrients$NO3NO2_ugL, na.rm=TRUE))) %>% 
+      mutate(SRP_ugL = rnorm(2340,mean=mean(nutrients$SRP_ugL, na.rm=TRUE),sd=sd(nutrients$SRP_ugL, na.rm=TRUE))) %>% 
+      mutate(DOC_mgL = rnorm(2340,mean=mean(nutrients$DOC_mgL, na.rm=TRUE),sd=sd(nutrients$DOC_mgL, na.rm=TRUE))) %>% 
+      mutate(DIC_mgL = rnorm(2340,mean=mean(nutrients$DIC_mgL, na.rm=TRUE),sd=sd(nutrients$DIC_mgL, na.rm=TRUE)))
     
-    inflow_combined_with_na <- left_join(inflow_combined, nutrients, by = "time") %>%
-      mutate(OXY_oxy = rMR::Eq.Ox.conc(TEMP, elevation.m = 506,
-                                  bar.press = NULL, bar.units = NULL,
-                                  out.DO.meas = "mg/L",
-                                  salinity = 0, salinity.units = "pp.thou")*1000*(1/32)) %>%
-      mutate(NIT_amm = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(NIT_amm), NA),
-             NIT_nit = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(NIT_nit), NA),
-             PHS_frp = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(PHS_frp), NA),
-             OGM_doc = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_doc), NA),
-             OGM_docr = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_docr), NA),
-             OGM_poc = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_poc), NA),
-             OGM_don = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_don), NA),
-             OGM_donr = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_donr), NA),
-             OGM_dop = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_dop), NA),
-             OGM_dopr = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_dopr), NA),
-             OGM_pop = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_pop), NA),
-             OGM_pon = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(OGM_pon), NA),
-             #PHS_frp_ads = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), na_interpolation(PHS_frp_ads), NA),
-             #CAR_dic = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), na_interpolation(CAR_dic), NA),
-             #CAR_ch4 = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), na_interpolation(CAR_ch4), NA),
-             SIL_rsi = ifelse(time <= last(nutrients$time) & time >= first(nutrients$time), imputeTS::na_interpolation(SIL_rsi), NA)
-      ) %>%
-      mutate(OGM_dop = ifelse(time > as_date("2013-09-01") & time < as_date("2015-01-01"), NA, OGM_dop),
-             OGM_dopr = ifelse(time > as_date("2013-09-01") & time < as_date("2015-01-01"), NA, OGM_dopr),
-             OGM_pop = ifelse(time > as_date("2013-09-01") & time < as_date("2015-01-01"), NA, OGM_pop))
-
-    nutrients_monthly <- nutrients %>%
-      mutate(month = month(time)) %>%
-      group_by(month) %>%
-      summarise_at(vars(NIT_amm:SIL_rsi), mean, na.rm = TRUE, .groups = "drop")
-
-    inflow_clean <- inflow_combined_with_na %>%
-      mutate(month = month(time)) %>%
-      left_join(nutrients_monthly, by = "month") %>%
-      mutate(NIT_amm = ifelse(is.na(NIT_amm.x), NIT_amm.y,NIT_amm.x),
-             NIT_nit = ifelse(is.na(NIT_nit.x), NIT_nit.y,NIT_nit.x),
-             PHS_frp = ifelse(is.na(PHS_frp.x), PHS_frp.y,PHS_frp.x),
-             OGM_doc = ifelse(is.na(OGM_doc.x), OGM_doc.y,OGM_doc.x),
-             OGM_docr = ifelse(is.na(OGM_docr.x), OGM_docr.y,OGM_docr.x),
-             OGM_poc = ifelse(is.na(OGM_poc.x), OGM_poc.y,OGM_poc.x),
-             OGM_don = ifelse(is.na(OGM_don.x), OGM_don.y,OGM_don.x),
-             OGM_donr = ifelse(is.na(OGM_don.x), OGM_don.y,OGM_don.x),
-             OGM_dop = ifelse(is.na(OGM_dop.x), OGM_dop.y,OGM_dop.x),
-             OGM_dopr = ifelse(is.na(OGM_dop.x), OGM_dop.y,OGM_dop.x),
-             OGM_pop = ifelse(is.na(OGM_pop.x), OGM_pop.y,OGM_pop.x),
-             OGM_pon = ifelse(is.na(OGM_pon.x), OGM_pon.y,OGM_pon.x),
-             #PHS_frp_ads = ifelse(is.na(PHS_frp_ads.x), PHS_frp_ads.y,PHS_frp_ads.x),
-             #CAR_dic = ifelse(is.na(CAR_dic.x), CAR_dic.y,CAR_dic.x)) %>%
-      #CAR_ch4 = ifelse(is.na(CAR_ch4.x), CAR_ch4.y,CAR_ch4.x),
-             SIL_rsi = ifelse(is.na(SIL_rsi.x), SIL_rsi.y,SIL_rsi.x))  %>%
-      dplyr::select(time, FLOW,TEMP,SALT,OXY_oxy, SIL_rsi, NIT_amm,NIT_nit,PHS_frp,OGM_doc,OGM_docr,OGM_poc,OGM_don,OGM_donr,OGM_pon,OGM_dop,OGM_dopr,OGM_pop)
-
-  }else{
-    inflow_clean <- inflow_combined
+    # Make sure values are not negative!
+    bvr_nuts <- bvr_nuts %>% 
+      mutate(TN_ugL = ifelse(TN_ugL<=0.00, 0.00, TN_ugL)) %>% 
+      mutate(TP_ugL = ifelse(TP_ugL<=0.00, 0.00, TP_ugL)) %>% 
+      mutate(NH4_ugL = ifelse(NH4_ugL<=0.00, 0.00, NH4_ugL)) %>% 
+      mutate(NO3NO2_ugL = ifelse(NO3NO2_ugL<=0.00, 0.00, NO3NO2_ugL)) %>% 
+      mutate(SRP_ugL = ifelse(SRP_ugL<=0.00, 0.00, SRP_ugL)) %>%
+      mutate(DOC_mgL = ifelse(DOC_mgL<=0.00, 0.00, DOC_mgL)) %>% 
+      mutate(DIC_mgL = ifelse(DIC_mgL<=0.00, 0.00, DIC_mgL))
+    
+    #read in lab dataset of dissolved silica, measured by Jon in summer 2014 only
+    silica <- read.csv(silica_file, header=T) %>%
+      select(Date, Depth, DRSI_mgL) %>%
+      mutate(Date = as.POSIXct(strptime(Date, "%Y-%m-%d", tz="EST"))) %>%
+      dplyr::filter(Depth == 999) %>% #999 = weir inflow site
+      select(Date, DRSI_mgL) %>%
+      rename(time = Date)
+    
+    #only select dates until end of 2021
+    inflow <- inflow %>% filter(time <= "2021-12-01")
+    
+    alldata<-merge(inflow, bvr_nuts, by="time", all.x=TRUE)
+    
+    #read in lab dataset of CH4 from 2015-2019
+    # for BVR: Only have a handful of days w/ CH4 in inflows (BVR 100 and 200); aggregate all time points
+    # and average CH4 - use average as CH4 input for the entier year
+    ghg <- read.csv(ghg_file, header=T) %>%
+      dplyr::filter(Reservoir == "BVR") %>%
+      dplyr::filter(Depth_m == 100|Depth_m == 200) %>% #weir inflow
+      select(DateTime, ch4_umolL) %>%
+      mutate(DateTime = as.POSIXct(strptime(DateTime, "%d-%b-%y", tz="EST"))) %>%
+      rename(time = DateTime, CAR_ch4 = ch4_umolL)
+    
+    # Calculate average for the BVR data points and mutate column to alldata
+    alldata <- alldata %>% mutate(CAR_ch4 = mean(ghg$CAR_ch4))
+    
+    #need to convert mass observed data into mmol/m3 units for two pools of organic carbon
+    total_inflow <- alldata %>% 
+      mutate(NIT_amm = NH4_ugL*1000*0.001*(1/18.04)) %>% 
+      mutate(NIT_nit = NO3NO2_ugL*1000*0.001*(1/62.00)) %>% #as all NO2 is converted to NO3
+      mutate(PHS_frp = SRP_ugL*1000*0.001*(1/94.9714)) %>% 
+      mutate(OGM_doc = DOC_mgL*1000*(1/12.01)* 0.10) %>% #assuming 10% of total DOC is in labile DOC pool (Wetzel page 753)
+      mutate(OGM_docr = DOC_mgL*1000*(1/12.01)* 0.90) %>% #assuming 90% of total DOC is in labile DOC pool
+      mutate(TN_ugL = TN_ugL*1000*0.001*(1/14)) %>% 
+      mutate(TP_ugL = TP_ugL*1000*0.001*(1/30.97)) %>% 
+      mutate(OGM_poc = 0.1*(OGM_doc+OGM_docr)) %>% #assuming that 10% of DOC is POC (Wetzel page 755)
+      mutate(OGM_don = (5/6)*(TN_ugL-(NIT_amm+NIT_nit))*0.10) %>% #DON is ~5x greater than PON (Wetzel page 220)
+      mutate(OGM_donr = (5/6)*(TN_ugL-(NIT_amm+NIT_nit))*0.90) %>% #to keep mass balance with DOC, DONr is 90% of total DON
+      mutate(OGM_pon = (1/6)*(TN_ugL-(NIT_amm+NIT_nit))) %>%
+      mutate(OGM_dop = 0.3*(TP_ugL-PHS_frp)*0.10) %>% #Wetzel page 241, 70% of total organic P = particulate organic; 30% = dissolved organic P
+      mutate(OGM_dopr = 0.3*(TP_ugL-PHS_frp)*0.90) %>% #Wetzel page 241, 70% of total organic P = particulate organic; 30% = dissolved organic P
+      mutate(OGM_pop = 0.7*(TP_ugL-PHS_frp)) %>% 
+      #mutate(PHS_frp_ads = PHS_frp) %>% #Following Farrell et al. 2020 EcolMod
+      mutate(CAR_dic = DIC_mgL*1000*(1/52.515)) #Long-term avg pH of FCR is 6.5, at which point CO2/HCO3 is about 50-50
+    
+    
+    #creating OXY_oxy column using RMR package, assuming that oxygen is at 100% saturation in this very well-mixed stream
+    # Obtained elevation from BVR DEM at BVR 100 inflow to the reservoir
+    for(i in 1:length(total_inflow$TEMP)){
+      total_inflow$OXY_oxy[i]<-(temp.C= Eq.Ox.conc(total_inflow$TEMP[i], elevation.m = 586,
+                                                   bar.press = NULL, bar.units = NULL,
+                                                   out.DO.meas = "mg/L",
+                                                   salinity = 0, salinity.units = "pp.thou"))*1000*(1/32)
+    }
+    
+    #clean it up and get vars in order
+    total_inflow <- total_inflow %>%
+      select(time, FLOW, TEMP, SALT, OXY_oxy, NIT_amm:CAR_dic, CAR_ch4) %>% 
+      mutate(SIL_rsi = rep(median(silica$DRSI_mgL),length(total_inflow$time))) %>%
+      mutate(SIL_rsi = SIL_rsi*1000*(1/60.08)) %>% #setting the Silica concentration to the median 2014 inflow concentration for consistency
+      mutate_if(is.numeric, round, 4) #round to 4 digits 
+    
+    #estimate bvr inflow temp based on relationship between bvr and fcr inflows
+    total_inflow$TEMP <- (1.5 * total_inflow$TEMP) - 9.21
   }
-
-  #inflow_clean %>%
-  #   pivot_longer(cols = -time, names_to = "Nutrient", values_to = "values") %>%
-  #   ggplot(aes(x = time, y = values)) +
-  #   geom_point() +
-  #   geom_line() +
-  #   facet_wrap(~Nutrient, scales = "free")
-
-
-  #inflow_clean <- inflow_clean %>%
-  #  filter(time < as_datetime("2018-01-01 00:00:00"))
-
-
-  readr::write_csv(inflow_clean, cleaned_inflow_file)
-
-}
+    
+    #write file for inflow for the weir, with 2 pools of OC (DOC + DOCR)  
+    readr::write_csv(total_inflow, cleaned_inflow_file)
+  }
+  
 
 

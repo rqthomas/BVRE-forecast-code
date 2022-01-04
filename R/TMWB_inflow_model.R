@@ -2,6 +2,10 @@
 #modified to daily timestep - added in recharge to help with baseflow underestimation 11Jun2020
 #Updated 4Sep2020 - change from GSOD temp/precip data to NLDAS for consistency 
 #Updated 23Sep21 - change to obs met data because forecasts look weird when going from glm to FLARE
+  
+create_inflow_file <- function(realtime_file,
+                        qaqc_file,
+                        nldas_file){
 
 #packages
 if (!require("pacman"))install.packages("pacman")
@@ -10,15 +14,12 @@ pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,raster,soilDB,rgdal,lattice,
 lake_directory <- here::here()
 
 #soil data
-#url="https://websoilsurvey.sc.egov.usda.gov/DSD/Download/AOI/4e4n0gmowbc20zgidprgwjdf/wss_aoi_2021-12-02_14-40-00.zip"
-#download.file(url,file.path(lake_directory,"drivers/inflow/mysoil.zip")) #Note: will probably have to update wss_aoi date if it's been a while - go to wss homepage and click on start wss link on right of page
-#unzip(file.path(lake_directory,"drivers/inflow/mysoil.zip"),exdir=file.path(lake_directory,"drivers/inflow/soils"))            #zoom in to site, use define aoi tool to select desired area, go to download soils data tab, scroll to bottom of page and click "create download link", right click and copy link address, paste on url line above
-list.files()
-
-list.files(file.path(lake_directory, "drivers/inflow/wss_aoi_2021-12-02_12-24-04/spatial/"),pattern = "shp")
-list.files(file.path(lake_directory, "drivers/inflow/wss_aoi_2021-12-02_12-24-04/tabular/"))
-
-objects()
+if(!file.exists(file.path(lake_directory,"configuration/forecast_model/t_m_water_balance/wss_aoi_2022-01-03_12-05-29"))){
+  url <- "https://websoilsurvey.sc.egov.usda.gov/DSD/Download/AOI/kyhiens5ilrfk2x33jckqmbn/wss_aoi_2022-01-03_12-05-29.zip"
+  download.file(url,file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance", "wss_aoi_2022-01-03_12-05-29.zip"), method = "curl") #Note: will probably have to update wss_aoi date if it's been a while - go to wss homepage and click on start wss link on right of page
+  unzip(file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance", "wss_aoi_2022-01-03_12-05-29.zip"),
+        exdir= file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance"))            #zoom in to site, use define aoi tool to select desired area, go to download soils data tab, click "create download link", right click and copy link address, paste on url line above
+}
 
 #Using ROANOKE RIVER AT NIAGARA, VA  usgs gage to use as a template (will write over with BVR-specific data) 
 myflowgage_id="02056000"
@@ -29,10 +30,10 @@ myflowgage$area<- 2.27 #km
 myflowgage$declat<- 37.31321
 myflowgage$declon<- -79.81535
 
-met <- read.csv(file.path(lake_directory,"data_raw/Met_final_2015_2020.csv"))
+met <- read.csv(qaqc_file)
 
 #want 2021 data too (even though it's not QAQC'ed)
-met_realtime <- read.csv(file.path(lake_directory,"data_raw/fcre-metstation-data/FCRmet.csv"),header=T,skip=1)
+met_realtime <- read.csv(realtime_file,header=T,skip=1)
 met_realtime <- met_realtime[-c(1,2),-c(17)]
 
 #drop first 3 rows because end of 1600 hour
@@ -72,7 +73,7 @@ met_daily <- met %>% select(DateTime, AirTemp_Average_C, Rain_Total_mm) %>% grou
             Precip_mmpd = sum(Rain_Total_mm, na.rm=T)) 
 
 #use NLDAS for missing met days
-NLDAS<- read.csv("./data_raw/BVR_GLM_NLDAS_010113_123119_GMTadjusted.csv")
+NLDAS<- read.csv(nldas_file)
 NLDAS[is.na(NLDAS)]=0 # A Quick BUT sloppy removal of NAs
 
 #convert NLDAS date to as.date format
@@ -105,11 +106,6 @@ myflowgage$flowdata <- myflowgage$flowdata[as.Date(myflowgage$flowdata$date) %in
 # Merge met_final weather data with flow gage to use as our base HRU data structure
 myflowgage$TMWB=merge(myflowgage$flowdata,met_final)
 
-# Grab the necessary soil and elevation spatial layers and parameters (usgs)
-#url="https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHD/HU8/HighResolution/Shape/NHD_H_03010101_HU8_Shape.zip"
-#curl_download(url,file.path(lake_directory,"drivers/inflow/NHD_H_03010101_HU8_Shape.zip"))
-#unzip(file.path(lake_directory,"drivers/inflow/NHD_H_03010101_HU8_Shape.zip"),exdir=file.path(lake_directory,"drivers/inflow/03010101")) 
-
 #set coordinates to plot DEM raster
 degdist=sqrt(myflowgage$area*4)/80
 mybbox = matrix(c(
@@ -117,11 +113,12 @@ mybbox = matrix(c(
   myflowgage$declat - degdist, myflowgage$declat + degdist), 
   ncol = 2, byrow = TRUE)
 
-streams=readOGR(file.path(lake_directory,"drivers/inflow/03010101/Shape/NHDFlowline.dbf")) 
-
-#mysoil <- mapunit_geom_by_ll_bbox(mybbox)
-#writeOGR(obj=mysoil, dsn="soils", layer="mysoil", driver="ESRI Shapefile")
-mysoil <- readOGR(file.path(lake_directory,"drivers/inflow/soils"))
+if(!file.exists(file.path(lake_directory,"configuration/forecast_model/t_m_water_balance/soils"))){
+mysoil <- mapunit_geom_by_ll_bbox(mybbox)
+writeOGR(obj=mysoil, dsn="soils", layer="mysoil", driver="ESRI Shapefile")
+}else(
+mysoil <- readOGR(file.path(lake_directory,"configuration/forecast_model/t_m_water_balance/soils"))
+)
 
 # Associate mukey with cokey from component
 mukey_statement = format_SQL_in_statement(unique(mysoil$mukey))
@@ -136,21 +133,6 @@ co2ch = SDA_query(q_co2ch)
 # Aggregate max values of ksat_r,awc_r, and hzdepb_r
 mu2ch=merge(mu2co,co2ch)
 mu2chmax=aggregate(mu2ch,list(mu2ch$mukey),max)
-
-#set projection
-proj4string(streams)
-proj4string(mysoil)<- "+proj=longlat +datum=NAD83 +no_defs +ellps=GRS80 +towgs84=0,0,0"
-
-# Use the spatial extents from our stream to download elevation raster.
-mydem=get_elev_raster(mysoil, z = 11, src ="aws",clip="bbox")
-
-#view watershed
-plot(mydem)
-lines(mysoil,col="black")
-points(myflowgage$declon,myflowgage$declat,pch = 24, cex=2, col="blue", bg="red", lwd=2)
-
-# For initializing slopes, we store the summary stats for terrain slope
-slope_sum=summary(terrain(mydem, opt='slope',unit = "radians"))
 
 # 3 Functions to calculate SWE and excess when soil is drying, wetting, and wetting above capacity
 soildrying<-function(AWprev,dP,AWC){
@@ -273,5 +255,6 @@ plot(TMWBsol$TMWB$mdate,TMWBsol$TMWB$Drainage,col="purple", type='l')
 
 #create csv for q export
 QExport<- data.frame("time"=TMWBsol$TMWB$mdate, "Q_BVR_m3pd"=TMWBsol$TMWB$Qpred_m3pd)
-write.csv(QExport, "data_processed/BVR_flow_calcs_obs_met_2015_2021.csv")
+write.csv(QExport, file.path(lake_directory, "data_processed/BVR_flow_calcs_obs_met_2015_2021.csv"))
+}
 

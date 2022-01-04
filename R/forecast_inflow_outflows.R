@@ -4,7 +4,6 @@ forecast_inflows_outflows <- function(inflow_obs,
                                       output_dir, 
                                       inflow_model, 
                                       inflow_process_uncertainty, 
-                                      forecast_location,
                                       config, 
                                       s3_mode = FALSE,
                                       bucket = NULL){
@@ -97,10 +96,12 @@ forecast_inflows_outflows <- function(inflow_obs,
 #------------------------------------------------------------------------------#      
   
   #soil data
-  #url <- "https://websoilsurvey.sc.egov.usda.gov/DSD/Download/AOI/kyhiens5ilrfk2x33jckqmbn/wss_aoi_2022-01-03_12-05-29.zip"
-  #download.file(url,file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance", "wss_aoi_2022-01-03_12-05-29.zip"), method = "curl") #Note: will probably have to update wss_aoi date if it's been a while - go to wss homepage and click on start wss link on right of page
-  #unzip(file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance", "wss_aoi_2022-01-03_12-05-29.zip"),
-  #                         exdir= file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance"))            #zoom in to site, use define aoi tool to select desired area, go to download soils data tab, click "create download link", right click and copy link address, paste on url line above
+  if(!file.exists(file.path(lake_directory,"configuration/forecast_model/t_m_water_balance/wss_aoi_2022-01-03_12-05-29"))){
+  url <- "https://websoilsurvey.sc.egov.usda.gov/DSD/Download/AOI/kyhiens5ilrfk2x33jckqmbn/wss_aoi_2022-01-03_12-05-29.zip"
+  download.file(url,file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance", "wss_aoi_2022-01-03_12-05-29.zip"), method = "curl") #Note: will probably have to update wss_aoi date if it's been a while - go to wss homepage and click on start wss link on right of page
+  unzip(file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance", "wss_aoi_2022-01-03_12-05-29.zip"),
+                           exdir= file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance"))            #zoom in to site, use define aoi tool to select desired area, go to download soils data tab, click "create download link", right click and copy link address, paste on url line above
+  }
   
   #Using ROANOKE RIVER AT NIAGARA, VA  usgs gage to use as a template (will write over with BVR-specific data) 
   myflowgage_id <- "02056000"
@@ -117,12 +118,6 @@ forecast_inflows_outflows <- function(inflow_obs,
   #replace flow with NAs because this is specific to Roanoke River (not BVR)
   myflowgage$flowdata[["flow"]] <- NA
   
-  # Grab the necessary soil and elevation spatial layers and parameters (usgs)
- #url <- "https://prd-tnm.s3.amazonaws.com/StagedProducts/Hydrography/NHD/HU8/HighResolution/Shape/NHD_H_03010101_HU8_Shape.zip"
- #download.file(url,file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance","NHD_H_03010101_HU8_Shape.zip"), method = "curl")
- #unzip(file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance","NHD_H_03010101_HU8_Shape.zip"),
- #      exdir=file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance","03010101")) 
- 
   #set coordinates to plot DEM raster
   degdist <- sqrt(myflowgage$area*4)/200
   mybbox <- matrix(c(
@@ -130,10 +125,11 @@ forecast_inflows_outflows <- function(inflow_obs,
     myflowgage$declat - degdist, myflowgage$declat + degdist), 
     ncol = 2, byrow = TRUE)
   
-  streams <- rgdal::readOGR(file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance","03010101","Shape","NHDFlowline.dbf")) 
+  if(!file.exists(file.path(lake_directory,"configuration/forecast_model/t_m_water_balance/soils"))){
+   mysoil <- mapunit_geom_by_ll_bbox(mybbox)
+   writeOGR(obj=mysoil, dsn="soils", layer="mysoil", driver="ESRI Shapefile")
+  }
   
-  #mysoil <- mapunit_geom_by_ll_bbox(mybbox)
-  #writeOGR(obj=mysoil, dsn="soils", layer="mysoil", driver="ESRI Shapefile")
   mysoil <- rgdal::readOGR(file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance","soils"))
   
   # Associate mukey with cokey from component
@@ -149,20 +145,6 @@ forecast_inflows_outflows <- function(inflow_obs,
   # Aggregate max values of ksat_r,awc_r, and hzdepb_r
   mu2ch <- merge(mu2co,co2ch)
   mu2chmax <- aggregate(mu2ch,list(mu2ch$mukey),max)
-  
-  #set projection
-  raster::proj4string(streams)
-  raster::proj4string(mysoil) <- "+proj=longlat +datum=NAD83 +no_defs +ellps=GRS80 +towgs84=0,0,0"
-  
-  # Use the spatial extents from our stream to download elevation raster.
-  mydem <- elevatr::get_elev_raster(mysoil, z = 11, src ="aws",clip="bbox")
-  #view watershed
-  #plot(mydem)
-  #lines(mysoil,col="black")
-  #points(myflowgage$declon,myflowgage$declat,pch = 24, cex=2, col="blue", bg="red", lwd=2)
-
-  # For initializing slopes, we store the summary stats for terrain slope
-  slope_sum <- summary(raster::terrain(mydem, opt='slope',unit = "radians"))
   
   # 3 Functions to calculate SWE and excess when soil is drying, wetting, and wetting above capacity
   soildrying <- function(AWprev, dP, AWC){
