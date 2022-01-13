@@ -8,8 +8,6 @@ inflow_qaqc <- function(inflow_file,
                         local_tzone,
                         input_file_tz){
 
-  #load packages
-  pacman::p_load(dplyr,zoo,EcoHydRology,rMR,tidyverse,lubridate)
   
 # read in calculated inflow csv, only select some cols
   # Updated inflow model using FCR met station precip and temp data: units in m3/d - need to convert to m3/s

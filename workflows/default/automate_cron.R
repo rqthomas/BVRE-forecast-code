@@ -3,8 +3,9 @@
 library(cronR)
 
 lake_directory <- here::here()
+config_set_name <- "default"
 
-home_dir <- file.path(lake_directory, "automation")
+home_dir <- file.path(lake_directory, "workflows", config_set_name)
 
 cmd <- cronR::cron_rscript(rscript = file.path(home_dir, "combined_workflow.R"),
                            rscript_log = file.path(home_dir, "bvre.log"),

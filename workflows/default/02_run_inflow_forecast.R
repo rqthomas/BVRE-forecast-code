@@ -7,6 +7,7 @@
 
 lake_directory <- here::here()
 s3_mode <- FALSE
+config_set_name <- "default"
 
 Sys.setenv("AWS_DEFAULT_REGION" = "s3",
            "AWS_S3_ENDPOINT" = "flare-forecast.org")
@@ -15,7 +16,7 @@ Sys.setenv("AWS_DEFAULT_REGION" = "s3",
 #unlink(file.path(getwd(),"restart/bvre/bvre_test/configure_run.yml"))
 
 configure_run_file <- "configure_run.yml"
-run_config <- yaml::read_yaml(file.path(lake_directory,"configuration","FLAREr",configure_run_file))
+run_config <- yaml::read_yaml(file.path(lake_directory,"configuration",config_set_name,configure_run_file))
 forecast_site <- "bvre"
 sim_name <- run_config$sim_name
 
@@ -29,7 +30,7 @@ Sys.setenv("AWS_DEFAULT_REGION" = "s3",
 
 #Note: lake_directory need to be set prior to running this script
 configuration_file <- "configure_flare.yml"
-config <- FLAREr::set_configuration(configure_run_file,lake_directory)
+config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
 config$file_path <- run_config$file_path
 
 if(s3_mode){
@@ -37,7 +38,7 @@ if(s3_mode){
   if(restart_exists){
     aws.s3::save_object(object = file.path(forecast_site, sim_name, "configure_run.yml"), 
                         bucket = "restart", 
-                        file = file.path(lake_directory,"configuration","FLAREr","configure_run.yml"))
+                        file = file.path(lake_directory,"configuration",config_set_name,"configure_run.yml"))
   }
   config$file_path$noaa_directory <- file.path(lake_directory, "drivers", "noaa")
   config$file_path$inflow_directory <- file.path(lake_directory, "drivers")
@@ -46,7 +47,7 @@ if(s3_mode){
   config$file_path$inflow_directory <- file.path(lake_directory, "drivers")
 }
 
-config$run_config <- yaml::read_yaml(file.path(lake_directory,"configuration","FLAREr","configure_run.yml"))
+config$run_config <- yaml::read_yaml(file.path(lake_directory,"configuration",config_set_name,"configure_run.yml"))
 
 
 if(config$run_config$forecast_horizon > 0){

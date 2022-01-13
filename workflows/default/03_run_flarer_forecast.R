@@ -14,10 +14,11 @@ unlink(file.path(getwd(),"restart/bvre/bvre_test/configure_run.yml"))
 
 lake_directory <- here::here()
 update_run_config <- TRUE
+config_set_name <- "default"
 
 configure_run_file <- "configure_run.yml"
 
-config <- FLAREr::set_configuration(configure_run_file,lake_directory)
+config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
 
 config <- FLAREr::get_restart_file(config, lake_directory)
 
@@ -30,9 +31,9 @@ inflow_forecast_path <- FLAREr::get_driver_forecast_path(config,
                                                  forecast_model = config$inflow$forecast_inflow_model)
 #inflow_forecast_path <- NULL
 
-pars_config <- readr::read_csv(file.path(config$file_path$configuration_directory, "FLAREr", config$model_settings$par_config_file), col_types = readr::cols())
-obs_config <- readr::read_csv(file.path(config$file_path$configuration_directory, "FLAREr", config$model_settings$obs_config_file), col_types = readr::cols())
-states_config <- readr::read_csv(file.path(config$file_path$configuration_directory, "FLAREr", config$model_settings$states_config_file), col_types = readr::cols())
+pars_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$par_config_file), col_types = readr::cols())
+obs_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$obs_config_file), col_types = readr::cols())
+states_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$states_config_file), col_types = readr::cols())
 
 if(!is.null(noaa_forecast_path)){
   FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
@@ -110,7 +111,7 @@ FLAREr::put_forecast(saved_file, eml_file_name, config)
 rm(da_forecast_output)
 gc()
 
-FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = 35, day_advance = 1)
+FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = 35, day_advance = 1, new_start_datetime = TRUE)
 
 setwd(lake_directory)
 unlink(config$run_config$restart_file)
