@@ -341,6 +341,9 @@ forecast_inflows_outflows <- function(inflow_obs,
                     inflow_num = 1) %>%
       slice(-1)
 
+    #forecasting outflow - Schuler method using forecasted NOAA for precip and water level
+    
+    
     curr_met_daily_output <- curr_met_daily %>% #this assumes that outflow = inflow, but might want to think about this a bit
       dplyr::select(time, FLOW, TEMP) %>% #, OXY_oxy
       dplyr::mutate(type = "outflow",

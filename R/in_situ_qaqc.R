@@ -123,7 +123,7 @@ in_situ_qaqc <- function(insitu_obs_fname,
   
   d_clean$value <- round(d_clean$value, digits = 4)
   
-  #selectively witholding obs to test effects on DA/forecast skill
+  #selectively withholding obs to test effects on DA/forecast skill
   dates <- unique(d_clean$date[d_clean$variable=="temperature"])
   every_other_dates <- dates[seq(1, length(dates), 2)]
   every_5_dates <- dates[seq(1, length(dates), 5)]
@@ -131,7 +131,11 @@ in_situ_qaqc <- function(insitu_obs_fname,
   fortnightly_dates <- dates[seq(1, length(dates), 14)]
   monthly_dates <- dates[seq(1, length(dates), 30)]
   
-  #d_clean <- d_clean[d_clean$variable=="temperature" & d_clean$date %in% every_other_dates | d_clean$variable!="temperature",]
+  #specify DA frequency to subset observation dataset
+  DA_frequency <- dates
+  
+  #final obs dataset to be exported
+  d_clean <- d_clean[d_clean$variable=="temperature" & d_clean$date %in% DA_frequency | d_clean$variable!="temperature",]
 
   readr::write_csv(d_clean, cleaned_insitu_file)
   
