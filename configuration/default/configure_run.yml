@@ -3,7 +3,7 @@ start_datetime: 2021-04-18 00:00:00
 end_datetime: .na
 forecast_start_datetime: 2021-05-18 00:00:00
 forecast_horizon: 16.0
-sim_name: bvre_test_noinflow
+sim_name: bvre_DA_experiments_test
 configure_flare: configure_flare.yml
 configure_obs: observation_processing.yml
 use_s3: TRUE

@@ -1,6 +1,6 @@
 #load packages
 #if (!require("pacman"))install.packages("pacman")
-#pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,soilDB,rgdal,lattice,tidyverse,lubridate,raster)
+#pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,soilDB,rgdal,lattice,tidyverse,lubridate,raster,rMR)
 
 #files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
 #sapply(files.sources, source)

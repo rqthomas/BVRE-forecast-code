@@ -12,10 +12,8 @@ in_situ_qaqc <- function(insitu_obs_fname,
 
   d <- temp_oxy_chla_qaqc(realtime_file = insitu_obs_fname[1],
                           qaqc_file = insitu_obs_fname[2],
+                          offset_file = insitu_obs_fname[3],
                           maintenance_file = maintenance_file,
-                          input_file_tz = "EST",
-                          focal_depths= config_obs$focal_depths,
-                          local_tzone = config_obs$local_tzone,
                           config_obs = config_obs)
 
   if(exists("ctd_fname")){
@@ -56,9 +54,6 @@ in_situ_qaqc <- function(insitu_obs_fname,
   
   #drop NA rows
   d <- d[!is.na(d$value),]
-  
-  #make hour forecast hour
-  #d <- d %>%   dplyr::mutate(hour = 7) 
   
   first_day  <- lubridate::as_datetime(paste0(lubridate::as_date(min(d$timestamp)), " ", config_obs$averaging_period_starting_hour))
   first_day <- lubridate::force_tz(first_day, tzone = "UTC")

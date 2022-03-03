@@ -20,7 +20,7 @@ noaa_location: BVRE
 
 met_raw_obs_fname:
     - fcre-metstation-data/FCRmet.csv
-    - Met_final_2015_2020.csv
+    - Met_final_2015_2021.csv
 #specified_metfile: .na #NA #paste0(manual_data_location, "/met_full_postQAQC.csv")
 
 downscaling_coeff: fcr2020.RData #debiased.coefficients.2018_07_12_2019_07_11.RData
@@ -64,11 +64,13 @@ manual_data_location: BVR-GLM/inputs
 specified_inflow1: BVR_inflow_2014_2019_20200917_allfractions_2poolsDOC_withch4_nldasInflow.csv
 specified_outflow1: BVR_spillway_outflow_2014_2019_20200917_nldasInflow.csv
 
-insitu_obs_fname: bvre-platform-data/bvre-waterquality.csv
-# BVR_EDI_2020.csv #getting rid of this for forecasts after EDI publication
+insitu_obs_fname: 
+    - bvre-platform-data/bvre-waterquality.csv
+    - BVR_platform_data_2020_2021.csv
+    - BVR_Depth_offsets_2020_2021.csv
 
-secchi_fname: Secchi_depth_2013_2020.csv
-ctd_fname: CTD_final_2013_2020.csv
+secchi_fname: Secchi_depth_2013_2021.csv
+ctd_fname: CTD_final_2013_2021.csv
 ch4_fname: field_gasses.csv
 nutrients_fname: chem.csv
 variable_obsevation_depths: FALSE

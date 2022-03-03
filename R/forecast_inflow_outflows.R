@@ -9,6 +9,9 @@ forecast_inflows_outflows <- function(inflow_obs,
                                       bucket = NULL){
 
   inflow <- readr::read_csv(inflow_obs, col_types = readr::cols()) 
+  
+  #change tz from utc to est
+  inflow$time <- with_tz(inflow$time, tzone = "EST")
 
   site_id <- config$location$site_id
   
@@ -96,11 +99,11 @@ forecast_inflows_outflows <- function(inflow_obs,
 #------------------------------------------------------------------------------#      
   
   #soil data
-  if(!file.exists(file.path(lake_directory,"configuration/forecast_model/t_m_water_balance/wss_aoi_2022-01-03_12-05-29"))){
+  if(!file.exists(file.path(lake_directory,"configuration/default/wss_aoi_2022-01-03_12-05-29"))){
   url <- "https://websoilsurvey.sc.egov.usda.gov/DSD/Download/AOI/kyhiens5ilrfk2x33jckqmbn/wss_aoi_2022-01-03_12-05-29.zip"
   download.file(url,file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance", "wss_aoi_2022-01-03_12-05-29.zip"), method = "curl") #Note: will probably have to update wss_aoi date if it's been a while - go to wss homepage and click on start wss link on right of page
-  unzip(file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance", "wss_aoi_2022-01-03_12-05-29.zip"),
-                           exdir= file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance"))            #zoom in to site, use define aoi tool to select desired area, go to download soils data tab, click "create download link", right click and copy link address, paste on url line above
+  unzip(file.path(lake_directory, "configuration", "default", "wss_aoi_2022-01-03_12-05-29.zip"),
+                           exdir= file.path(lake_directory, "configuration", "default"))            #zoom in to site, use define aoi tool to select desired area, go to download soils data tab, click "create download link", right click and copy link address, paste on url line above
   }
   
   #Using ROANOKE RIVER AT NIAGARA, VA  usgs gage to use as a template (will write over with BVR-specific data) 
@@ -125,12 +128,12 @@ forecast_inflows_outflows <- function(inflow_obs,
     myflowgage$declat - degdist, myflowgage$declat + degdist), 
     ncol = 2, byrow = TRUE)
   
-  if(!file.exists(file.path(lake_directory,"configuration/forecast_model/t_m_water_balance/soils"))){
+  if(!file.exists(file.path(lake_directory,"configuration/default/soils"))){
    mysoil <- mapunit_geom_by_ll_bbox(mybbox)
    writeOGR(obj=mysoil, dsn="soils", layer="mysoil", driver="ESRI Shapefile")
   }
   
-  mysoil <- rgdal::readOGR(file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance","soils"))
+  mysoil <- rgdal::readOGR(file.path(lake_directory, "configuration", "default","soils"))
   
   # Associate mukey with cokey from component
   mukey_statement <- soilDB::format_SQL_in_statement(unique(mysoil$mukey))

@@ -1,323 +1,522 @@
-#NOTE - one day, it would be nice to change catdata to bvrdata in these scripts
+# Install packages
+#pacman::p_load(tidyverse,lubridate, plotly,plyr)
 
 temp_oxy_chla_qaqc <- function(realtime_file,
                                qaqc_file,
                                maintenance_file,
-                               input_file_tz,
-                               focal_depths,
-                               local_tzone,
+                               offset_file,
+                               #input_file_tz,
+                               #focal_depths,
+                               #local_tzone,
                                config_obs){
-  
-  CATDATA_COL_NAMES <- c("DateTime", "RECORD", "CR6_Batt_V", "CR6Panel_Temp_C", "ThermistorTemp_C_1",
-                         "ThermistorTemp_C_2", "ThermistorTemp_C_3", "ThermistorTemp_C_4", "ThermistorTemp_C_5",
-                         "ThermistorTemp_C_6", "ThermistorTemp_C_7", "ThermistorTemp_C_8", "ThermistorTemp_C_9",
-                         "ThermistorTemp_C_10","ThermistorTemp_C_11","ThermistorTemp_C_12","ThermistorTemp_C_13",
-                         "RDO_mgL_6", "RDOsat_percent_6", "RDOTemp_C_6", "RDO_mgL_13",
-                         "RDOsat_percent_13", "RDOTemp_C_13", "EXO_Date", "EXO_Time", "EXOTemp_C_1_5", "EXOCond_uScm_1_5",
-                         "EXOSpCond_uScm_1_5", "EXOTDS_mgL_1_5", "EXODOsat_percent_1_5", "EXODO_mgL_1_5", "EXOChla_RFU_1_5",
-                         "EXOChla_ugL_1_5", "EXOBGAPC_RFU_1_5", "EXOBGAPC_ugL_1_5", "EXOfDOM_RFU_1_5", "EXOfDOM_QSU_1_5",
-                         "EXO_pressure_1_5", "EXO_depth", "EXO_battery", "EXO_cablepower", "EXO_wiper", "Lvl_psi_13", "LvlTemp_C_13")
-  
-  # after maintenance, DO values will continue to be replaced by NA until DO_mgL returns within this threshold (in mg/L)
-  # of the pre-maintenance value
-  DO_RECOVERY_THRESHOLD <- 1
-  
-  # columns where certain values are stored
-  DO_MGL_COLS <- c(31, 18, 21)
-  DO_SAT_COLS <- c(30, 19, 22)
-  DO_FLAG_COLS <- c(46,47,48) 
-  
-  # depths at which DO is measured
-  DO_DEPTHS <- c(1.5, 6, 13) #these are essentially meaningless because of the drastic water level changes...
-  
-  # EXO sonde sensor data that differs from the mean by more than the standard deviation multiplied by this factor will
-  # either be replaced with NA and flagged (if between 2018-10-01 and 2019-03-01) or just flagged (otherwise)
-  EXO_FOULING_FACTOR <- 4
-  
-  # read catwalk data and maintenance log
-  # NOTE: date-times throughout this script are processed as UTC
-  catdata <- readr::read_csv(realtime_file, skip = 4, col_names = CATDATA_COL_NAMES, 
-                             col_types = readr::cols(.default = readr::col_double(), DateTime = readr::col_datetime()))
 
-  log <- readr::read_csv(maintenance_file, col_types = readr::cols(
-    .default = readr::col_character(),
-    TIMESTAMP_start = readr::col_datetime("%Y-%m-%d %H:%M:%S%*"),
-    TIMESTAMP_end = readr::col_datetime("%Y-%m-%d %H:%M:%S%*"),
-    flag = readr::col_integer()
-  ))
-  
-  # remove NaN data at beginning
-  catdata <- catdata %>% dplyr::filter(DateTime > ymd_hms("2020-08-13 11:30:00"))
-  
-  # add flag columns
-  catdata$Flag_All <- 0
-  catdata$Flag_DO_1_5 <- 0
-  catdata$Flag_DO_6 <- 0
-  catdata$Flag_DO_13 <- 0
-  catdata$Flag_Chla <- 0
-  catdata$Flag_Phyco <- 0
-  catdata$Flag_TDS <- 0
-  catdata$Flag_fDOM <- 0
-  catdata$Flag_Cond <-0
-  catdata$Flag_Lvl_13 <-0
-  catdata$Flag_Temp_1 <-0
-  catdata$Flag_Temp_2 <-0
-  catdata$Flag_Temp_3 <-0
-  catdata$Flag_Temp_4 <-0
-  catdata$Flag_Temp_5 <-0
-  catdata$Flag_Temp_6 <-0
-  catdata$Flag_Temp_7 <-0
-  catdata$Flag_Temp_8 <-0
-  catdata$Flag_Temp_9 <-0
-  catdata$Flag_Temp_10 <-0
-  catdata$Flag_Temp_11 <-0
-  catdata$Flag_Temp_12 <-0
-  catdata$Flag_Temp_13 <-0
-  
-  # replace negative DO values with 0
-  catdata <- catdata %>%
-    dplyr::mutate(Flag_DO_1_5 = ifelse((! is.na(EXODO_mgL_1_5) & EXODO_mgL_1_5 < 0)
-                                       | (! is.na(EXODOsat_percent_1_5) & EXODOsat_percent_1_5 < 0), 3, Flag_DO_1_5)) %>%
-    dplyr::mutate(EXODO_mgL_1_5 = ifelse(EXODO_mgL_1_5 < 0, 0, EXODO_mgL_1_5)) %>%
-    dplyr::mutate(EXODOsat_percent_1_5 = ifelse(EXODOsat_percent_1_5 <0, 0, EXODOsat_percent_1_5))
-  
-  catdata <- catdata %>%
-    dplyr::mutate(Flag_DO_6 = ifelse((! is.na(RDO_mgL_6) & RDO_mgL_6 < 0)
-                                     | (! is.na(RDOsat_percent_6) & RDOsat_percent_6 < 0), 3, Flag_DO_6)) %>%
-    dplyr::mutate(RDO_mgL_6 = ifelse(RDO_mgL_6 < 0, 0, RDO_mgL_6)) %>%
-    dplyr::mutate(RDOsat_percent_6 = ifelse(RDOsat_percent_6 < 0, 0, RDOsat_percent_6))
-  
-  catdata <- catdata %>%
-    dplyr::mutate(Flag_DO_13 = ifelse((! is.na(RDO_mgL_13) & RDO_mgL_13 < 0)
-                                      | (! is.na(RDOsat_percent_13) & RDOsat_percent_13 < 0), 3, Flag_DO_13)) %>%
-    dplyr::mutate(RDO_mgL_13 = ifelse(RDO_mgL_13 < 0, 0, RDO_mgL_13)) %>%
-    dplyr::mutate(RDOsat_percent_13 = ifelse(RDOsat_percent_13 < 0, 0, RDOsat_percent_13))
-  
-  # modify catdata based on the information in the log
-  for(i in 1:nrow(log)){
-    # get start and end time of one maintenance event
-    start <- log$TIMESTAMP_start[i]
-    end <- log$TIMESTAMP_end[i]
     
-    # get indices of columns affected by maintenance
-    if(grepl("^\\d+$", log$colnumber[i])) # single num
-    {
-      maintenance_cols <- intersect(c(2:39), as.integer(log$colnumber[i]))
-    }
-    else if(grepl("^c\\(\\s*\\d+\\s*(;\\s*\\d+\\s*)*\\)$", log$colnumber[i])) # c(x;y;...)
-    {
-      maintenance_cols <- intersect(c(2:39), as.integer(unlist(regmatches(log$colnumber[i],
-                                                                          gregexpr("\\d+", log$colnumber[i])))))
-    }
-    else if(grepl("^c\\(\\s*\\d+\\s*:\\s*\\d+\\s*\\)$", log$colnumber[i])) # c(x:y)
-    {
-      bounds <- as.integer(unlist(regmatches(log$colnumber[i], gregexpr("\\d+", log$colnumber[i]))))
-      maintenance_cols <- intersect(c(2:39), c(bounds[1]:bounds[2]))
-    }
-    else
-    {
-      warning(paste("Could not parse column colnumber in row", i, "of the maintenance log. Skipping maintenance for",
-                    "that row. The value of colnumber should be in one of three formats: a single number (\"47\"), a",
-                    "semicolon-separated list of numbers in c() (\"c(47;48;49)\"), or a range of numbers in c() (\"c(47:74)\").",
-                    "Other values (even valid calls to c()) will not be parsed properly."))
-      next
+    #bvrdata=data_file
+    #change column names
+    BVRDATA_COL_NAMES = c("DateTime", "RECORD", "CR6_Batt_V", "CR6Panel_Temp_C", "ThermistorTemp_C_1",
+                          "ThermistorTemp_C_2", "ThermistorTemp_C_3", "ThermistorTemp_C_4", "ThermistorTemp_C_5",
+                          "ThermistorTemp_C_6", "ThermistorTemp_C_7", "ThermistorTemp_C_8", "ThermistorTemp_C_9",
+                          "ThermistorTemp_C_10","ThermistorTemp_C_11","ThermistorTemp_C_12","ThermistorTemp_C_13",
+                          "RDO_mgL_6", "RDOsat_percent_6", "RDOTemp_C_6", "RDO_mgL_13",
+                          "RDOsat_percent_13", "RDOTemp_C_13", "EXO_Date", "EXO_Time", "EXOTemp_C_1_5", "EXOCond_uScm_1_5",
+                          "EXOSpCond_uScm_1_5", "EXOTDS_mgL_1_5", "EXODOsat_percent_1_5", "EXODO_mgL_1_5", "EXOChla_RFU_1_5",
+                          "EXOChla_ugL_1_5", "EXOBGAPC_RFU_1_5", "EXOBGAPC_ugL_1_5", "EXOfDOM_RFU_1_5", "EXOfDOM_QSU_1_5",
+                          "EXOTurbidity_FNU_1_5", "EXOTSS_mg_1_5","EXO_pressure_psi", "EXO_depth_m", "EXO_battery_V",
+                          "EXO_cablepower_V", "EXO_wiper_V", "Lvl_psi_13", "LvlTemp_C_13")
+    
+    
+    #Fouling factor for Chla on EXO
+    EXO_FOULING_FACTOR <- 4
+    
+    #Adjustment period of time to stabilization after cleaning in seconds
+    ADJ_PERIOD = 2*60*60 
+    
+    # read bvr catwalk data and maintenance log
+    # NOTE: date-times throughout this script are processed as UTC
+    bvrdata <- read_csv(realtime_file, skip=1, col_names = BVRDATA_COL_NAMES,
+                         col_types = cols(.default = col_double(), DateTime = col_datetime()))
+    
+  ####################################################################################################################################### 
+  #read in maintenance log
+  log <- read_csv(maintenance_file,
+                    col_types = cols(
+                      .default = col_character(),
+                      TIMESTAMP_start = col_datetime("%Y-%m-%d %H:%M:%S%*"),
+                      TIMESTAMP_end = col_datetime("%Y-%m-%d %H:%M:%S%*"),
+                      flag = col_integer()))
+    
+    #Filter out the 7 flag because it is already NAs in the dataset and not maintenance
+    log=log%>%filter(flag!=7)
+    
+    for(j in c(5:23,26:46)) { #for loop to create new columns in data frame
+      bvrdata[,paste0("Flag_",colnames(bvrdata[j]))] <- 0 #creates flag column + name of variable
+      bvrdata[c(which(is.na(bvrdata[,j]))),paste0("Flag_",colnames(bvrdata[j]))] <-7 #puts in flag 7 if value not collected
     }
     
-    # remove EXO_Date and EXO_Time columns from the list of maintenance columns, because they will be deleted later
-    maintenance_cols <- setdiff(maintenance_cols, c(21, 22))
-    
-    if(length(maintenance_cols) == 0)
-    {
-      warning(paste("Did not parse any valid data columns in row", i, "of the maintenance log. Valid columns have",
-                    "indices 2 through 39, excluding 21 and 22, which are deleted by this script. Skipping maintenance for that row."))
-      next
-    }
-    
-    # replace relevant data with NAs and set "all" flag while maintenance was in effect
-    catdata[catdata$DateTime >= start & catdata$DateTime <= end, maintenance_cols] <- NA
-    catdata[catdata$DateTime >= start & catdata$DateTime <= end, "Flag_All"] <- 1
-    
-    # if DO data was affected by maintenance, set the appropriate DO flags, and replace DO data with NAs after maintenance
-    # was in effect until value returns to within a threshold of the value when maintenance began, because the sensors take
-    # time to re-adjust to ambient conditions
-    last_row_before_maintenance <- tail(catdata %>% filter(DateTime < start), 1)
-    for(j in 1:3)
-    {
-      # if maintenance was not in effect on DO data, then skip
-      if(! (DO_MGL_COLS[j] %in% maintenance_cols | DO_SAT_COLS[j] %in% maintenance_cols))
+    # modify bvrdata based on the information in the log
+    for(i in 1:nrow(log)){
+      # get start and end time of one maintenance event
+      start <- log$TIMESTAMP_start[i]
+      end <- log$TIMESTAMP_end[i]
+      
+      
+      # get indices of columns affected by maintenance
+      if(grepl("^\\d+$", log$colnumber[i])) # single num
       {
-        next
+        maintenance_cols <- intersect(c(2:46), as.integer(log$colnumber[i]))
       }
       
-      # set the appropriate DO flag while maintenance was in effect
-      catdata[catdata$DateTime >= start & catdata$DateTime <= end, DO_FLAG_COLS[j]] <- 1
-      
-      last_DO_before_maintenance <- last_row_before_maintenance[[DO_MGL_COLS[j]]][1]
-      if(is.na(last_DO_before_maintenance))
+      else if(grepl("^c\\(\\s*\\d+\\s*(;\\s*\\d+\\s*)*\\)$", log$colnumber[i])) # c(x;y;...)
       {
-        warning(paste("For row", i, "of the maintenance log, the pre-maintenance DO value at depth", DO_DEPTHS[j],
-                      "could not be found. Not replacing DO values after the end of maintenance. This could occur because the start",
-                      "date-time for maintenance is at or before the first date-time in the data, or simply because the value was",
-                      "missing or replaced in prior maintenance."))
+        maintenance_cols <- intersect(c(2:46), as.integer(unlist(regmatches(log$colnumber[i],
+                                                                            gregexpr("\\d+", log$colnumber[i])))))
+      }
+      else if(grepl("^c\\(\\s*\\d+\\s*:\\s*\\d+\\s*\\)$", log$colnumber[i])) # c(x:y)
+      {
+        bounds <- as.integer(unlist(regmatches(log$colnumber[i], gregexpr("\\d+", log$colnumber[i]))))
+        maintenance_cols <- intersect(c(2:46), c(bounds[1]:bounds[2]))
       }
       else
       {
-        DO_recovery_time <- (catdata %>%
-                               dplyr::filter(DateTime > end &
-                                               abs(catdata[[DO_MGL_COLS[j]]] - last_DO_before_maintenance) <= DO_RECOVERY_THRESHOLD)
-        )$DateTime[1]
+        warning(paste("Could not parse column colnumber in row", i, "of the maintenance log. Skipping maintenance for",
+                      "that row. The value of colnumber should be in one of three formats: a single number (\"47\"), a",
+                      "semicolon-separated list of numbers in c() (\"c(47;48;49)\"), or a range of numbers in c() (\"c(47:74)\").",
+                      "Other values (even valid calls to c()) will not be parsed properly."))
+        next
+      }
+      
+      # remove EXO_Date and EXO_Time columns from the list of maintenance columns, because they will be deleted later
+      maintenance_cols <- setdiff(maintenance_cols, c(24, 25))
+      
+      if(length(maintenance_cols) == 0)
+      {
+        warning(paste("Did not parse any valid data columns in row", i, "of the maintenance log. Valid columns have",
+                      "indices 2 through 46, excluding 24 and 25, which are deleted by this script. Skipping maintenance for that row."))
+        next
+      }
+      
+      #index the Flag columns
+      if(grepl("^\\d+$", log$flagcol[i])) # single num
+      {
+        flag_cols <- intersect(c(47:86), as.integer(log$flagcol[i]))
         
-        # if the recovery time cannot be found, then raise a warning and replace post-maintenance DO values until the end of
-        # the file
-        if(is.na(DO_recovery_time))
-        {
-          warning(paste("For row", i, "of the maintenance log, post-maintenance DO levels at depth", DO_DEPTHS[j],
-                        "never returned within the given threshold of the pre-maintenance DO value. All post-maintenance DO values",
-                        "have been replaced with NA. This could occur because the end date-time for maintenance is at or after the",
-                        "last date-time in the data, or simply because post-maintenance levels never returned within the threshold."))
-          catdata[catdata$DateTime > end, intersect(maintenance_cols, c(DO_MGL_COLS[j], DO_SAT_COLS[j]))] <- NA
-          catdata[catdata$DateTime > end, DO_FLAG_COLS[j]] <- 1
-        }
-        else
-        {
-          catdata[catdata$DateTime > end & catdata$DateTime < DO_recovery_time,
-                  intersect(maintenance_cols, c(DO_MGL_COLS[j], DO_SAT_COLS[j]))] <- NA
-          catdata[catdata$DateTime > end & catdata$DateTime < DO_recovery_time, DO_FLAG_COLS[j]] <- 1
-        }
+      }
+      else if(grepl("^c\\(\\s*\\d+\\s*(;\\s*\\d+\\s*)*\\)$", log$flagcol[i])) # c(x;y;...)
+      {
+        flag_cols <- intersect(c(47:86), as.integer(unlist(regmatches(log$flagcol[i],
+                                                                      gregexpr("\\d+", log$flagcol[i])))))
+      }
+      
+      else if(grepl("^c\\(\\s*\\d+\\s*:\\s*\\d+\\s*\\)$", log$flagcol[i])) # c(x:y)
+      {
+        bounds_flag <- as.integer(unlist(regmatches(log$flagcol[i], gregexpr("\\d+", log$flagcol[i]))))
+        flag_cols <- intersect(c(47:86), c(bounds_flag[1]:bounds_flag[2]))
+      }
+      else
+      {
+        warning(paste("Could not parse column flagcol in row", i, "of the maintenance log. Skipping maintenance for",
+                      "that row. The value of colnumber should be in one of three formats: a single number (\"47\"), a",
+                      "semicolon-separated list of numbers in c() (\"c(47;48;49)\"), or a range of numbers in c() (\"c(47:74)\").",
+                      "Other values (even valid calls to c()) will not be parsed properly."))
+        next
+      }
+      
+      #Get the Maintenance Flag 
+      
+      flag <- log$flag[i]
+      
+      # replace relevant data with NAs and set flags while maintenance was in effect
+      if(flag!=5)
+      {
+        bvrdata[bvrdata$DateTime >= start & bvrdata$DateTime <= end, maintenance_cols] <- NA
+        bvrdata[bvrdata$DateTime >= start & bvrdata$DateTime <= end, flag_cols] <- flag
+      }
+      else
+      {
+        bvrdata[bvrdata$DateTime >= start & bvrdata$DateTime <= end, flag_cols] <- flag
+        next
+      }
+      #Add the 2 hour adjustment for DO 
+      if (log$colnumber[i]=="c(1:46)" & flag==1){
+        DO_col=c("RDO_mgL_6", "RDOsat_percent_6", "RDO_mgL_13","RDOsat_percent_13","EXODOsat_percent_1_5", "EXODO_mgL_1_5")
+        DO_flag_col=c("Flag_RDO_mgL_6", "Flag_RDOsat_percent_6", "Flag_RDO_mgL_13","Flag_RDOsat_percent_13","Flag_EXODOsat_percent_1_5", "Flag_EXODO_mgL_1_5")
+        bvrdata[bvrdata$DateTime>start&bvrdata$DateTime<(end+ADJ_PERIOD),DO_col] <- NA
+        bvrdata[bvrdata$DateTime>start&bvrdata$DateTime<(end+ADJ_PERIOD),DO_flag_col] <- flag
+      }
+      else if(log$colnumber[i] %in% c(" 18"," 19") & flag==1){
+        DO_col=c(RDO_mgL_6, RDOsat_percent_6)
+        DO_flag_col=c(Flag_RDO_mgL_6, Flag_RDOsat_percent_6)
+        bvrdata[bvrdata$DateTime>start[i]&bvrdata$DateTime<end[i]+ADJ_PERIOD,DO_col] <- NA
+        bvrdata[bvrdata$DateTime>start[i]&bvrdata$DateTime<end[i]+ADJ_PERIOD,DO_flag_col] <- flag
+        
+      }
+      else if(log$colnumber[i] %in% c(" 21"," 22") & flag==1){
+        DO_col=c(RDO_mgL_13,RDOsat_percent_13)
+        DO_flag_col=c(Flag_RDO_mgL_13,Flag_RDOsat_percent_13)
+        bvrdata[bvrdata$DateTime>start[i]&bvrdata$DateTime<end[i]+ADJ_PERIOD,DO_col] <- NA
+        bvrdata[bvrdata$DateTime>start[i]&bvrdata$DateTime<end[i]+ADJ_PERIOD,DO_flag_col] <- flag
+        
+      }
+      else if (log$colnumber[i] %in% c(" c(26:44"," 30"," 31") & flag==1){
+        DO_col=c(EXODOsat_percent_1_5, EXODO_mgL_1_5)
+        DO_flag_col=c(Flag_EXODOsat_percent_1_5, Flag_EXODO_mgL_1_5)
+        bvrdata[bvrdata$DateTime>start[i]&bvrdata$DateTime<(end[i]+ADJ_PERIOD),DO_col] <- NA
+        bvrdata[bvrdata$DateTime>start[i]&bvrdata$DateTime<(end[i]+ADJ_PERIOD),DO_flag_col] <-1
+        
+      }
+      else{
+        warning(paste("No DO to time to adjust"))
+        
       }
     }
-  }
   
-  # find EXO sonde sensor data that differs from the mean by more than the standard deviation times a given factor, and
-  # replace with NAs between October and March, due to sensor fouling
-  Chla_RFU_1_5_mean <- mean(catdata$EXOChla_RFU_1_5, na.rm = TRUE)
-  Chla_ugL_1_5_mean <- mean(catdata$EXOChla_ugL_1_5, na.rm = TRUE)
-  BGAPC_RFU_1_5_mean <- mean(catdata$EXOBGAPC_RFU_1_5, na.rm = TRUE)
-  BGAPC_ugL_1_5_mean <- mean(catdata$EXOBGAPC_ugL_1_5, na.rm = TRUE)
-  Chla_RFU_1_5_threshold <- EXO_FOULING_FACTOR * sd(catdata$EXOChla_RFU_1_5, na.rm = TRUE)
-  Chla_ugL_1_5_threshold <- EXO_FOULING_FACTOR * sd(catdata$EXOChla_ugL_1_5, na.rm = TRUE)
-  BGAPC_RFU_1_5_threshold <- EXO_FOULING_FACTOR * sd(catdata$EXOBGAPC_RFU_1_5, na.rm = TRUE)
-  BGAPC_ugL_1_5_threshold <- EXO_FOULING_FACTOR * sd(catdata$EXOBGAPC_ugL_1_5, na.rm = TRUE)
-  
-  catdata <- catdata %>%
-    dplyr::mutate(Flag_Chla = ifelse(DateTime >= ymd("2020-10-01") & DateTime < ymd("2021-03-01") &
-                                       (! is.na(EXOChla_RFU_1_5) & abs(EXOChla_RFU_1_5 - Chla_RFU_1_5_mean) > Chla_RFU_1_5_threshold |
-                                          ! is.na(EXOChla_ugL_1_5) & abs(EXOChla_ugL_1_5 - Chla_ugL_1_5_mean) > Chla_ugL_1_5_threshold),
-                                     4, Flag_Chla)) %>%
-    dplyr::mutate(Flag_Phyco = ifelse(DateTime >= ymd("2020-10-01") & DateTime < ymd("2021-03-01") &
-                                        (! is.na(EXOBGAPC_RFU_1_5) & abs(EXOBGAPC_RFU_1_5 - BGAPC_RFU_1_5_mean) > BGAPC_RFU_1_5_threshold |
-                                           ! is.na(EXOBGAPC_ugL_1_5) & abs(EXOBGAPC_ugL_1_5 - BGAPC_ugL_1_5_mean) > BGAPC_ugL_1_5_threshold),
-                                      4, Flag_Phyco)) %>%
-    dplyr::mutate(EXOChla_RFU_1_5 = ifelse(DateTime >= ymd("2020-10-01") & DateTime < ymd("2021-03-01") &
-                                             abs(EXOChla_RFU_1_5 - Chla_RFU_1_5_mean) > Chla_RFU_1_5_threshold, NA, EXOChla_RFU_1_5)) %>%
-    dplyr::mutate(EXOChla_ugL_1_5 = ifelse(DateTime >= ymd("2020-10-01") & DateTime < ymd("2021-03-01") &
-                                             abs(EXOChla_ugL_1_5 - Chla_ugL_1_5_mean) > Chla_ugL_1_5_threshold, NA, EXOChla_ugL_1_5)) %>%
-    dplyr::mutate(EXOBGAPC_RFU_1_5 = ifelse(DateTime >= ymd("2020-10-01") & DateTime < ymd("2021-03-01") &
-                                              abs(EXOBGAPC_RFU_1_5 - BGAPC_RFU_1_5_mean) > BGAPC_RFU_1_5_threshold, NA, EXOBGAPC_RFU_1_5)) %>%
-    dplyr::mutate(EXOBGAPC_ugL_1_5 = ifelse(DateTime >= ymd("2020-10-01") & DateTime < ymd("2021-03-01") &
-                                              abs(EXOBGAPC_ugL_1_5 - BGAPC_ugL_1_5_mean) > BGAPC_ugL_1_5_threshold, NA, EXOBGAPC_ugL_1_5))
-  
-  # flag EXO sonde sensor data of value above 4 * standard deviation at other times
-  catdata <- catdata %>%
-    dplyr::mutate(Flag_Phyco = ifelse(! is.na(EXOBGAPC_RFU_1_5) & abs(EXOBGAPC_RFU_1_5 - BGAPC_RFU_1_5_mean) > BGAPC_RFU_1_5_threshold |
-                                        ! is.na(EXOBGAPC_ugL_1_5) & abs(EXOBGAPC_ugL_1_5 - BGAPC_ugL_1_5_mean) > BGAPC_ugL_1_5_threshold,
-                                      5, Flag_Phyco))
-  
+  ##################################################################################################################  
+    #Set negative DO values to 0 and Flag_DO for NA values
+    bvrdata <- bvrdata %>%  #RDO at 5m
+      mutate(Flag_RDO_mgL_6 = ifelse(RDO_mgL_6 < 0 & !is.na(RDO_mgL_6) , 3, Flag_RDO_mgL_6),#Add a flag for DO<0
+             Flag_RDOsat_percent_6 = ifelse(RDOsat_percent_6 < 0 & !is.na(RDOsat_percent_6) , 3, Flag_RDOsat_percent_6),
+             RDO_mgL_6 = ifelse(RDO_mgL_6 < 0, 0, RDO_mgL_6), #Change negative to 0
+             RDOsat_percent_6 = ifelse(RDOsat_percent_6 < 0, 0, RDOsat_percent_6), #Change negative %sat to 0
+             
+             Flag_RDO_mgL_13 = ifelse(RDO_mgL_13 < 0 & !is.na(RDO_mgL_13), 3, Flag_RDO_mgL_13), #repeat for 13m
+             Flag_RDOsat_percent_13 = ifelse(RDOsat_percent_13 < 0 & !is.na(RDOsat_percent_13) , 3, Flag_RDOsat_percent_13),
+             RDO_mgL_13 = ifelse(RDO_mgL_13 < 0, 0, RDO_mgL_13),
+             RDOsat_percent_13 = ifelse(RDOsat_percent_13 < 0, 0, RDOsat_percent_13),
+             
+             Flag_EXODO_mgL_1_5 = ifelse(EXODO_mgL_1_5 < 0 & !is.na(EXODO_mgL_1_5), 3, Flag_EXODO_mgL_1_5), #and for 1m
+             Flag_EXODOsat_percent_1_5 = ifelse(EXODOsat_percent_1_5 < 0 & !is.na(EXODOsat_percent_1_5) , 3, Flag_EXODOsat_percent_1_5),
+             EXODO_mgL_1_5 = ifelse(EXODO_mgL_1_5 < 0, 0, EXODO_mgL_1_5),
+             EXODOsat_percent_1_5 = ifelse(EXODOsat_percent_1_5 <0, 0, EXODOsat_percent_1_5)
+      )
+    
+    ########################################################################################################################  
+    # find chla and phyo on the EXO sonde sensor data that differs from the mean by more than the standard deviation times a given factor, and
+    # replace with NAs between October 2018 and March 2019, due to sensor fouling
+    Chla_RFU_1_5_mean <- mean(bvrdata$EXOChla_RFU_1_5, na.rm = TRUE)
+    Chla_ugL_1_5_mean <- mean(bvrdata$EXOChla_ugL_1_5, na.rm = TRUE)
+    BGAPC_RFU_1_5_mean <- mean(bvrdata$EXOBGAPC_RFU_1_5, na.rm = TRUE)
+    BGAPC_ugL_1_5_mean <- mean(bvrdata$EXOBGAPC_ugL_1_5, na.rm = TRUE)
+    Chla_RFU_1_5_threshold <- EXO_FOULING_FACTOR * sd(bvrdata$EXOChla_RFU_1_5, na.rm = TRUE)
+    Chla_ugL_1_5_threshold <- EXO_FOULING_FACTOR * sd(bvrdata$EXOChla_ugL_1_5, na.rm = TRUE)
+    BGAPC_RFU_1_5_threshold <- EXO_FOULING_FACTOR * sd(bvrdata$EXOBGAPC_RFU_1_5, na.rm = TRUE)
+    BGAPC_ugL_1_5_threshold <- EXO_FOULING_FACTOR * sd(bvrdata$EXOBGAPC_ugL_1_5, na.rm = TRUE)
+    
+    
+    # QAQC on major chl outliers using DWH's method: datapoint set to NA if data is greater than 4*sd different from both previous and following datapoint
+    bvrdata <- bvrdata %>% 
+      mutate(Chla_ugL = lag(EXOChla_ugL_1_5, 0),
+             Chla_ugL_lag1 = lag(EXOChla_ugL_1_5, 1),
+             Chla_ugL_lead1 = lead(EXOChla_ugL_1_5, 1)) %>%  #These mutates create columns for current fDOM, fDOM before and fDOM after. These are used to run ifelse QAQC loops
+      mutate(Flag_EXOChla_ugL_1_5 = ifelse(Chla_ugL < 0 & !is.na(Chla_ugL), 3, Flag_EXOChla_ugL_1_5)) %>% 
+      mutate(EXOChla_ugL_1_5 = ifelse(Chla_ugL < 0 & !is.na(Chla_ugL), 0, EXOChla_ugL_1_5)) %>% 
+      mutate(EXOChla_ugL_1_5 = ifelse((abs(Chla_ugL_lag1 - Chla_ugL) > (Chla_ugL_1_5_threshold))  & (abs(Chla_ugL_lead1 - Chla_ugL) > (Chla_ugL_1_5_threshold) & !is.na(Chla_ugL)), 
+                                      NA, EXOChla_ugL_1_5)) %>%   
+      mutate(Flag_EXOChla_ugL_1_5 = ifelse((abs(Chla_ugL_lag1 - Chla_ugL) > (Chla_ugL_1_5_threshold))  & (abs(Chla_ugL_lead1 - Chla_ugL) > (Chla_ugL_1_5_threshold)) & !is.na(Chla_ugL), 
+                                           2, Flag_EXOChla_ugL_1_5)) %>%
+      mutate(Flag_EXOChla_ugL_1_5 = ifelse(is.na(Flag_EXOChla_ugL_1_5), 2, Flag_EXOChla_ugL_1_5))%>%
+      select(-Chla_ugL, -Chla_ugL_lag1, -Chla_ugL_lead1)
+    
+    #Chla_RFU QAQC
+    bvrdata <- bvrdata %>% 
+      mutate(Chla_RFU = lag(EXOChla_RFU_1_5, 0),
+             Chla_RFU_lag1 = lag(EXOChla_RFU_1_5, 1),
+             Chla_RFU_lead1 = lead(EXOChla_RFU_1_5, 1)) %>%  #These mutates create columns for current fDOM, fDOM before and fDOM after. These are used to run ifelse QAQC loops
+      mutate(Flag_EXOChla_RFU_1_5 = ifelse(Chla_RFU < 0 & !is.na(Chla_RFU), 3, Flag_EXOChla_RFU_1_5)) %>% 
+      mutate(EXOChla_RFU_1_5 = ifelse(Chla_RFU < 0 & !is.na(Chla_RFU), 0, EXOChla_RFU_1_5)) %>% 
+      mutate(EXOChla_RFU_1_5 = ifelse((abs(Chla_RFU_lag1 - Chla_RFU) > (Chla_RFU_1_5_threshold))  & (abs(Chla_RFU_lead1 - Chla_RFU) > (Chla_RFU_1_5_threshold) & !is.na(Chla_RFU)), 
+                                      NA, EXOChla_RFU_1_5)) %>%   
+      mutate(Flag_EXOChla_RFU_1_5 = ifelse((abs(Chla_RFU_lag1 - Chla_RFU) > (Chla_RFU_1_5_threshold))  & (abs(Chla_RFU_lead1 - Chla_RFU) > (Chla_RFU_1_5_threshold)) & !is.na(Chla_RFU), 
+                                           2, Flag_EXOChla_RFU_1_5)) %>%
+      mutate(Flag_EXOChla_RFU_1_5 = ifelse(is.na(Flag_EXOChla_RFU_1_5), 2, Flag_EXOChla_RFU_1_5))%>%
+      select(-Chla_RFU, -Chla_RFU_lag1, -Chla_RFU_lead1)
+    # QAQC on major chl outliers using DWH's method: datapoint set to NA if data is greater than 4*sd different from both previous and following datapoint
+    bvrdata <- bvrdata %>% 
+      mutate(phyco_ugL = lag(EXOBGAPC_ugL_1_5, 0),
+             phyco_ugL_lag1 = lag(EXOBGAPC_ugL_1_5, 1),
+             phyco_ugL_lead1 = lead(EXOBGAPC_ugL_1_5, 1)) %>%  #These mutates create columns for current fDOM, fDOM before and fDOM after. These are used to run ifelse QAQC loops
+      mutate(Flag_EXOBGAPC_ugL_1_5 = ifelse(phyco_ugL < 0 & !is.na(phyco_ugL), 3, Flag_EXOBGAPC_ugL_1_5)) %>% 
+      mutate(EXOBGAPC_ugL_1_5 = ifelse(phyco_ugL < 0 & !is.na(phyco_ugL), 0, EXOBGAPC_ugL_1_5)) %>% 
+      mutate(EXOBGAPC_ugL_1_5 = ifelse((abs(phyco_ugL_lag1 - phyco_ugL) > (BGAPC_ugL_1_5_threshold))  & (abs(phyco_ugL_lead1 - phyco_ugL) > (BGAPC_ugL_1_5_threshold) & !is.na(phyco_ugL)), 
+                                       NA, EXOBGAPC_ugL_1_5)) %>%   
+      mutate(Flag_EXOBGAPC_ugL_1_5 = ifelse((abs(phyco_ugL_lag1 - phyco_ugL) > (BGAPC_ugL_1_5_threshold))  & (abs(phyco_ugL_lead1 - phyco_ugL) > (BGAPC_ugL_1_5_threshold) & !is.na(phyco_ugL)), 
+                                            2, Flag_EXOBGAPC_ugL_1_5)) %>%
+      mutate(Flag_EXOBGAPC_ugL_1_5 = ifelse(is.na(Flag_EXOBGAPC_ugL_1_5),2,Flag_EXOBGAPC_ugL_1_5))%>%
+      select(-phyco_ugL, -phyco_ugL_lag1, -phyco_ugL_lead1)
+    
+    #Phyco QAQC for RFU
+    bvrdata <- bvrdata %>% 
+      mutate(phyco_RFU = lag(EXOBGAPC_RFU_1_5, 0),
+             phyco_RFU_lag1 = lag(EXOBGAPC_RFU_1_5, 1),
+             phyco_RFU_lead1 = lead(EXOBGAPC_RFU_1_5, 1)) %>%  #These mutates create columns for current fDOM, fDOM before and fDOM after. These are used to run ifelse QAQC loops
+      mutate(Flag_EXOBGAPC_RFU_1_5 = ifelse(phyco_RFU < 0 & !is.na(phyco_RFU), 3, Flag_EXOBGAPC_RFU_1_5)) %>% 
+      mutate(EXOBGAPC_RFU_1_5 = ifelse(phyco_RFU < 0 & !is.na(phyco_RFU), 0, EXOBGAPC_RFU_1_5)) %>% 
+      mutate(EXOBGAPC_RFU_1_5 = ifelse((abs(phyco_RFU_lag1 - phyco_RFU) > (BGAPC_RFU_1_5_threshold))  & (abs(phyco_RFU_lead1 - phyco_RFU) > (BGAPC_RFU_1_5_threshold) & !is.na(phyco_RFU)), 
+                                       NA, EXOBGAPC_RFU_1_5)) %>%   
+      mutate(Flag_EXOBGAPC_RFU_1_5 = ifelse((abs(phyco_RFU_lag1 - phyco_RFU) > (BGAPC_RFU_1_5_threshold))  & (abs(phyco_RFU_lead1 - phyco_RFU) > (BGAPC_RFU_1_5_threshold) & !is.na(phyco_RFU)), 
+                                            2, Flag_EXOBGAPC_RFU_1_5)) %>%
+      mutate(Flag_EXOBGAPC_RFU_1_5 = ifelse(is.na(Flag_EXOBGAPC_RFU_1_5),2,Flag_EXOBGAPC_RFU_1_5))%>%
+      select(-phyco_RFU, -phyco_RFU_lag1, -phyco_RFU_lead1)
+    
+    
+    
+    # flag EXO sonde sensor data of value above 4 * standard deviation at other times but leave them in the dataset
+    bvrdata <- bvrdata %>%
+      mutate(Flag_EXOBGAPC_RFU_1_5 = ifelse(! is.na(EXOBGAPC_RFU_1_5) & abs(EXOBGAPC_RFU_1_5 - BGAPC_RFU_1_5_mean) > BGAPC_RFU_1_5_threshold,
+                                            5, Flag_EXOBGAPC_RFU_1_5)) %>%
+      mutate(Flag_EXOBGAPC_ugL_1_5 = ifelse( ! is.na(EXOBGAPC_ugL_1_5) & abs(EXOBGAPC_ugL_1_5 - BGAPC_ugL_1_5_mean) > BGAPC_ugL_1_5_threshold,
+                                             5, Flag_EXOBGAPC_ugL_1_5)) %>%
+      mutate(Flag_EXOChla_RFU_1_5 = ifelse(! is.na(EXOChla_RFU_1_5) & abs(EXOChla_RFU_1_5 - Chla_RFU_1_5_mean) > Chla_RFU_1_5_threshold,
+                                           5, Flag_EXOChla_RFU_1_5)) %>%
+      mutate(Flag_EXOChla_ugL_1_5 = ifelse(! is.na(EXOChla_ugL_1_5) & abs(EXOChla_ugL_1_5 - Chla_ugL_1_5_mean) > Chla_ugL_1_5_threshold,
+                                           5, Flag_EXOChla_ugL_1_5)) 
+    
+    
+    
+    ####################################################################################################################################  
+    # fdom qaqc----
+    # QAQC from DWH to remove major outliers from fDOM data that are 2 sd's greater than the previous and following datapoint
+    sd_fDOM_QSU <- sd(bvrdata$EXOfDOM_QSU_1_5, na.rm = TRUE) #deteriming the standard deviation of fDOM data 
+    sd_fDOM_RFU <- sd(bvrdata$EXOfDOM_RFU_1_5, na.rm = TRUE)
+    mean_fDOM_QSU <- mean(bvrdata$EXOfDOM_QSU_1_5, na.rm = TRUE) #deteriming the standard deviation of fDOM data 
+    mean_fDOM_RFU <- mean(bvrdata$EXOfDOM_RFU_1_5, na.rm = TRUE)
+    
+    #fDOM QSU QAQC
+    bvrdata <- bvrdata%>% 
+      #mutate(Flag_fDOM = ifelse(is.na(EXOfDOM_QSU_1_5), 1, 0)) #This creates Flag column for fDOM data, setting all NA's going into QAQC as 1 for missing data, and to 0 for the rest
+      mutate(fDOM_QSU = lag(EXOfDOM_QSU_1_5, 0),
+             fDOM_QSU_lag1 = lag(EXOfDOM_QSU_1_5, 1),
+             fDOM_QSU_lead1 = lead(EXOfDOM_QSU_1_5, 1)) %>%  #These mutates create columns for current fDOM_QSU, fDOM before and fDOM after. These are used to run ifelse QAQC loops
+      mutate(Flag_EXOfDOM_QSU_1_5 = ifelse(fDOM_QSU < 0 & !is.na(fDOM_QSU), 3, Flag_EXOfDOM_QSU_1_5),
+             EXOfDOM_QSU_1_5 = ifelse(fDOM_QSU < 0 & !is.na(fDOM_QSU), 0, EXOfDOM_QSU_1_5))%>%
+      mutate(EXOfDOM_QSU_1_5 = ifelse(
+        ( abs(fDOM_QSU_lag1 - fDOM_QSU) > (2*sd_fDOM_QSU)   )  & ( abs(fDOM_QSU_lead1 - fDOM_QSU) > (2*sd_fDOM_QSU)  & !is.na(fDOM_QSU) ), NA, EXOfDOM_QSU_1_5
+      )) %>%  #QAQC to remove outliers for QSU fDOM data 
+      mutate(Flag_EXOfDOM_QSU_1_5 = ifelse(
+        ( abs(fDOM_QSU_lag1 - fDOM_QSU) > (2*sd_fDOM_QSU)   )  & ( abs(fDOM_QSU_lead1 - fDOM_QSU) > (2*sd_fDOM_QSU)  & !is.na(fDOM_QSU)  ), 2, Flag_EXOfDOM_QSU_1_5
+      ))  %>%  #QAQC to set flags for data that was set to NA after applying 2 S.D. QAQC 
+      mutate(Flag_EXOfDOM_QSU_1_5 = ifelse(is.na(Flag_EXOfDOM_QSU_1_5),2,Flag_EXOfDOM_QSU_1_5))%>%
+      select(-fDOM_QSU, -fDOM_QSU_lag1, -fDOM_QSU_lead1)#This removes the columns used to run ifelse statements since they are no longer needed.
+    
+    
+    #fDOM QSU QAQC
+    bvrdata <- bvrdata%>% 
+      #mutate(Flag_fDOM = ifelse(is.na(EXOfDOM_RFU_1_5), 1, 0)) #This creates Flag column for fDOM data, setting all NA's going into QAQC as 1 for missing data, and to 0 for the rest
+      mutate(fDOM_RFU = lag(EXOfDOM_RFU_1_5, 0),
+             fDOM_RFU_lag1 = lag(EXOfDOM_RFU_1_5, 1),
+             fDOM_RFU_lead1 = lead(EXOfDOM_RFU_1_5, 1)) %>%  #These mutates create columns for current fDOM_RFU, fDOM before and fDOM after. These are used to run ifelse QAQC loops
+      mutate(Flag_EXOfDOM_RFU_1_5 = ifelse(fDOM_RFU < 0 & !is.na(fDOM_RFU), 3, Flag_EXOfDOM_RFU_1_5),
+             EXOfDOM_RFU_1_5 = ifelse(fDOM_RFU < 0 & !is.na(fDOM_RFU), 0, EXOfDOM_RFU_1_5))%>%
+      mutate(EXOfDOM_RFU_1_5 = ifelse(
+        ( abs(fDOM_RFU_lag1 - fDOM_RFU) > (2*sd_fDOM_RFU)   )  & ( abs(fDOM_RFU_lead1 - fDOM_RFU) > (2*sd_fDOM_RFU)  & !is.na(fDOM_RFU) ), NA, EXOfDOM_RFU_1_5
+      )) %>%  #QAQC to remove outliers for RFU fDOM data 
+      mutate(Flag_EXOfDOM_RFU_1_5 = ifelse(
+        ( abs(fDOM_RFU_lag1 - fDOM_RFU) > (2*sd_fDOM_RFU)   )  & ( abs(fDOM_RFU_lead1 - fDOM_RFU) > (2*sd_fDOM_RFU)  & !is.na(fDOM_RFU)  ), 2, Flag_EXOfDOM_RFU_1_5
+      ))  %>%  #QAQC to set flags for data that was set to NA after applying 2 S.D. QAQC 
+      mutate(Flag_EXOfDOM_RFU_1_5 = ifelse(is.na(Flag_EXOfDOM_RFU_1_5),2,Flag_EXOfDOM_RFU_1_5))%>%
+      select(-fDOM_RFU, -fDOM_RFU_lag1, -fDOM_RFU_lead1)#This removes the columns used to run ifelse statements since they are no longer needed.
+    
+    # flag EXO sonde sensor data of value above 4 * standard deviation at other times but leave them in the dataset. Probably won't flag anything but for consistenacy. 
+    bvrdata <- bvrdata %>%
+      mutate(Flag_EXOfDOM_RFU_1_5 = ifelse(! is.na(EXOfDOM_RFU_1_5) & abs(EXOfDOM_RFU_1_5 - mean_fDOM_RFU) > (4*sd_fDOM_RFU),
+                                           5, Flag_EXOfDOM_RFU_1_5)) %>%
+      mutate(Flag_EXOfDOM_QSU_1_5 = ifelse( ! is.na(EXOfDOM_QSU_1_5) & abs(EXOfDOM_QSU_1_5 - mean_fDOM_QSU) > (4*sd_fDOM_QSU),
+                                            5, Flag_EXOfDOM_QSU_1_5)) 
+    
+    #####################################################################################################################################  
+    #QAQC from DWH to remove major outliers from conductity, specific conductivity and TDS data that are 2 sd's greater than the previous and following datapoint
+    sd_cond <- sd(bvrdata$EXOCond_uScm_1_5, na.rm = TRUE)
+    sd_spcond <-sd(bvrdata$EXOSpCond_uScm_1_5, na.rm = TRUE)
+    sd_TDS <- sd(bvrdata$EXOTDS_mgL_1_5, na.rm = TRUE)
+    mean_cond <- mean(bvrdata$EXOCond_uScm_1_5, na.rm = TRUE)
+    mean_spcond <-mean(bvrdata$EXOSpCond_uScm_1_5, na.rm = TRUE)
+    mean_TDS <- mean(bvrdata$EXOTDS_mgL_1_5, na.rm = TRUE)
+    
+    
+    # QAQC on major conductivity outliers using DWH's method: datapoint set to NA if data is greater than 2*sd different from both previous and following datapoint
+    #Remove any data below 1 because it is an outlier and give it a Flag Code of 2
+    bvrdata <- bvrdata %>% 
+      mutate(Cond = lag(EXOCond_uScm_1_5, 0),
+             Cond_lag1 = lag(EXOCond_uScm_1_5, 1),
+             Cond_lead1 = lead(EXOCond_uScm_1_5, 1)) %>%  #These mutates create columns for current fDOM, fDOM before and fDOM after. These are used to run ifelse QAQC loops
+      mutate(Flag_EXOCond_uScm_1_5 = ifelse(Cond < 0 & !is.na(Cond), 3, Flag_EXOCond_uScm_1_5)) %>%
+      mutate(Flag_EXOCond_uScm_1_5 = ifelse(Cond < 1 & !is.na(Cond), 2, Flag_EXOCond_uScm_1_5)) %>%#Remove any points less than 1
+      mutate(EXOCond_uScm_1_5 = ifelse(Cond < 0 & !is.na(Cond), 0, EXOCond_uScm_1_5)) %>%
+      mutate(EXOCond_uScm_1_5 = ifelse(Cond < 1 & !is.na(Cond), NA, EXOCond_uScm_1_5)) %>%
+      mutate(EXOCond_uScm_1_5 = ifelse((abs(Cond_lag1 - Cond) > (2*sd_cond))  & (abs(Cond_lead1 - Cond) > (2*sd_cond) & !is.na(Cond)), 
+                                       NA, EXOCond_uScm_1_5)) %>%   
+      mutate(Flag_EXOCond_uScm_1_5 = ifelse((abs(Cond_lag1 - Cond) > (2*sd_cond))  & (abs(Cond_lead1 - Cond) > (2*sd_cond) & !is.na(Cond)), 
+                                            2, Flag_EXOCond_uScm_1_5)) %>%
+      mutate(Flag_EXOCond_uScm_1_5 = ifelse(is.na(Flag_EXOCond_uScm_1_5),2,Flag_EXOCond_uScm_1_5))%>%
+      select(-Cond, -Cond_lag1, -Cond_lead1)
+    
+    # QAQC on major Specific conductivity outliers using DWH's method: datapoint set to NA if data is greater than 2*sd different from both previous and following datapoint
+    #Remove any data below 1 because it is an outlier and give it a Flag Code of 2
+    bvrdata <- bvrdata %>% 
+      mutate(SpCond = lag(EXOSpCond_uScm_1_5, 0),
+             SpCond_lag1 = lag(EXOSpCond_uScm_1_5, 1),
+             SpCond_lead1 = lead(EXOSpCond_uScm_1_5, 1)) %>%  #These mutates create columns for current fDOM, fDOM before and fDOM after. These are used to run ifelse QAQC loops
+      mutate(Flag_EXOSpCond_uScm_1_5 = ifelse(SpCond < 0 & !is.na(SpCond), 3, Flag_EXOSpCond_uScm_1_5)) %>% 
+      mutate(Flag_EXOSpCond_uScm_1_5 = ifelse(SpCond < 1 & !is.na(SpCond), 2, Flag_EXOSpCond_uScm_1_5)) %>%
+      mutate(EXOSpCond_uScm_1_5 = ifelse(SpCond < 0 & !is.na(SpCond), 0, EXOSpCond_uScm_1_5)) %>% 
+      mutate(EXOSpCond_uScm_1_5 = ifelse(SpCond < 1 & !is.na(SpCond), NA, EXOSpCond_uScm_1_5)) %>%
+      mutate(EXOSpCond_uScm_1_5 = ifelse((abs(SpCond_lag1 - SpCond) > (2*sd_spcond))  & (abs(SpCond_lead1 - SpCond) > (2*sd_spcond) & !is.na(SpCond)), 
+                                         NA, EXOSpCond_uScm_1_5)) %>%   
+      mutate(Flag_EXOSpCond_uScm_1_5 = ifelse((abs(SpCond_lag1 - SpCond) > (2*sd_spcond))  & (abs(SpCond_lead1 - SpCond) > (2*sd_spcond)) & !is.na(SpCond), 
+                                              2, Flag_EXOSpCond_uScm_1_5)) %>% 
+      mutate(Flag_EXOSpCond_uScm_1_5 = ifelse(is.na(Flag_EXOSpCond_uScm_1_5),2,Flag_EXOSpCond_uScm_1_5))%>%
+      select(-SpCond, -SpCond_lag1, -SpCond_lead1)
+    
+    # QAQC on major TDS outliers using DWH's method: datapoint set to NA if data is greater than 2*sd different from both previous and following datapoint
+    #Remove any data below 1 because it is an outlier and give it a Flag Code of 2
+    bvrdata <- bvrdata %>% 
+      mutate(TDS = lag(EXOTDS_mgL_1_5, 0),
+             TDS_lag1 = lag(EXOTDS_mgL_1_5, 1),
+             TDS_lead1 = lead(EXOTDS_mgL_1_5, 1)) %>%  #These mutates create columns for current fDOM, fDOM before and fDOM after. These are used to run ifelse QAQC loops
+      mutate(Flag_EXOTDS_mgL_1_5 = ifelse(TDS < 0 & !is.na(TDS), 3, Flag_EXOTDS_mgL_1_5)) %>% 
+      mutate(Flag_EXOTDS_mgL_1_5 = ifelse(TDS < 1 & !is.na(TDS), 2, Flag_EXOTDS_mgL_1_5)) %>%
+      mutate(EXOTDS_mgL_1_5 = ifelse(TDS < 0 & !is.na(TDS), 0, EXOTDS_mgL_1_5)) %>%
+      mutate(EXOTDS_mgL_1_5 = ifelse(TDS < 1 & !is.na(TDS), NA, EXOTDS_mgL_1_5)) %>% 
+      mutate(EXOTDS_mgL_1_5 = ifelse((abs(TDS_lag1 - TDS) > (2*sd_TDS))  & (abs(TDS_lead1 - TDS) > (2*sd_TDS) & !is.na(TDS)), 
+                                     NA, EXOTDS_mgL_1_5)) %>%   
+      mutate(Flag_EXOTDS_mgL_1_5 = ifelse((abs(TDS_lag1 - TDS) > (2*sd_TDS))  & (abs(TDS_lead1 - TDS) > (2*sd_TDS)) & !is.na(TDS), 
+                                          2, Flag_EXOTDS_mgL_1_5)) %>% 
+      mutate(Flag_EXOTDS_mgL_1_5 = ifelse(is.na(Flag_EXOTDS_mgL_1_5),2,Flag_EXOTDS_mgL_1_5))%>%
+      select(-TDS, -TDS_lag1, -TDS_lead1)
+    
+    # flag EXO sonde sensor data of value above 4 * standard deviation at other times but leave them in the dataset. Probably won't flag anything but for consistenacy. 
+    bvrdata <- bvrdata %>%
+      mutate(Flag_EXOCond_uScm_1_5 = ifelse(! is.na(EXOCond_uScm_1_5) & abs(EXOCond_uScm_1_5 - mean_cond) > (4*sd_cond),
+                                            5, Flag_EXOCond_uScm_1_5)) %>%
+      mutate(Flag_EXOSpCond_uScm_1_5 = ifelse( ! is.na(EXOSpCond_uScm_1_5) & abs(EXOSpCond_uScm_1_5 - mean_spcond) > (4*sd_spcond),
+                                               5, Flag_EXOSpCond_uScm_1_5)) %>%
+      mutate(Flag_EXOTDS_mgL_1_5 = ifelse( ! is.na(EXOTDS_mgL_1_5) & abs(EXOTDS_mgL_1_5 - mean_TDS) > (4*sd_TDS),
+                                           5, Flag_EXOTDS_mgL_1_5)) 
+    ##################################################################################################################################### 
+    #QAQC for Turbidity and Total Suspended Solids
+    
+    sd_Turbidity_FNU <- sd(bvrdata$EXOTurbidity_FNU_1_5, na.rm = TRUE) #deteriming the standard deviation of fDOM data 
+    sd_TSS_mg <- sd(bvrdata$EXOTSS_mg_1_5, na.rm = TRUE)
+    mean_Turbidity_FNU <- mean(bvrdata$EXOTurbidity_FNU_1_5, na.rm = TRUE) #deteriming the standard deviation of fDOM data 
+    mean_TSS_mg <- mean(bvrdata$EXOTSS_mg_1_5, na.rm = TRUE)
+    
+    #Turbidity FNU QAQC
+    bvrdata <- bvrdata%>% 
+      #mutate(Flag_fDOM = ifelse(is.na(EXOTurbidity_FNU_1_5), 1, 0)) #This creates Flag column for fDOM data, setting all NA's going into QAQC as 1 for missing data, and to 0 for the rest
+      mutate(Turbidity_FNU = lag(EXOTurbidity_FNU_1_5, 0),
+             Turbidity_FNU_lag1 = lag(EXOTurbidity_FNU_1_5, 1),
+             Turbidity_FNU_lead1 = lead(EXOTurbidity_FNU_1_5, 1)) %>%  #These mutates create columns for current Turbidity_FNU, fDOM before and fDOM after. These are used to run ifelse QAQC loops
+      mutate(Flag_EXOTurbidity_FNU_1_5 = ifelse(Turbidity_FNU < 0 & !is.na(Turbidity_FNU), 3, Flag_EXOTurbidity_FNU_1_5),
+             EXOTurbidity_FNU_1_5 = ifelse(Turbidity_FNU < 0 & !is.na(Turbidity_FNU), 0, EXOTurbidity_FNU_1_5))%>%
+      mutate(EXOTurbidity_FNU_1_5 = ifelse(
+        ( abs(Turbidity_FNU_lag1 - Turbidity_FNU) > (2*sd_Turbidity_FNU)   )  & ( abs(Turbidity_FNU_lead1 - Turbidity_FNU) > (2*sd_Turbidity_FNU)  & !is.na(Turbidity_FNU) ), NA, EXOTurbidity_FNU_1_5
+      )) %>%  #QAQC to remove outliers for QSU fDOM data 
+      mutate(Flag_EXOTurbidity_FNU_1_5 = ifelse(
+        ( abs(Turbidity_FNU_lag1 - Turbidity_FNU) > (2*sd_Turbidity_FNU)   )  & ( abs(Turbidity_FNU_lead1 - Turbidity_FNU) > (2*sd_Turbidity_FNU)  & !is.na(Turbidity_FNU)  ), 2, Flag_EXOTurbidity_FNU_1_5
+      ))  %>%  #QAQC to set flags for data that was set to NA after applying 2 S.D. QAQC 
+      mutate(Flag_EXOTurbidity_FNU_1_5 = ifelse(is.na(Flag_EXOTurbidity_FNU_1_5),2,Flag_EXOTurbidity_FNU_1_5))%>%
+      select(-Turbidity_FNU, -Turbidity_FNU_lag1, -Turbidity_FNU_lead1)#This removes the columns used to run ifelse statements since they are no longer needed.
+    
+    
+    #TSS mgL QAQC
+    bvrdata <- bvrdata%>% 
+      #mutate(Flag_fDOM = ifelse(is.na(EXOTSS_mg_1_5), 1, 0)) #This creates Flag column for fDOM data, setting all NA's going into QAQC as 1 for missing data, and to 0 for the rest
+      mutate(TSS_mg = lag(EXOTSS_mg_1_5, 0),
+             TSS_mg_lag1 = lag(EXOTSS_mg_1_5, 1),
+             TSS_mg_lead1 = lead(EXOTSS_mg_1_5, 1)) %>%  #These mutates create columns for current TSS_mg, fDOM before and fDOM after. These are used to run ifelse QAQC loops
+      mutate(Flag_EXOTSS_mg_1_5 = ifelse(TSS_mg < 0 & !is.na(TSS_mg), 3, Flag_EXOTSS_mg_1_5),
+             EXOTSS_mg_1_5 = ifelse(TSS_mg < 0 & !is.na(TSS_mg), 0, EXOTSS_mg_1_5))%>%
+      mutate(EXOTSS_mg_1_5 = ifelse(
+        ( abs(TSS_mg_lag1 - TSS_mg) > (2*sd_TSS_mg)   )  & ( abs(TSS_mg_lead1 - TSS_mg) > (2*sd_TSS_mg)  & !is.na(TSS_mg) ), NA, EXOTSS_mg_1_5
+      )) %>%  #QAQC to remove outliers for RFU fDOM data 
+      mutate(Flag_EXOTSS_mg_1_5 = ifelse(
+        ( abs(TSS_mg_lag1 - TSS_mg) > (2*sd_TSS_mg)   )  & ( abs(TSS_mg_lead1 - TSS_mg) > (2*sd_TSS_mg)  & !is.na(TSS_mg)  ), 2, Flag_EXOTSS_mg_1_5
+      ))  %>%  #QAQC to set flags for data that was set to NA after applying 2 S.D. QAQC 
+      mutate(Flag_EXOTSS_mg_1_5 = ifelse(is.na(Flag_EXOTSS_mg_1_5),2,Flag_EXOTSS_mg_1_5))%>%
+      select(-TSS_mg, -TSS_mg_lag1, -TSS_mg_lead1)#This removes the columns used to run ifelse statements since they are no longer needed.
+    
+    # flag EXO sonde sensor data of value above 4 * standard deviation at other times but leave them in the dataset. Probably won't flag anything but for consistenacy. 
+    bvrdata <- bvrdata %>%
+      mutate(Flag_EXOTSS_mg_1_5 = ifelse(! is.na(EXOTSS_mg_1_5) & abs(EXOTSS_mg_1_5 - mean_TSS_mg) > (4*sd_TSS_mg),
+                                         5, Flag_EXOTSS_mg_1_5)) %>%
+      mutate(Flag_EXOTurbidity_FNU_1_5 = ifelse( ! is.na(EXOTurbidity_FNU_1_5) & abs(EXOTurbidity_FNU_1_5 - mean_Turbidity_FNU) > (4*sd_Turbidity_FNU),
+                                                 5, Flag_EXOTurbidity_FNU_1_5)) 
+    
+  ########################################################################################################################### 
   #create depth column
-  #note that there are a decent amount of negative depths at 13m so unless BVR drained, this isn't the most robust method w/o additional QAQC
-  catdata=catdata%>%mutate(Depth_m_13=Lvl_psi_13*0.70455)#1psi=2.31ft, 1ft=0.305m
+  bvrdata=bvrdata%>%mutate(Depth_m_13=Lvl_psi_13*0.70455) #1psi=2.31ft, 1ft=0.305m
+    
+    #offsets from BVR
+    bvrdata=bvrdata%>%
+      mutate(
+        depth_1=Depth_m_13-11.82, #Gets depth of thermistor 1
+        depth_2=Depth_m_13-11.478, #Gets depth of thermistor 2
+        depth_3=Depth_m_13-10.47, #Gets depth of thermistor 3
+        depth_4=Depth_m_13-9.423) #Gets depth of thermistor 4. This will have to be recalculated if/when the thermistor comees out of the water. 
+    
+    
+    #change the temp to NA when the thermistor is clearly out of the water which we used to determine the depth of the temp string
+    #negative depths are changed to NA
+    #when depth is NA then the depth of the sensors can't be calculated and are set to NA
   
-  # temp qaqc ----
-  
-  #Setting the temperature to NA when the thermistors are out of the water
-  #add a depth column which we set NAs for when the thermistor is out of the water. Flag 2
-  catdata=catdata%>%
-    mutate(depth_1=1 -(13-Depth_m_13))%>%
-    mutate(depth_2=2 - (13-Depth_m_13)) %>%
-    mutate(depth_3=3 - (13-Depth_m_13)) %>%
-    mutate(depth_4=4 - (13-Depth_m_13))%>%
-    mutate(depth_5=5 - (13-Depth_m_13))
-  
-  #change the temp to NA when the thermistor is clearly out of the water which we used to determine the depth of the temp string
-  #negative depths are changed to NA
-  #the date ifelse statement is when the pressure transducer was unplugged
-  
-  #for thermistor at position 1 when it was out of the water 
-  catdata=catdata%>%
-    mutate(Flag_Temp_1= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",2,Flag_Temp_1))%>%
-    mutate(ThermistorTemp_C_1= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",NA,ThermistorTemp_C_1))%>%
-    mutate(Flag_Temp_1= ifelse(!is.na(depth_1) & depth_1<0 ,2,Flag_Temp_1))%>%
-    mutate(ThermistorTemp_C_1=ifelse(!is.na(depth_1) & depth_1<0 | is.na(Lvl_psi_13),NA,ThermistorTemp_C_1))
-  
-  
-  #for thermistor at position 2 when it was out of the water 
-  catdata=catdata%>%
-    mutate(Flag_Temp_2= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",2,Flag_Temp_2)) %>% #this is when the pressure sensor was unplugged
-    mutate(ThermistorTemp_C_2= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",NA,ThermistorTemp_C_2)) %>%
-    mutate(Flag_Temp_2= ifelse(!is.na(depth_2) & depth_2<0 ,2,Flag_Temp_2))%>%
-    mutate(ThermistorTemp_C_2=ifelse(!is.na(depth_2) & depth_2<0 | is.na(Lvl_psi_13),NA,ThermistorTemp_C_2))
-  
-  
-  #for thermistor at position 3 when it was out of the water 
-  catdata=catdata%>%
-    mutate(Flag_Temp_3= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",2,Flag_Temp_3))%>%#this is when the pressure sensor was unplugged
-    mutate(ThermistorTemp_C_3= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",NA,ThermistorTemp_C_3))%>%
-    mutate(Flag_Temp_3= ifelse(!is.na(depth_3) & depth_3<0 ,2,Flag_Temp_3))%>%
-    mutate(ThermistorTemp_C_3=ifelse(!is.na(depth_3) & depth_3<0 | is.na(Lvl_psi_13),NA,ThermistorTemp_C_3))
-  
-  #for thermistor at position 4 when it was out of the water 
-  catdata=catdata%>%
-    mutate(Flag_Temp_4= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",2,Flag_Temp_4))%>%#this is when the pressure sensor was unplugged
-    mutate(ThermistorTemp_C_4= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",NA,ThermistorTemp_C_4))%>%
-    mutate(Flag_Temp_4= ifelse(!is.na(depth_4) & depth_4<0 ,2,Flag_Temp_4))%>%
-    mutate(ThermistorTemp_C_4=ifelse(!is.na(depth_4) & depth_4<0 | is.na(Lvl_psi_13),NA,ThermistorTemp_C_4))
-  
-  #for thermistor at position 5 when it was out of the water 
-  catdata=catdata%>%
-    mutate(Flag_Temp_5= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",2,Flag_Temp_5))%>%#this is when the pressure sensor was unplugged
-    mutate(ThermistorTemp_C_5= ifelse(DateTime>="2020-10-26 12:10:00 tz=Etc/GMT+5 "&DateTime<="2020-10-30 09:40:00 tz=Etc/GMT+5",NA,ThermistorTemp_C_5))%>%
-    mutate(Flag_Temp_5= ifelse(!is.na(depth_5) & depth_5<0 ,2,Flag_Temp_5))%>%
-    mutate(ThermistorTemp_C_5=ifelse(!is.na(depth_5) & depth_5<0 | is.na(Lvl_psi_13),NA,ThermistorTemp_C_5))
-  
-  #take out the depth columns for thermisotrs 1-5 after you set the values to NA
-  catdata=catdata%>%
-    dplyr::select(-depth_1,-depth_2,-depth_3,-depth_4,-depth_5)
-  
-  catdata=catdata%>%
-    mutate(Flag_Temp_11=ifelse(DateTime<"2020-10-05 12:05:00 tz=Etc/GMT+5", 7, Flag_Temp_11))%>%
-    mutate(Flag_Temp_12=ifelse(DateTime<"2020-10-05 12:05:00 tz=Etc/GMT+5", 7, Flag_Temp_12))%>%
-    mutate(Flag_Temp_13=ifelse(DateTime<"2020-10-05 12:05:00 tz=Etc/GMT+5", 7, Flag_Temp_13))
-  
-  #add flags and set to NA 
-  catdata=catdata%>%
-    mutate(Flag_Phyco= ifelse(DateTime=="2020-08-01 12:50:00 tz=Etc/GMT+5", 5, Flag_Phyco))%>%
-    mutate(Flag_Phyco= ifelse(DateTime>="2020-10-29 10:10:00 tz=Etc/GMT+5" &DateTime<="2020-10-29 12:00:00 tz=Etc/GMT+5", 2, Flag_Phyco))%>%
-    mutate(Flag_Phyco= ifelse(DateTime=="2020-12-25 06:20:00 tz=Etc/GMT+5", 2, Flag_Phyco))%>%
-    mutate(EXOBGAPC_RFU_1_5= ifelse(DateTime>="2020-10-29 10:10:00 tz=Etc/GMT+5" &DateTime<="2020-10-29 12:00:00 tz=Etc/GMT+5", NA, EXOBGAPC_RFU_1_5))%>%
-    mutate(EXOBGAPC_ugL_1_5= ifelse(DateTime>="2020-10-29 10:10:00 tz=Etc/GMT+5" &DateTime<="2020-10-29 12:00:00 tz=Etc/GMT+5", NA, EXOBGAPC_ugL_1_5))%>%
-    mutate(EXOBGAPC_RFU_1_5= ifelse(DateTime=="2020-12-28 03:20:00 tz=Etc/GMT+5",NA, EXOBGAPC_RFU_1_5))%>%
-    mutate(EXOBGAPC_ugL_1_5= ifelse(DateTime=="2020-12-28 03:20:00 tz=Etc/GMT+5", NA, EXOBGAPC_ugL_1_5))
-  
-  #Add flags when the wire was not connected
-  catdata=catdata%>%
-    mutate(Flag_Lvl_13=ifelse(is.na(Lvl_psi_13)& DateTime>="2020-10-26 12:00:00" & DateTime<="2020-10-30 09:40:00",
-                              7, Flag_Lvl_13))
+    #for thermistor at position 1 when it was out of the water 
+    bvrdata=bvrdata%>%
+      mutate(Flag_ThermistorTemp_C_1= ifelse(is.na(Lvl_psi_13) & !is.na(ThermistorTemp_C_1) ,2,Flag_ThermistorTemp_C_1))%>%
+      mutate(ThermistorTemp_C_1= ifelse(is.na(Lvl_psi_13) & !is.na(ThermistorTemp_C_1) ,NA,ThermistorTemp_C_1))%>%
+      mutate(Flag_ThermistorTemp_C_1= ifelse(!is.na(depth_1) & depth_1<0 ,2,Flag_ThermistorTemp_C_1))%>%
+      mutate(ThermistorTemp_C_1=ifelse(!is.na(depth_1) & depth_1<0,NA,ThermistorTemp_C_1))
+    
+    
+    #for thermistor at position 2 when it was out of the water or depth is not recorded
+    bvrdata=bvrdata%>%
+      mutate(Flag_ThermistorTemp_C_2= ifelse(is.na(Lvl_psi_13) & !is.na(ThermistorTemp_C_2),2,Flag_ThermistorTemp_C_2))%>%#this is when the pressure sensor was unplugged
+      mutate(ThermistorTemp_C_2= ifelse(is.na(Lvl_psi_13) & !is.na(ThermistorTemp_C_2),NA,ThermistorTemp_C_2))%>%
+      mutate(Flag_ThermistorTemp_C_2= ifelse(!is.na(depth_2) & depth_2<0 ,2,Flag_ThermistorTemp_C_2))%>%
+      mutate(ThermistorTemp_C_2=ifelse(!is.na(depth_2) & depth_2<0,NA,ThermistorTemp_C_2))
+    
+    #for thermistor at position 3 when it was out of the water or depth is not recorded
+    bvrdata=bvrdata%>%
+      mutate(
+        Flag_ThermistorTemp_C_3= ifelse(!is.na(depth_3) & depth_3<0 ,2,Flag_ThermistorTemp_C_3),
+        ThermistorTemp_C_3=ifelse(!is.na(depth_3) & depth_3<0,NA,ThermistorTemp_C_3))
+    
+    #for thermistor at position 4 when it was out of the water 
+    bvrdata=bvrdata%>%
+      mutate(
+        Flag_ThermistorTemp_C_4= ifelse(!is.na(depth_4) & depth_4<0 ,2,Flag_ThermistorTemp_C_4),
+        ThermistorTemp_C_4=ifelse(!is.na(depth_4) & depth_4<0,NA,ThermistorTemp_C_4))
+    
+    
+    #take out the depth columns for thermisotrs depths after you set the values to NA
+    bvrdata=bvrdata%>%
+      select(-depth_1,-depth_2, -depth_3, -depth_4)
+    
+  ################################################################################################################################  
+  # delete EXO_Date and EXO_Time columns
+  bvrdata <- bvrdata %>% select(-EXO_Date, -EXO_Time)
   
   # reorder columns
-  catdata <- catdata %>% dplyr::select(-RECORD, -CR6_Batt_V, -CR6Panel_Temp_C, -Flag_All, -Flag_DO_1_5, -Flag_DO_6,
-                                       -Flag_DO_13, -Flag_Chla, -Flag_Phyco, -Flag_TDS, -EXO_wiper, -EXO_cablepower,
-                                       -EXO_battery,-EXO_pressure_1_5)
-  
-  # replace NaNs with NAs
-  catdata[is.na(catdata)] <- NA
-  
-  # convert datetimes to characters so that they are properly formatted in the output file
-  catdata$DateTime <- as.character(catdata$DateTime)
+  bvrdata <- bvrdata %>% select(DateTime, ThermistorTemp_C_1:ThermistorTemp_C_13,
+                                  RDO_mgL_6, RDOsat_percent_6,
+                                  RDOTemp_C_6, RDO_mgL_13, RDOsat_percent_13, RDOTemp_C_13,
+                                  EXOTemp_C_1_5, EXOCond_uScm_1_5, EXOSpCond_uScm_1_5, EXOTDS_mgL_1_5, EXODOsat_percent_1_5,
+                                  EXODO_mgL_1_5, EXOChla_RFU_1_5, EXOChla_ugL_1_5, EXOBGAPC_RFU_1_5, EXOBGAPC_ugL_1_5,
+                                  EXOfDOM_RFU_1_5, EXOfDOM_QSU_1_5,EXOTurbidity_FNU_1_5, EXOTSS_mg_1_5, EXO_pressure_psi, EXO_depth_m, EXO_battery_V, EXO_cablepower_V,
+                                  EXO_wiper_V, Lvl_psi_13,Depth_m_13, LvlTemp_C_13, RECORD, CR6_Batt_V, CR6Panel_Temp_C)
+    
+    # replace NaNs with NAs
+    bvrdata[is.na(bvrdata)] <- NA
+    
+    #order by date and time
+    bvrdata <- bvrdata[order(bvrdata$DateTime),]
+    
+    # convert datetimes to characters so that they are properly formatted in the output file
+    bvrdata$DateTime <- as.character(bvrdata$DateTime)
+    
   
   if(!is.na(realtime_file)){
     #Different lakes are going to have to modify this for their temperature data format
     
-    d1 <- catdata
+    d1 <- bvrdata
     
     if(!is.na(qaqc_file)){
       d2 <- read.csv(qaqc_file, na.strings = 'NA', stringsAsFactors = FALSE)
@@ -327,8 +526,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
       d2 <- d2[d2$DateTime %in% d1$DateTime,]
     }
     
-    TIMESTAMP_in <- as_datetime(d1$DateTime,tz = input_file_tz)
-    d1$TIMESTAMP <- with_tz(TIMESTAMP_in,tz = "UTC")
+    d1$TIMESTAMP <- as_datetime(d1$DateTime,tz = "UTC")
     
     d3 <-  data.frame(TIMESTAMP = d1$TIMESTAMP, 
                       wtr_1 = d1$ThermistorTemp_C_1, wtr_2 = d1$ThermistorTemp_C_2,
@@ -342,17 +540,10 @@ temp_oxy_chla_qaqc <- function(realtime_file,
                       Chla_1_5 = d1$EXOChla_ugL_1_5, doobs_1_5 = d1$EXODO_mgL_1_5,
                       doobs_6 = d1$RDO_mgL_6, doobs_13 = d1$RDO_mgL_13,
                       fDOM_1_5 = d1$EXOfDOM_QSU_1_5, bgapc_1_5 = d1$EXOBGAPC_ugL_1_5,
-                      depth_1_5 = d1$EXO_depth, Depth_m_13=d1$Depth_m_13)
+                      depth_1_5 = d1$EXO_depth_m, Depth_m_13=d1$Depth_m_13)
     
     if(!is.na(qaqc_file)){
-    #TIMESTAMP_in <- as_datetime(d2$DateTime,tz = input_file_tz)
-    d2$TIMESTAMP <- with_tz(TIMESTAMP_in,tz = "UTC") #NA
-
-    #d1 <- d1[which(d1$TIMESTAMP > d2$TIMESTAMP[nrow(d2)] | d1$TIMESTAMP < d2$TIMESTAMP[1]), ]
-
-    #d3 <- data.frame(TIMESTAMP = d1$TIMESTAMP, wtr_surf, wtr_1 = d1$wtr_1, wtr_2 = d1$wtr_2, wtr_3 = d1$wtr_3, wtr_4 = d1$wtr_4,
-    #                 wtr_5 = d1$wtr_5, wtr_6 = d1$wtr_6, wtr_7 = d1$wtr_7, wtr_8 = d1$wtr_8, wtr_9 = d1$wtr_9, wtr_10 = d1$wtr_10, wtr_11 = d1$wtr_11, 
-    #                 wtr_12 = d1$wtr_12, wtr_13 = d1$wtr_13, wtr_1_exo = d1$EXO_wtr_1, wtr_6_do = d1$dotemp_6, wtr_13_do = d1$dotemp_13)
+      d2$TIMESTAMP <- as_datetime(d2$DateTime,tz = "UTC")
 
      d4 <- data.frame(TIMESTAMP = d2$TIMESTAMP, 
                       wtr_1 = d2$ThermistorTemp_C_1, wtr_2 = d2$ThermistorTemp_C_2,
@@ -366,7 +557,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
                       Chla_1_5 = d2$EXOChla_ugL_1_5, doobs_1_5 = d2$EXODO_mgL_1_5,
                       doobs_6 = d2$RDO_mgL_6, doobs_13 = d2$RDO_mgL_13,
                       fDOM_1_5 = d2$EXOfDOM_QSU_1_5, bgapc_1_5 = d2$EXOBGAPC_ugL_1_5,
-                      depth_1_5 = d2$EXO_depth, Depth_m_13=d1$Depth_m_13)
+                      depth_1_5 = d2$EXO_depth_m, Depth_m_13=d1$Depth_m_13)
 
     d <- rbind(d3,d4)
     } else{
@@ -375,7 +566,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
     
   }else{
     #Different lakes are going to have to modify this for their temperature data format
-    d1 <- catdata
+    d1 <- bvrdata
     
     TIMESTAMP_in <- as_datetime(d1$DateTime,tz = input_file_tz)
     d1$TIMESTAMP <- with_tz(TIMESTAMP_in,tz = "UTC")
@@ -392,7 +583,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
                      Chla_1_5 = d1$EXOChla_ugL_1_5, doobs_1_5 = d1$EXODO_mgL_1_5,
                      doobs_6 = d1$RDO_mgL_6, doobs_13 = d1$RDO_mgL_13,
                      fDOM_1_5 = d1$EXOfDOM_QSU_1_5, bgapc_1_5 = d1$EXOBGAPC_ugL_1_5,
-                     depth_1_5 = d1$EXO_depth, Depth_m_13=d1$Depth_m_13)
+                     depth_1_5 = d1$EXO_depth_m, Depth_m_13=d1$Depth_m_13)
   }
   
   
@@ -407,6 +598,9 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   d$doobs_1_5 <- config_obs$exo_sensor_2_ctd_do_1_5[1]  +   d$doobs_1_5 * config_obs$exo_sensor_2_ctd_do_1[2]
   d$doobs_6 <- config_obs$do_sensor_2_ctd_do_6[1] +   d$doobs_6 * config_obs$do_sensor_2_ctd_do_6[2]
   d$doobs_13 <- config_obs$do_sensor_2_ctd_do_13[1] +   d$doobs_13 * config_obs$do_sensor_2_ctd_do_13[2]
+  
+  ######################################################################################
+  # END OF QAQC - now transform df from wide to long
   
   d <- d %>%
     dplyr::mutate(day = day(TIMESTAMP),
@@ -424,46 +618,36 @@ temp_oxy_chla_qaqc <- function(realtime_file,
     dplyr::mutate(timestamp = as_datetime(paste0(year,"-",month,"-",day," ",hour,":00:00"),tz = "UTC")) %>%
     dplyr::arrange(timestamp)
   
-  
   d_therm <- d %>%
     dplyr::select(timestamp, wtr_1, wtr_2, wtr_3, wtr_4, wtr_5, wtr_6, 
-           wtr_7,wtr_8, wtr_9, wtr_10, wtr_11, wtr_12, wtr_13, Depth_m_13) %>%
-   dplyr::rename(
-          "1.0" = wtr_1,
-          "2.0" = wtr_2,
-          "3.0" = wtr_3,
-          "4.0" = wtr_4,
-          "5.0" = wtr_5,
-          "6.0" = wtr_6,
-          "7.0" = wtr_7,
-          "8.0" = wtr_8,
-          "9.0" = wtr_9,
-          "10.0" = wtr_10,
-          "11.0" = wtr_11,
-          "12.0" = wtr_12,
-          "13.0" = wtr_13) %>%
+                  wtr_7,wtr_8, wtr_9, wtr_10, wtr_11, wtr_12, wtr_13, Depth_m_13) %>%
+    dplyr::rename(
+      "1.0" = wtr_1,
+      "2.0" = wtr_2,
+      "3.0" = wtr_3,
+      "4.0" = wtr_4,
+      "5.0" = wtr_5,
+      "6.0" = wtr_6,
+      "7.0" = wtr_7,
+      "8.0" = wtr_8,
+      "9.0" = wtr_9,
+      "10.0" = wtr_10,
+      "11.0" = wtr_11,
+      "12.0" = wtr_12,
+      "13.0" = wtr_13) %>%
     tidyr::pivot_longer(cols = -c(timestamp,Depth_m_13), names_to = "depth", values_to = "value") %>%
     dplyr::mutate(variable = "temperature",
-           method = "thermistor",
-           value = ifelse(is.nan(value), NA, value))
-
-  #dynamic depths here
-  d_therm$offset <-  13-d_therm$Depth_m_13
-  d_therm$depth <- round(as.numeric(d_therm$depth)- d_therm$offset, 2)
-
-  d_do_temp <- d %>% #need to make this dynamic too but first need to confirm the depths of the do sensors...
+                  method = "thermistor",
+                  value = ifelse(is.nan(value), NA, value))
+  
+  d_do_temp <- d %>% 
     dplyr::select(timestamp, wtr_6_do, wtr_13_do, Depth_m_13) %>%
     dplyr::rename("6.0" = wtr_6_do,
-           "13.0" = wtr_13_do) %>%
+                  "13.0" = wtr_13_do) %>%
     tidyr::pivot_longer(cols = -c(timestamp,Depth_m_13), names_to = "depth", values_to = "value") %>%
     dplyr::mutate(variable = "temperature",
-           method = "do_sensor",
-           value = ifelse(is.nan(value), NA, value))
-
-  #dynamic depths for DO temp
-  d_do_temp$offset <-  13-d_do_temp$Depth_m_13
-  d_do_temp$depth <- round(as.numeric(d_do_temp$depth)- d_do_temp$offset, 2)
-
+                  method = "do_sensor",
+                  value = ifelse(is.nan(value), NA, value))
   
   d_exo_temp <- d %>%
     dplyr::select(timestamp, wtr_1_5_exo, Depth_m_13) %>%
@@ -472,10 +656,6 @@ temp_oxy_chla_qaqc <- function(realtime_file,
     mutate(variable = "temperature",
            method = "exo_sensor",
            value = ifelse(is.nan(value), NA, value))
- #dynamic depths for exo 
-  d_exo_temp$offset <-  13-d_exo_temp$Depth_m_13
-  d_exo_temp$depth <- round(as.numeric(d_exo_temp$depth)- d_exo_temp$offset, 2)
-
   
   d_do_do <- d %>%
     dplyr::select(timestamp, doobs_6, doobs_13, Depth_m_13) %>%
@@ -486,11 +666,6 @@ temp_oxy_chla_qaqc <- function(realtime_file,
            method = "do_sensor",
            value = ifelse(is.nan(value), NA, value))
   
-
-  #dynamic depths for DO
-  d_do_do$offset <-  13-d_do_do$Depth_m_13
-  d_do_do$depth <- round(as.numeric(d_do_do$depth)- d_do_do$offset, 2)
-
   d_exo_do <- d %>%
     dplyr::select(timestamp, doobs_1_5, Depth_m_13) %>%
     rename("1.5" = doobs_1_5) %>%
@@ -498,11 +673,6 @@ temp_oxy_chla_qaqc <- function(realtime_file,
     mutate(variable = "oxygen",
            method = "exo_sensor",
            value = ifelse(is.nan(value), NA, value))
-  
-  #dynamic depths for exo DO
-  d_exo_do$offset <-  13-d_exo_do$Depth_m_13
-  d_exo_do$depth <- round(as.numeric(d_exo_do$depth)- d_exo_do$offset, 2)
-
   
   d_exo_fdom <- d %>%
     dplyr::select(timestamp, fDOM_1_5, Depth_m_13) %>%
@@ -512,11 +682,6 @@ temp_oxy_chla_qaqc <- function(realtime_file,
            method = "exo_sensor",
            value = ifelse(is.nan(value), NA, value))
   
-
-  #dynamic depths for exo fdom
-  d_exo_fdom$offset <-  13-d_exo_fdom$Depth_m_13
-  d_exo_fdom$depth <- round(as.numeric(d_exo_fdom$depth)- d_exo_fdom$offset, 2)
-
   d_exo_chla <- d %>%
     dplyr::select(timestamp, Chla_1_5, Depth_m_13) %>%
     rename("1.5" = Chla_1_5) %>%
@@ -525,10 +690,6 @@ temp_oxy_chla_qaqc <- function(realtime_file,
            method = "exo_sensor",
            value = ifelse(is.nan(value), NA, value))
   
-  #dynamic depths for exo chla
-  d_exo_chla$offset <-  13-d_exo_chla$Depth_m_13
-  d_exo_chla$depth <- round(as.numeric(d_exo_chla$depth)- d_exo_chla$offset, 2)
-
   d_exo_bgapc <- d %>%
     dplyr::select(timestamp, bgapc_1_5, Depth_m_13) %>%
     rename("1.5" = bgapc_1_5) %>%
@@ -537,29 +698,60 @@ temp_oxy_chla_qaqc <- function(realtime_file,
            method = "exo_sensor",
            value = ifelse(is.nan(value), NA, value))
   
-  #dynamic depths for exo chla
-  d_exo_bgapc$offset <-  13-d_exo_bgapc$Depth_m_13
-  d_exo_bgapc$depth <- round(as.numeric(d_exo_bgapc$depth)- d_exo_bgapc$offset, 2)
-  
   d <- rbind(d_therm,d_do_temp,d_exo_temp,d_do_do,d_exo_do,d_exo_fdom,
              d_exo_chla,d_exo_bgapc)
   
-  d <- d %>% mutate(depth = depth)
+  d <- d %>% mutate(depth = depth) 
   
-  #drop offset and 13m depth cols
-  d <- d %>% select(-c(Depth_m_13,offset))
-  
-#drop NA rows and negative depths
+  #drop NA rows and negative depths
   d <- d[!is.na(d$value),]
   
   d <- d[d$depth >=0,]
-
+  
+  ######################################################################################
+  #now read in the offset file and calculate depth for each sensor/position
+  offsets <- read_csv(offset_file) %>% select(-c(Reservoir,Site))
+  
+  #make depth numeric so it matches offset position col
+  d$depth <- as.numeric(d$depth)
+  
+  #rename depth to position for left_join
+  names(d)[3] <- "Position"
+  
+  #add in offsets to df
+  bvr_depths <- left_join(d, offsets)
+  
+  # The pressure sensor was moved to be in line with the bottom thermistor. The top two thermistors has slid closer to each other
+  # and were re-secured about a meter a part from each other. Because of this we need to filter before 2021-04-05 13:20:00 EST
+  # and after. The top two thermistors exact offset will have to be determined again when the water level is high enough again. 
+  bvr_pre_05APR21=bvr_depths%>%
+    filter(timestamp<="2021-04-05 13:20")%>%
+    mutate(Sensor_depth=Depth_m_13-Offset_before_05APR21)%>% #this gives you the depth of the thermistors from the surface
+    mutate(depth=round_any(Sensor_depth, 0.1))#Round to the nearest tenth 
+  
+  bvr_post_05APR21=bvr_depths%>%
+    filter(timestamp>"2021-04-05 13:20")%>%
+    mutate(Sensor_depth=Depth_m_13-Offset_after_05APR21)%>% #this gives you the depth of the thermistor from the surface
+    mutate(depth=round_any(Sensor_depth, 0.1)) #Round to the nearest tenth 
+  
+  # combine the pre April 5th and the post April 5th. Drop if the values are NA. Drop if the sensor depth is NA because can't
+  # figure out the depth of the sensors. This will give you a depth for each sensor reading. 
+  bvr_by_depth=bvr_pre_05APR21%>%
+    rbind(.,bvr_post_05APR21)%>%
+    filter(!is.na(value))%>%
+    filter(!is.na(depth))%>%
+    select(-Offset_before_05APR21, -Offset_after_05APR21, -Distance_above_sediments, -Depth_m_13, -Sensor_depth, -Position)
+  
+  #drop NA rows and negative depths
+  bvr_by_depth <- bvr_by_depth[!is.na(bvr_by_depth$value),]
+  
+  bvr_by_depth <- bvr_by_depth[bvr_by_depth$depth >=0,]
+  
   #rename 0 depth to be 0.1
-  d$depth[d$depth == 0] <- 0.1
-
+  bvr_by_depth$depth[bvr_by_depth$depth == 0] <- 0.1
   
   # write to output file
-  return(d)
+  return(bvr_by_depth)
 }
 
 
@@ -569,7 +761,25 @@ temp_oxy_chla_qaqc <- function(realtime_file,
 #points(d$timestamp[d$variable=="oxygen" & d$depth=="13.0"], d$value[d$variable=="oxygen"& d$depth=="13.0"],col="mediumseagreen",type="l")
 #legend("bottomright", legend=c("1m", "6m", "13m"), text.col=c("magenta","black","mediumseagreen"), bty='n')
 
+# ###Prep RemoveMet for final file version
+# 
+#   names(log)=c("Station", "DateTime_start","DateTime_end", "Parameter", "ColumnNumber", "Flag", "Notes")
+#   
+#   log=log%>%
+#   mutate(Reservoir="BVR")%>%
+#   mutate(Site=50)%>%
+#   mutate(Station="BVR_sensor_string")%>%
+#   select(Reservoir, Site, Station, DateTime_start, DateTime_end, Parameter, ColumnNumber, Flag, Notes)
+# 
+# 
+# write.csv(log, output2_file, row.names = FALSE, quote=FALSE)
+
+
 # example usage
-# qaqc("https://raw.githubusercontent.com/CareyLabVT/SCCData/mia-data/Catwalk.csv",
-#      "https://raw.githubusercontent.com/CareyLabVT/SCCData/mia-data/CAT_MaintenanceLog.txt",
-#      "Catwalk.csv")
+
+
+#qaqc('https://github.com/FLARE-forecast/BVRE-data/raw/bvre-platform-data/BVRplatform.csv',
+#      'https://raw.githubusercontent.com/CareyLabVT/ManualDownloadsSCCData/master/BVRplatform_manual_2020.csv',
+#      "https://raw.githubusercontent.com/FLARE-forecast/BVRE-data/bvre-platform-data/BVR_maintenance_log.txt",
+#       "BVRplatform_clean.csv", 
+#     "BVR_Maintenance_2020.csv")
