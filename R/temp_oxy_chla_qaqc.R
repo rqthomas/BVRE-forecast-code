@@ -1,5 +1,5 @@
 # Install packages
-#pacman::p_load(tidyverse,lubridate, plotly,plyr)
+pacman::p_load(tidyverse,lubridate, plotly, dplyr)
 
 temp_oxy_chla_qaqc <- function(realtime_file,
                                qaqc_file,
@@ -721,6 +721,9 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   #add in offsets to df
   bvr_depths <- left_join(d, offsets)
   
+  #load plotly for this section only 
+  library(plyr)
+  
   # The pressure sensor was moved to be in line with the bottom thermistor. The top two thermistors has slid closer to each other
   # and were re-secured about a meter a part from each other. Because of this we need to filter before 2021-04-05 13:20:00 EST
   # and after. The top two thermistors exact offset will have to be determined again when the water level is high enough again. 
@@ -733,6 +736,9 @@ temp_oxy_chla_qaqc <- function(realtime_file,
     filter(timestamp>"2021-04-05 13:20")%>%
     mutate(Sensor_depth=Depth_m_13-Offset_after_05APR21)%>% #this gives you the depth of the thermistor from the surface
     mutate(depth=round_any(Sensor_depth, 0.1)) #Round to the nearest tenth 
+  
+  #unload plotly becuase it messes w/ dplyr
+  detach("package:plyr", unload = TRUE)
   
   # combine the pre April 5th and the post April 5th. Drop if the values are NA. Drop if the sensor depth is NA because can't
   # figure out the depth of the sensors. This will give you a depth for each sensor reading. 

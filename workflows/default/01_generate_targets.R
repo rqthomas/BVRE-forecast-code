@@ -138,7 +138,7 @@ message("Successfully generated targets")
 
 FLAREr::put_targets(site_id = config_obs$site_id,
                     cleaned_insitu_file,
-                    use_s3 = TRUE)
+                    use_s3 = FALSE)
 
 message("Successfully moved targets to s3 bucket")
 

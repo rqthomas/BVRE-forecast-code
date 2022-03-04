@@ -1,0 +1,7 @@
+"residuum weathered from granite and gneiss"|Yes|"22004002"|"16182861"
+"residuum weathered from granite and gneiss"|Yes|"22004005"|"16182864"
+"residuum weathered from granite and gneiss"|Yes|"22004006"|"16182865"
+"residuum weathered from granite and gneiss"|Yes|"22004007"|"16182866"
+"residuum weathered from granite and gneiss"|Yes|"22004017"|"16182876"
+"residuum weathered from granite and gneiss"|Yes|"22004018"|"16182877"
+"colluvium"|Yes|"22004025"|"16182884"

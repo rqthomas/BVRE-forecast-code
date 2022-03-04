@@ -72,13 +72,10 @@ plot_and_save <- function (file_name, target_file, ncore = 1, plot_profile = FAL
       forecast_start_day_alpha <- 0
     }
     curr_tibble <- tibble::tibble(date = lubridate::as_datetime(date), 
-                                  forecast_mean = round(c(mean_var), 4), forecast_sd = round(c(sd_var), 
-                                                                                             4), forecast_upper_95 = round(c(upper_var), 
-                                                                                                                           4), forecast_lower_95 = round(c(lower_var), 
-                                                                                                                                                         4), observed = round(obs_curr, 4), depth = rep(depths, 
-                                                                                                                                                                                                        length(full_time)), state = state_names[i], 
-                                  forecast_start_day = forecast_start_day) %>% dplyr::filter(depth %in% 
-                                                                                               focal_depths_plotting)
+                                  forecast_mean = round(c(mean_var), 4), forecast_sd = round(c(sd_var), 4),
+                                  forecast_upper_95 = round(c(upper_var), 4), forecast_lower_95 = round(c(lower_var),4),
+                                  observed = round(obs_curr, 4), depth = rep(depths, length(full_time)), state = state_names[i], 
+                                  forecast_start_day = forecast_start_day) %>% dplyr::filter(depth %in% focal_depths_plotting)
     if (obs_csv) {
       only_with_obs <- curr_tibble #%>% dplyr::filter(!is.na(observed))
       evaluation_df <- dplyr::bind_rows(evaluation_df, 

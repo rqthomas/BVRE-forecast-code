@@ -7,7 +7,7 @@ message("Beginning generate targets")
 #' Set the lake directory to the repository directory
 
 lake_directory <- here::here()
-config_set_name <- "default"
+config_set_name <- "DA_experiments"
 
 Sys.setenv("AWS_DEFAULT_REGION" = "s3",
            "AWS_S3_ENDPOINT" = "flare-forecast.org")
@@ -125,7 +125,8 @@ cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(lake_directory,
                                     secchi_fname = file.path(lake_directory, "data_raw", config_obs$secchi_fname),
                                     cleaned_insitu_file = file.path(lake_directory,"targets", config_obs$site_id, paste0(config_obs$site_id,"-targets-insitu.csv")),
                                     site_id = config_obs$site_id,
-                                    config_obs = config_obs)
+                                    config_obs = config_obs,
+                                    DA_frequency = )
 
 #' Move targets to s3 bucket
 
@@ -141,10 +142,4 @@ FLAREr::put_targets(site_id = config_obs$site_id,
                     use_s3 = TRUE)
 
 message("Successfully moved targets to s3 bucket")
-
-
-
-#NOTE TO SELF
-#use git files - bvr_platform_qaqc_function script to read in raw data, calculate depth for each thermistor/date
-#then use bvr_sort_by depth to create long version necessary for flare
 
