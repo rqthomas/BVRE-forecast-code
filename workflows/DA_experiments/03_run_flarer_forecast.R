@@ -1,6 +1,12 @@
+#separating this from 2.5 so I can iteratively loop through this scipt for each day I want to generate forecasts
 states_config <- FLAREr::generate_states_to_obs_mapping(states_config, obs_config)
 
 model_sd <- FLAREr::initiate_model_error(config, states_config)
+
+#change restart file directory for DA experiments
+if(!is.na(config$run_config$restart_file)){
+config$run_config$restart_file <- file.path(config$file_path$forecast_output_directory,basename(config$run_config$restart_file))
+}
 
 init <- FLAREr::generate_initial_conditions(states_config,
                                             obs_config,
@@ -38,7 +44,7 @@ eml_file_name <- FLAREr::create_flare_metadata(file_name = saved_file,
                                                da_forecast_output = da_forecast_output)
 
 #Clean up temp files and large objects in memory
-unlink(config$file_path$execute_directory, recursive = TRUE)
+#unlink(config$file_path$execute_directory, recursive = TRUE)
 
 FLAREr::put_forecast(saved_file, eml_file_name, config)
 
@@ -48,14 +54,8 @@ gc()
 FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = NA, day_advance = 1, new_start_datetime = TRUE)
 
 setwd(lake_directory)
-unlink(config$run_config$restart_file)
-unlink(forecast_dir, recursive = TRUE)
-unlink(file.path(lake_directory, "flare_tempdir", config$location$site_id, config$run_config$sim_name), recursive = TRUE)
-
-
-setwd(lake_directory)
-unlink(config$run_config$restart_file)
-unlink(forecast_dir, recursive = TRUE)
-unlink(file.path(lake_directory, "flare_tempdir", config$location$site_id, config$run_config$sim_name), recursive = TRUE)
+#unlink(config$run_config$restart_file)
+#unlink(forecast_dir, recursive = TRUE)
+#unlink(file.path(lake_directory, "flare_tempdir", config$location$site_id, config$run_config$sim_name), recursive = TRUE)
 
 message(paste0("successfully generated flare forecats for: ", basename(saved_file)))

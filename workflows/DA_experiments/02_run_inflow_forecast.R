@@ -30,20 +30,20 @@ Sys.setenv("AWS_DEFAULT_REGION" = "s3",
 
 #Note: lake_directory need to be set prior to running this script
 configuration_file <- "configure_flare.yml"
-config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
-config$file_path <- run_config$file_path
+# config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
+#config$file_path <- run_config$file_path
 
-if(s3_mode){
+if(s3_mode){ 
   restart_exists <- aws.s3::object_exists(object = file.path(forecast_site, sim_name, "configure_run.yml"), bucket = "restart")
   if(restart_exists){
     aws.s3::save_object(object = file.path(forecast_site, sim_name, "configure_run.yml"), 
                         bucket = "restart", 
                         file = file.path(lake_directory,"configuration",config_set_name,"configure_run.yml"))
   }
-  config$file_path$noaa_directory <- file.path(lake_directory, "drivers", "noaa")
+  config$file_path$noaa_directory <- file.path(lake_directory, "drivers")
   config$file_path$inflow_directory <- file.path(lake_directory, "drivers")
 }else{
-  config$file_path$noaa_directory <- file.path(lake_directory, "drivers", "noaa")
+  config$file_path$noaa_directory <- file.path(lake_directory, "drivers")
   config$file_path$inflow_directory <- file.path(lake_directory, "drivers")
 }
 
@@ -63,7 +63,7 @@ if(config$run_config$forecast_horizon > 0){
   }
   forecast_hour <- lubridate::hour(forecast_start_datetime)
   if(forecast_hour < 10){forecast_hour <- paste0("0",forecast_hour)}
-  forecast_path <- file.path(config$file_path$noaa_directory, "NOAAGEFS_1hr",config$location$site_id,lubridate::as_date(forecast_start_datetime),forecast_hour)
+  forecast_path <- file.path(config$file_path$noaa_directory, "noaa/NOAAGEFS_1hr",config$location$site_id,lubridate::as_date(forecast_start_datetime),forecast_hour)
   
   
   #Weather Drivers

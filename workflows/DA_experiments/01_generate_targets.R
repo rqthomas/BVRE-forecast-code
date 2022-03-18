@@ -125,8 +125,7 @@ cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(lake_directory,
                                     secchi_fname = file.path(lake_directory, "data_raw", config_obs$secchi_fname),
                                     cleaned_insitu_file = file.path(lake_directory,"targets", config_obs$site_id, paste0(config_obs$site_id,"-targets-insitu.csv")),
                                     site_id = config_obs$site_id,
-                                    config_obs = config_obs,
-                                    DA_frequency = )
+                                    config_obs = config_obs)
 
 #' Move targets to s3 bucket
 
@@ -139,7 +138,7 @@ message("Successfully generated targets")
 
 FLAREr::put_targets(site_id = config_obs$site_id,
                     cleaned_insitu_file,
-                    use_s3 = TRUE)
+                    use_s3 = FALSE)
 
 message("Successfully moved targets to s3 bucket")
 

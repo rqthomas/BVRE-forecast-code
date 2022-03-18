@@ -730,12 +730,12 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   bvr_pre_05APR21=bvr_depths%>%
     filter(timestamp<="2021-04-05 13:20")%>%
     mutate(Sensor_depth=Depth_m_13-Offset_before_05APR21)%>% #this gives you the depth of the thermistors from the surface
-    mutate(depth=round_any(Sensor_depth, 0.1))#Round to the nearest tenth 
+    mutate(depth=round_any(Sensor_depth, 0.5))#Round to the nearest 0.5
   
   bvr_post_05APR21=bvr_depths%>%
     filter(timestamp>"2021-04-05 13:20")%>%
     mutate(Sensor_depth=Depth_m_13-Offset_after_05APR21)%>% #this gives you the depth of the thermistor from the surface
-    mutate(depth=round_any(Sensor_depth, 0.1)) #Round to the nearest tenth 
+    mutate(depth=round_any(Sensor_depth, 0.5)) #Round to the nearest 0.5
   
   #unload plotly becuase it messes w/ dplyr
   detach("package:plyr", unload = TRUE)
