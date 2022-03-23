@@ -36,13 +36,14 @@ if(!is.null(config$run_config$forecast_fails)){
 
 
 #DA frequency vectors
-daily = seq.Date(as.Date("2021-01-01"), as.Date("2021-12-31"), by = 1) 
+daily = seq.Date(as.Date("2020-12-01"), as.Date("2021-12-31"), by = 1) 
 date_list <- list(daily = daily,
                   daily_2 = daily[seq(1, length(daily), 2)],
                   daily_5 = daily[seq(1, length(daily), 5)],
                   weekly = daily[seq(1, length(daily), 7)],
                   fortnightly = daily[seq(1, length(daily), 14)],
-                  monthly = daily[seq(1, length(daily), 30)]) 
+                  monthly = daily[seq(1, length(daily), 30)],
+                  start_dates = seq.Date(as.Date("2021-01-01"), as.Date("2021-12-31"), by = 1) ) 
 
 
 if(noaa_ready){
@@ -64,12 +65,13 @@ if(noaa_ready){
   source(file.path(lake_directory, "workflows", config_set_name, "02_run_inflow_forecast.R"))
   
   for(da_freq in 1:length(date_list)) {
-    for(date in 1:length(daily[1])) {
+    for(date in 1:length(daily)) {
       
       if(date == 1) {
-        config$run_config$forecast_start_datetime <- format(daily[date], "%Y-%m-%d %H:%M:%S")
-        config$run_config$start_datetime <- format((daily[date]-30), "%Y-%m-%d %H:%M:%S")
-        config$run_config$end_datetime <- format(daily[date]+35, "%Y-%m-%d %H:%M:%S")
+        unlink(file.path(lake_directory, "restart", config$location$site_id, config$run_config$sim_name, "configure_run.yml"))
+        config$run_config$forecast_start_datetime <- "2021-01-01 00:00:00" # format(daily[date], "%Y-%m-%d %H:%M:%S")
+        config$run_config$start_datetime <- "2020-12-01 00:00:00" # format((daily[date]-30), "%Y-%m-%d %H:%M:%S")
+        config$run_config$end_datetime <- NA # format(daily[date]+35, "%Y-%m-%d %H:%M:%S")
       } else {
         config$run_config <- yaml::read_yaml("restart/bvre/bvre_DA_experiments_test/configure_run.yml")
       }
