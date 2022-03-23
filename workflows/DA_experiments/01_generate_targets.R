@@ -1,4 +1,4 @@
-library(tidyverse)
+library(magrittr)
 library(lubridate)
 
 
@@ -70,7 +70,7 @@ FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi
              file = config_obs$insitu_obs_fname[2],
              lake_directory)
 
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/725/2/026a6e2cca8bdf18720d6a10d8860e3d",
+FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/725/2/8c0d1d8ea078d274c252cd362a500d26",
                      file = config_obs$insitu_obs_fname[3],
                      lake_directory)
 
