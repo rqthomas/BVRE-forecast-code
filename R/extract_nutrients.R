@@ -5,10 +5,10 @@ extract_nutrients <- function(fname,
 
   d <- read_csv(fname, guess_max = 1000000,
                 col_types = readr::cols()) %>%
-    mutate(DateTime = force_tz(DateTime, tzone = input_file_tz),
+    dplyr::mutate(DateTime = force_tz(DateTime, tzone = input_file_tz),
            DateTime = with_tz(DateTime, tzone = local_tzone)) %>%
-    filter(Reservoir == "BVR" & Site == "50") %>%
-    mutate(TN = TN_ugL * 1000 * 0.001 * (1/14),
+    dplyr::filter(Reservoir == "BVR" & Site == "50") %>%
+    dplyr::mutate(TN = TN_ugL * 1000 * 0.001 * (1/14),
            TP = TP_ugL * 1000 * 0.001 * (1/30.97),
            NH4 = NH4_ugL * 1000 * 0.001 * (1 / 18.04),
            NO3NO2 = NO3NO2_ugL * 1000 * 0.001 * (1/62.00),
@@ -16,16 +16,16 @@ extract_nutrients <- function(fname,
            DOC = DOC_mgL* 1000 * (1/12.01),
            DIC = DIC_mgL*1000*(1/52.515)) %>%
     dplyr::select(DateTime, Depth_m, TN, TP, NH4, NO3NO2, SRP, DOC, DIC) %>%
-    rename("timestamp" = DateTime,
+    dplyr::rename("timestamp" = DateTime,
            "depth" = Depth_m,
            "fdom" = DOC) %>%
-    pivot_longer(cols = -c(timestamp, depth), names_to = "variable", values_to = "value") %>%
-    mutate(method = "grab_sample") %>%
-    filter(!is.na(value)) %>%
+    tidyr::pivot_longer(cols = -c(timestamp, depth), names_to = "variable", values_to = "value") %>%
+    dplyr::mutate(method = "grab_sample") %>%
+    dplyr::filter(!is.na(value)) %>%
     dplyr::select(timestamp , depth, value, variable, method)
 
   if(!is.na(focal_depths)){
-    d <- d %>% filter(depth %in% focal_depths)
+    d <- d %>% dplyr::filter(depth %in% focal_depths)
   }
 
   return(d)

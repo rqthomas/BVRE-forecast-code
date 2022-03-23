@@ -30,28 +30,28 @@ extract_CTD <- function(fname,
                   Flag_ORP = readr::col_integer(),
                   Flag_PAR = readr::col_integer(),
                   Flag_DescRate = readr::col_integer())) %>%
-    mutate(Date = force_tz(Date, tzone = input_file_tz)) %>%
-    filter(Reservoir == "BVR" & Site == "50") %>%
+    dplyr::mutate(Date = force_tz(Date, tzone = input_file_tz)) %>%
+    dplyr::filter(Reservoir == "BVR" & Site == "50") %>%
     dplyr::select(Date, Depth_m, Temp_C, DO_mgL, Chla_ugL) %>%
-    rename("timestamp" = Date,
+    dplyr::rename("timestamp" = Date,
            "depth" = Depth_m,
            "temperature" = Temp_C,
            "oxygen" = DO_mgL,
            "chla" = Chla_ugL) %>%
-    mutate(oxygen = oxygen * 1000/32,
+    dplyr::mutate(oxygen = oxygen * 1000/32,
            chla = config_obs$ctd_2_exo_sensor_chla[1] + config_obs$ctd_2_exo_sensor_chla[2] * chla,
            oxygen = config_obs$ctd_2_exo_sensor_do[1] + config_obs$ctd_2_exo_sensor_do[2] * oxygen) %>%
-    pivot_longer(cols = c("temperature", "oxygen", "chla"), names_to = "variable", values_to = "value") %>%
-    mutate(method = "ctd") %>%
-    mutate(timestamp = lubridate::as_datetime(timestamp, tz = "UTC")) %>%
+    tidyr::pivot_longer(cols = c("temperature", "oxygen", "chla"), names_to = "variable", values_to = "value") %>%
+    dplyr::mutate(method = "ctd") %>%
+    dplyr::mutate(timestamp = lubridate::as_datetime(timestamp, tz = "UTC")) %>%
     dplyr::select(timestamp , depth, value, variable, method) 
   
   #select every 0.5m
   d_ctd <- d_ctd %>%
     dplyr::mutate(rdepth = plyr::round_any(depth, 0.5)) %>% 
     dplyr::group_by(timestamp, rdepth, variable) %>%
-    summarise(value = mean(value)) %>% 
-    mutate(method = "ctd") %>% 
+    dplyr::summarise(value = mean(value)) %>% 
+    dplyr::mutate(method = "ctd") %>% 
     dplyr::rename(depth = rdepth) 
   
   #add hour to 2019 data
