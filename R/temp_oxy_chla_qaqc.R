@@ -129,31 +129,36 @@ temp_oxy_chla_qaqc <- function(realtime_file,
         next
       }
       #Add the 2 hour adjustment for DO 
-      if (log$colnumber[i]=="c(1:46)" & flag==1) {
+
+      if (log$colnumber[i]=="c(1:46)" && flag==1){
         DO_col=c("RDO_mgL_6", "RDOsat_percent_6", "RDO_mgL_13","RDOsat_percent_13","EXODOsat_percent_1_5", "EXODO_mgL_1_5")
         DO_flag_col=c("Flag_RDO_mgL_6", "Flag_RDOsat_percent_6", "Flag_RDO_mgL_13","Flag_RDOsat_percent_13","Flag_EXODOsat_percent_1_5", "Flag_EXODO_mgL_1_5")
-        bvrdata[bvrdata$DateTime>start&bvrdata$DateTime<(end+ADJ_PERIOD),DO_col] <- NA
-        bvrdata[bvrdata$DateTime>start&bvrdata$DateTime<(end+ADJ_PERIOD),DO_flag_col] <- flag
-      } else if(log$colnumber[i] %in% c(" 18"," 19") & flag==1){
-        DO_col=c(RDO_mgL_6, RDOsat_percent_6)
-        DO_flag_col=c(Flag_RDO_mgL_6, Flag_RDOsat_percent_6)
-        bvrdata[bvrdata$DateTime>start[i]&bvrdata$DateTime<end[i]+ADJ_PERIOD,DO_col] <- NA
-        bvrdata[bvrdata$DateTime>start[i]&bvrdata$DateTime<end[i]+ADJ_PERIOD,DO_flag_col] <- flag
+        bvrdata[bvrdata$DateTime>start&bvrdata$DateTime<end+ADJ_PERIOD,DO_col] <- NA
+        bvrdata[bvrdata$DateTime>start&bvrdata$DateTime<end+ADJ_PERIOD,DO_flag_col] <- flag
+      }
+      else if(log$colnumber[i] %in% c(" 18"," 19") && flag==1){
+        DO_col=c("RDO_mgL_6", "RDOsat_percent_6")
+        DO_flag_col=c("Flag_RDO_mgL_6", "Flag_RDOsat_percent_6")
+        bvrdata[bvrdata$DateTime>start&bvrdata$DateTime<end+ADJ_PERIOD,DO_col] <- NA
+        bvrdata[bvrdata$DateTime>start&bvrdata$DateTime<end+ADJ_PERIOD,DO_flag_col] <- flag
         
-      } else if (log$colnumber[i] %in% c(" 21"," 22") & flag==1){
-        DO_col=c(RDO_mgL_13,RDOsat_percent_13)
-        DO_flag_col=c(Flag_RDO_mgL_13,Flag_RDOsat_percent_13)
-        bvrdata[bvrdata$DateTime>start[i]&bvrdata$DateTime<end[i]+ADJ_PERIOD,DO_col] <- NA
-        bvrdata[bvrdata$DateTime>start[i]&bvrdata$DateTime<end[i]+ADJ_PERIOD,DO_flag_col] <- flag
+      }
+      else if(log$colnumber[i] %in% c(" 21"," 22") && flag==1){
+        DO_col=c("RDO_mgL_13","RDOsat_percent_13")
+        DO_flag_col=c("Flag_RDO_mgL_13","Flag_RDOsat_percent_13")
+        bvrdata[bvrdata$DateTime>start&bvrdata$DateTime<end+ADJ_PERIOD,DO_col] <- NA
+        bvrdata[bvrdata$DateTime>start&bvrdata$DateTime<end+ADJ_PERIOD,DO_flag_col] <- flag
         
-      } else if (log$colnumber[i] %in% c(" c(26:44"," 30"," 31") & flag==1){
-        DO_col=c(EXODOsat_percent_1_5, EXODO_mgL_1_5)
-        DO_flag_col=c(Flag_EXODOsat_percent_1_5, Flag_EXODO_mgL_1_5)
-        bvrdata[bvrdata$DateTime>start[i]&bvrdata$DateTime<(end[i]+ADJ_PERIOD),DO_col] <- NA
-        bvrdata[bvrdata$DateTime>start[i]&bvrdata$DateTime<(end[i]+ADJ_PERIOD),DO_flag_col] <-1
+      }
+      else if (log$colnumber[i] %in% c(" c(26:44"," 30"," 31") && flag==1){
+        DO_col=c("EXODOsat_percent_1_5", "EXODO_mgL_1_5")
+        DO_flag_col=c("Flag_EXODOsat_percent_1_5", "Flag_EXODO_mgL_1_5")
+        bvrdata[bvrdata$DateTime>start&bvrdata$DateTime<end+ADJ_PERIOD,DO_col] <- NA
+        bvrdata[bvrdata$DateTime>start&bvrdata$DateTime<end+ADJ_PERIOD,DO_flag_col] <-1
         
-      } else{
-        warning(paste("No DO to time to adjust"))
+      }
+      else{
+        warning(paste("No DO to time to adjust in row",i,"."))
         
       }
     }
