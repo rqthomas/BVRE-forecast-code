@@ -85,20 +85,21 @@ FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi
              file = config_obs$nutrients_fname,
              lake_directory)
 
-#' INFLOW - functions to create and qaqc the inflow data using the TMWB model
+#' INFLOW - functions to create and qaqc the inflow data using the TMWB model 
 
-#create_inflow_file(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[1]),
-#                      qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[2]),
-#                      nldas_file = file.path(config_obs$file_path$data_directory, config_obs$nldas))
-#
-#inflow_qaqc(inflow_file = file.path(lake_directory,"data_processed/BVR_flow_calcs_obs_met_2015_2021.csv"),
-#            qaqc_file = file.path(config_obs$file_path$data_directory, "inflow_for_EDI_2013_06Mar2020.csv"),
-#            realtime_file = file.path(config_obs$file_path$data_directory, "2021_YSI_PAR_profiles.csv"), #will need to change to pressure transducer sensor when available (currently ysi temp on local computer)
-#            nutrients_file = file.path(config_obs$file_path$data_directory, config_obs$nutrients_fname),
-#            silica_file = file.path(config_obs$file_path$data_directory, "FCR2014_Chemistry.csv"),
-#            ghg_file = file.path(config_obs$file_path$data_directory, "BVR_GHG_Inflow_20200619.csv"),
-#            cleaned_inflow_file = file.path(config_obs$file_path$targets_directory, "bvre/bvre-targets-inflow.csv"))
+if(file.exists(file.path(config_obs$file_path$targets_directory, "bvre/bvre-targets-inflow.csv"))){
+create_inflow_file(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[1]),
+                      qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[2]),
+                      nldas_file = file.path(config_obs$file_path$data_directory, config_obs$nldas))
 
+inflow_qaqc(inflow_file = file.path(lake_directory,"data_processed/BVR_flow_calcs_obs_met_2015_2021.csv"),
+            qaqc_file = file.path(config_obs$file_path$data_directory, "inflow_for_EDI_2013_06Mar2020.csv"),
+            realtime_file = file.path(config_obs$file_path$data_directory, "2021_YSI_PAR_profiles.csv"), #will need to change to pressure transducer sensor when available (currently ysi temp on local computer)
+            nutrients_file = file.path(config_obs$file_path$data_directory, config_obs$nutrients_fname),
+            silica_file = file.path(config_obs$file_path$data_directory, "FCR2014_Chemistry.csv"),
+            ghg_file = file.path(config_obs$file_path$data_directory, "BVR_GHG_Inflow_20200619.csv"),
+            cleaned_inflow_file = file.path(config_obs$file_path$targets_directory, "bvre/bvre-targets-inflow.csv"))
+}
 
 
 
