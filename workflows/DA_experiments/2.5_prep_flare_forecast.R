@@ -1,4 +1,4 @@
-library(tidyverse)
+library(magrittr)
 library(lubridate)
 
 if(file.exists("~/.aws")){

@@ -1,7 +1,6 @@
 library(magrittr)
 library(lubridate)
 
-
 message("Beginning generate targets")
 
 #' Set the lake directory to the repository directory
