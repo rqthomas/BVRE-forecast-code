@@ -46,7 +46,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
                       flag = col_integer()))
     
     #Filter out the 7 flag because it is already NAs in the dataset and not maintenance
-    log=log%>%filter(flag!=7)
+    log= log%>% dplyr::filter(flag!=7)
     
     for(j in c(5:23,26:46)) { #for loop to create new columns in data frame
       bvrdata[,paste0("Flag_",colnames(bvrdata[j]))] <- 0 #creates flag column + name of variable
@@ -68,13 +68,13 @@ temp_oxy_chla_qaqc <- function(realtime_file,
       
       else if(grepl("^c\\(\\s*\\d+\\s*(;\\s*\\d+\\s*)*\\)$", log$colnumber[i])) # c(x;y;...)
       {
-        maintenance_cols <- intersect(c(2:46), as.integer(unlist(regmatches(log$colnumber[i],
+        maintenance_cols <- dplyr::intersect(c(2:46), as.integer(unlist(regmatches(log$colnumber[i],
                                                                             gregexpr("\\d+", log$colnumber[i])))))
       }
       else if(grepl("^c\\(\\s*\\d+\\s*:\\s*\\d+\\s*\\)$", log$colnumber[i])) # c(x:y)
       {
         bounds <- as.integer(unlist(regmatches(log$colnumber[i], gregexpr("\\d+", log$colnumber[i]))))
-        maintenance_cols <- intersect(c(2:46), c(bounds[1]:bounds[2]))
+        maintenance_cols <- dplyr::intersect(c(2:46), c(bounds[1]:bounds[2]))
       }
       else
       {
@@ -97,23 +97,18 @@ temp_oxy_chla_qaqc <- function(realtime_file,
       
       #index the Flag columns
       if(grepl("^\\d+$", log$flagcol[i])) # single num
-      {
+        {
         flag_cols <- intersect(c(47:86), as.integer(log$flagcol[i]))
         
-      }
-      else if(grepl("^c\\(\\s*\\d+\\s*(;\\s*\\d+\\s*)*\\)$", log$flagcol[i])) # c(x;y;...)
+      } else if(grepl("^c\\(\\s*\\d+\\s*(;\\s*\\d+\\s*)*\\)$", log$flagcol[i])) # c(x;y;...)
       {
         flag_cols <- intersect(c(47:86), as.integer(unlist(regmatches(log$flagcol[i],
                                                                       gregexpr("\\d+", log$flagcol[i])))))
-      }
-      
-      else if(grepl("^c\\(\\s*\\d+\\s*:\\s*\\d+\\s*\\)$", log$flagcol[i])) # c(x:y)
-      {
+      } else if(grepl("^c\\(\\s*\\d+\\s*:\\s*\\d+\\s*\\)$", log$flagcol[i])) # c(x:y)
+        {
         bounds_flag <- as.integer(unlist(regmatches(log$flagcol[i], gregexpr("\\d+", log$flagcol[i]))))
-        flag_cols <- intersect(c(47:86), c(bounds_flag[1]:bounds_flag[2]))
-      }
-      else
-      {
+        flag_cols <- dplyr::intersect(c(47:86), c(bounds_flag[1]:bounds_flag[2]))
+      } else {
         warning(paste("Could not parse column flagcol in row", i, "of the maintenance log. Skipping maintenance for",
                       "that row. The value of colnumber should be in one of three formats: a single number (\"47\"), a",
                       "semicolon-separated list of numbers in c() (\"c(47;48;49)\"), or a range of numbers in c() (\"c(47:74)\").",
@@ -126,17 +121,15 @@ temp_oxy_chla_qaqc <- function(realtime_file,
       flag <- log$flag[i]
       
       # replace relevant data with NAs and set flags while maintenance was in effect
-      if(flag!=5)
-      {
+      if(flag!=5) {
         bvrdata[bvrdata$DateTime >= start & bvrdata$DateTime <= end, maintenance_cols] <- NA
         bvrdata[bvrdata$DateTime >= start & bvrdata$DateTime <= end, flag_cols] <- flag
-      }
-      else
-      {
+      } else {
         bvrdata[bvrdata$DateTime >= start & bvrdata$DateTime <= end, flag_cols] <- flag
         next
       }
       #Add the 2 hour adjustment for DO 
+
       if (log$colnumber[i]=="c(1:46)" && flag==1){
         DO_col=c("RDO_mgL_6", "RDOsat_percent_6", "RDO_mgL_13","RDOsat_percent_13","EXODOsat_percent_1_5", "EXODO_mgL_1_5")
         DO_flag_col=c("Flag_RDO_mgL_6", "Flag_RDOsat_percent_6", "Flag_RDO_mgL_13","Flag_RDOsat_percent_13","Flag_EXODOsat_percent_1_5", "Flag_EXODO_mgL_1_5")
@@ -173,7 +166,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   ##################################################################################################################  
     #Set negative DO values to 0 and Flag_DO for NA values
     bvrdata <- bvrdata %>%  #RDO at 5m
-      mutate(Flag_RDO_mgL_6 = ifelse(RDO_mgL_6 < 0 & !is.na(RDO_mgL_6) , 3, Flag_RDO_mgL_6),#Add a flag for DO<0
+      dplyr::mutate(Flag_RDO_mgL_6 = ifelse(RDO_mgL_6 < 0 & !is.na(RDO_mgL_6) , 3, Flag_RDO_mgL_6),#Add a flag for DO<0
              Flag_RDOsat_percent_6 = ifelse(RDOsat_percent_6 < 0 & !is.na(RDOsat_percent_6) , 3, Flag_RDOsat_percent_6),
              RDO_mgL_6 = ifelse(RDO_mgL_6 < 0, 0, RDO_mgL_6), #Change negative to 0
              RDOsat_percent_6 = ifelse(RDOsat_percent_6 < 0, 0, RDOsat_percent_6), #Change negative %sat to 0
@@ -204,44 +197,44 @@ temp_oxy_chla_qaqc <- function(realtime_file,
     
     # QAQC on major chl outliers using DWH's method: datapoint set to NA if data is greater than 4*sd different from both previous and following datapoint
     bvrdata <- bvrdata %>% 
-      mutate(Chla_ugL = lag(EXOChla_ugL_1_5, 0),
+      dplyr::mutate(Chla_ugL = lag(EXOChla_ugL_1_5, 0),
              Chla_ugL_lag1 = lag(EXOChla_ugL_1_5, 1),
              Chla_ugL_lead1 = lead(EXOChla_ugL_1_5, 1)) %>%  #These mutates create columns for current fDOM, fDOM before and fDOM after. These are used to run ifelse QAQC loops
-      mutate(Flag_EXOChla_ugL_1_5 = ifelse(Chla_ugL < 0 & !is.na(Chla_ugL), 3, Flag_EXOChla_ugL_1_5)) %>% 
-      mutate(EXOChla_ugL_1_5 = ifelse(Chla_ugL < 0 & !is.na(Chla_ugL), 0, EXOChla_ugL_1_5)) %>% 
-      mutate(EXOChla_ugL_1_5 = ifelse((abs(Chla_ugL_lag1 - Chla_ugL) > (Chla_ugL_1_5_threshold))  & (abs(Chla_ugL_lead1 - Chla_ugL) > (Chla_ugL_1_5_threshold) & !is.na(Chla_ugL)), 
+      dplyr::mutate(Flag_EXOChla_ugL_1_5 = ifelse(Chla_ugL < 0 & !is.na(Chla_ugL), 3, Flag_EXOChla_ugL_1_5)) %>% 
+      dplyr::mutate(EXOChla_ugL_1_5 = ifelse(Chla_ugL < 0 & !is.na(Chla_ugL), 0, EXOChla_ugL_1_5)) %>% 
+      dplyr::mutate(EXOChla_ugL_1_5 = ifelse((abs(Chla_ugL_lag1 - Chla_ugL) > (Chla_ugL_1_5_threshold))  & (abs(Chla_ugL_lead1 - Chla_ugL) > (Chla_ugL_1_5_threshold) & !is.na(Chla_ugL)), 
                                       NA, EXOChla_ugL_1_5)) %>%   
-      mutate(Flag_EXOChla_ugL_1_5 = ifelse((abs(Chla_ugL_lag1 - Chla_ugL) > (Chla_ugL_1_5_threshold))  & (abs(Chla_ugL_lead1 - Chla_ugL) > (Chla_ugL_1_5_threshold)) & !is.na(Chla_ugL), 
+      dplyr::mutate(Flag_EXOChla_ugL_1_5 = ifelse((abs(Chla_ugL_lag1 - Chla_ugL) > (Chla_ugL_1_5_threshold))  & (abs(Chla_ugL_lead1 - Chla_ugL) > (Chla_ugL_1_5_threshold)) & !is.na(Chla_ugL), 
                                            2, Flag_EXOChla_ugL_1_5)) %>%
-      mutate(Flag_EXOChla_ugL_1_5 = ifelse(is.na(Flag_EXOChla_ugL_1_5), 2, Flag_EXOChla_ugL_1_5))%>%
-      select(-Chla_ugL, -Chla_ugL_lag1, -Chla_ugL_lead1)
+      dplyr::mutate(Flag_EXOChla_ugL_1_5 = ifelse(is.na(Flag_EXOChla_ugL_1_5), 2, Flag_EXOChla_ugL_1_5))%>%
+      dplyr::select(-Chla_ugL, -Chla_ugL_lag1, -Chla_ugL_lead1)
     
     #Chla_RFU QAQC
     bvrdata <- bvrdata %>% 
-      mutate(Chla_RFU = lag(EXOChla_RFU_1_5, 0),
+      dplyr::mutate(Chla_RFU = lag(EXOChla_RFU_1_5, 0),
              Chla_RFU_lag1 = lag(EXOChla_RFU_1_5, 1),
              Chla_RFU_lead1 = lead(EXOChla_RFU_1_5, 1)) %>%  #These mutates create columns for current fDOM, fDOM before and fDOM after. These are used to run ifelse QAQC loops
-      mutate(Flag_EXOChla_RFU_1_5 = ifelse(Chla_RFU < 0 & !is.na(Chla_RFU), 3, Flag_EXOChla_RFU_1_5)) %>% 
-      mutate(EXOChla_RFU_1_5 = ifelse(Chla_RFU < 0 & !is.na(Chla_RFU), 0, EXOChla_RFU_1_5)) %>% 
-      mutate(EXOChla_RFU_1_5 = ifelse((abs(Chla_RFU_lag1 - Chla_RFU) > (Chla_RFU_1_5_threshold))  & (abs(Chla_RFU_lead1 - Chla_RFU) > (Chla_RFU_1_5_threshold) & !is.na(Chla_RFU)), 
+      dplyr::mutate(Flag_EXOChla_RFU_1_5 = ifelse(Chla_RFU < 0 & !is.na(Chla_RFU), 3, Flag_EXOChla_RFU_1_5)) %>% 
+      dplyr::mutate(EXOChla_RFU_1_5 = ifelse(Chla_RFU < 0 & !is.na(Chla_RFU), 0, EXOChla_RFU_1_5)) %>% 
+      dplyr::mutate(EXOChla_RFU_1_5 = ifelse((abs(Chla_RFU_lag1 - Chla_RFU) > (Chla_RFU_1_5_threshold))  & (abs(Chla_RFU_lead1 - Chla_RFU) > (Chla_RFU_1_5_threshold) & !is.na(Chla_RFU)), 
                                       NA, EXOChla_RFU_1_5)) %>%   
-      mutate(Flag_EXOChla_RFU_1_5 = ifelse((abs(Chla_RFU_lag1 - Chla_RFU) > (Chla_RFU_1_5_threshold))  & (abs(Chla_RFU_lead1 - Chla_RFU) > (Chla_RFU_1_5_threshold)) & !is.na(Chla_RFU), 
+      dplyr::mutate(Flag_EXOChla_RFU_1_5 = ifelse((abs(Chla_RFU_lag1 - Chla_RFU) > (Chla_RFU_1_5_threshold))  & (abs(Chla_RFU_lead1 - Chla_RFU) > (Chla_RFU_1_5_threshold)) & !is.na(Chla_RFU), 
                                            2, Flag_EXOChla_RFU_1_5)) %>%
-      mutate(Flag_EXOChla_RFU_1_5 = ifelse(is.na(Flag_EXOChla_RFU_1_5), 2, Flag_EXOChla_RFU_1_5))%>%
-      select(-Chla_RFU, -Chla_RFU_lag1, -Chla_RFU_lead1)
+      dplyr::mutate(Flag_EXOChla_RFU_1_5 = ifelse(is.na(Flag_EXOChla_RFU_1_5), 2, Flag_EXOChla_RFU_1_5))%>%
+      dplyr::select(-Chla_RFU, -Chla_RFU_lag1, -Chla_RFU_lead1)
     # QAQC on major chl outliers using DWH's method: datapoint set to NA if data is greater than 4*sd different from both previous and following datapoint
     bvrdata <- bvrdata %>% 
-      mutate(phyco_ugL = lag(EXOBGAPC_ugL_1_5, 0),
+      dplyr::mutate(phyco_ugL = lag(EXOBGAPC_ugL_1_5, 0),
              phyco_ugL_lag1 = lag(EXOBGAPC_ugL_1_5, 1),
              phyco_ugL_lead1 = lead(EXOBGAPC_ugL_1_5, 1)) %>%  #These mutates create columns for current fDOM, fDOM before and fDOM after. These are used to run ifelse QAQC loops
-      mutate(Flag_EXOBGAPC_ugL_1_5 = ifelse(phyco_ugL < 0 & !is.na(phyco_ugL), 3, Flag_EXOBGAPC_ugL_1_5)) %>% 
-      mutate(EXOBGAPC_ugL_1_5 = ifelse(phyco_ugL < 0 & !is.na(phyco_ugL), 0, EXOBGAPC_ugL_1_5)) %>% 
-      mutate(EXOBGAPC_ugL_1_5 = ifelse((abs(phyco_ugL_lag1 - phyco_ugL) > (BGAPC_ugL_1_5_threshold))  & (abs(phyco_ugL_lead1 - phyco_ugL) > (BGAPC_ugL_1_5_threshold) & !is.na(phyco_ugL)), 
+      dplyr::mutate(Flag_EXOBGAPC_ugL_1_5 = ifelse(phyco_ugL < 0 & !is.na(phyco_ugL), 3, Flag_EXOBGAPC_ugL_1_5)) %>% 
+      dplyr::mutate(EXOBGAPC_ugL_1_5 = ifelse(phyco_ugL < 0 & !is.na(phyco_ugL), 0, EXOBGAPC_ugL_1_5)) %>% 
+      dplyr::mutate(EXOBGAPC_ugL_1_5 = ifelse((abs(phyco_ugL_lag1 - phyco_ugL) > (BGAPC_ugL_1_5_threshold))  & (abs(phyco_ugL_lead1 - phyco_ugL) > (BGAPC_ugL_1_5_threshold) & !is.na(phyco_ugL)), 
                                        NA, EXOBGAPC_ugL_1_5)) %>%   
-      mutate(Flag_EXOBGAPC_ugL_1_5 = ifelse((abs(phyco_ugL_lag1 - phyco_ugL) > (BGAPC_ugL_1_5_threshold))  & (abs(phyco_ugL_lead1 - phyco_ugL) > (BGAPC_ugL_1_5_threshold) & !is.na(phyco_ugL)), 
+      dplyr::mutate(Flag_EXOBGAPC_ugL_1_5 = ifelse((abs(phyco_ugL_lag1 - phyco_ugL) > (BGAPC_ugL_1_5_threshold))  & (abs(phyco_ugL_lead1 - phyco_ugL) > (BGAPC_ugL_1_5_threshold) & !is.na(phyco_ugL)), 
                                             2, Flag_EXOBGAPC_ugL_1_5)) %>%
-      mutate(Flag_EXOBGAPC_ugL_1_5 = ifelse(is.na(Flag_EXOBGAPC_ugL_1_5),2,Flag_EXOBGAPC_ugL_1_5))%>%
-      select(-phyco_ugL, -phyco_ugL_lag1, -phyco_ugL_lead1)
+      dplyr::mutate(Flag_EXOBGAPC_ugL_1_5 = ifelse(is.na(Flag_EXOBGAPC_ugL_1_5),2,Flag_EXOBGAPC_ugL_1_5))%>%
+      dplyr::select(-phyco_ugL, -phyco_ugL_lag1, -phyco_ugL_lead1)
     
     #Phyco QAQC for RFU
     bvrdata <- bvrdata %>% 
@@ -651,7 +644,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   
   d_exo_temp <- d %>%
     dplyr::select(timestamp, wtr_1_5_exo, Depth_m_13) %>%
-    rename("1.5" = wtr_1_5_exo) %>%
+    dplyr::rename("1.5" = wtr_1_5_exo) %>%
     tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "value") %>%
     mutate(variable = "temperature",
            method = "exo_sensor",
@@ -659,7 +652,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   
   d_do_do <- d %>%
     dplyr::select(timestamp, doobs_6, doobs_13, Depth_m_13) %>%
-    rename("6.0" = doobs_6,
+    dplyr::rename("6.0" = doobs_6,
            "13.0" = doobs_13) %>%
     tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "value") %>%
     mutate(variable = "oxygen",
@@ -668,7 +661,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   
   d_exo_do <- d %>%
     dplyr::select(timestamp, doobs_1_5, Depth_m_13) %>%
-    rename("1.5" = doobs_1_5) %>%
+    dplyr::rename("1.5" = doobs_1_5) %>%
     tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "value") %>%
     mutate(variable = "oxygen",
            method = "exo_sensor",
@@ -676,7 +669,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   
   d_exo_fdom <- d %>%
     dplyr::select(timestamp, fDOM_1_5, Depth_m_13) %>%
-    rename("1.5" = fDOM_1_5) %>%
+    dplyr::rename("1.5" = fDOM_1_5) %>%
     tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "value") %>%
     mutate(variable = "fdom",
            method = "exo_sensor",
@@ -684,7 +677,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   
   d_exo_chla <- d %>%
     dplyr::select(timestamp, Chla_1_5, Depth_m_13) %>%
-    rename("1.5" = Chla_1_5) %>%
+    dplyr::rename("1.5" = Chla_1_5) %>%
     tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "value") %>%
     mutate(variable = "chla",
            method = "exo_sensor",
@@ -692,7 +685,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   
   d_exo_bgapc <- d %>%
     dplyr::select(timestamp, bgapc_1_5, Depth_m_13) %>%
-    rename("1.5" = bgapc_1_5) %>%
+    dplyr::rename("1.5" = bgapc_1_5) %>%
     tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "value") %>%
     mutate(variable = "bgapc",
            method = "exo_sensor",
