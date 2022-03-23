@@ -1,4 +1,4 @@
-pacman::p_load(ggplot2, hydroGOF, scoringRules, dplyr, tidyverse)
+pacman::p_load(ggplot2, hydroGOF, scoringRules, dplyr, magrittr)
 
 lake_directory <- here::here()
 

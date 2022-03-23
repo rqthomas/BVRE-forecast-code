@@ -1,4 +1,4 @@
-library(tidyverse)
+library(magrittr)
 library(lubridate)
 
 Sys.setenv("AWS_DEFAULT_REGION" = "s3",

@@ -24,15 +24,13 @@ plot_and_save <- function (file_name, target_file, ncore = 1, plot_profile = FAL
   obs_names <- output$obs_names
   if (length(which(forecast == 1)) > 0) {
     forecast_index <- which(forecast == 1)[1]
-  }
-  else {
+  } else {
     forecast_index <- 0
   }
   focal_depths_plotting <- depths
   if (length(focal_depths_plotting) < 4) {
     plot_height <- 3
-  }
-  else {
+  }else {
     plot_height <- 8
   }
   pdf(pdf_file_name, width = 11, height = plot_height)
@@ -59,47 +57,20 @@ plot_and_save <- function (file_name, target_file, ncore = 1, plot_profile = FAL
     if (state_names[i] %in% unlist(obs_names)) {
       obs_index <- which(obs_names == state_names[i])
       #set days to NA for DA experiments
-      dates <-  seq.Date(first(as.Date(full_time)),last(as.Date(full_time)), by=1)
-    if(da_freq == 1){
-      idx <- which(!(dates %in% dates))
+      dates <-  seq.Date(dplyr::first(as.Date(full_time)),dplyr::last(as.Date(full_time)), by=1)
+      freq <- c(1,2,5,7,14,30)
+      #subset based on da_freq
+      idx <- which(!(dates %in% seq(dplyr::first(dates),dplyr::last(dates), by=freq[da_freq])))
       obs[idx, ,1] <- NA 
       obs_curr <- as.numeric(c(t(obs[, , obs_index])))
-    }
-      else if(da_freq == 2){
-        idx <- which(!(dates %in% seq(first(dates),last(dates), by=2)))
-        obs[idx, ,1] <- NA 
-        obs_curr <- as.numeric(c(t(obs[, , obs_index])))
-    } 
-      else if(da_freq == 3){
-        idx <- which(!(dates %in% seq(first(dates),last(dates), by=5)))
-        obs[idx, ,1] <- NA 
-        obs_curr <- as.numeric(c(t(obs[, , obs_index])))
-      } 
-      else if(da_freq == 4){
-        idx <- which(!(dates %in% seq(first(dates),last(dates), by=7)))
-        obs[idx, ,1] <- NA 
-        obs_curr <- as.numeric(c(t(obs[, , obs_index])))
-      }
-      else if(da_freq == 5){
-        idx <- which(!(dates %in% seq(first(dates),last(dates), by=14)))
-        obs[idx, ,1] <- NA 
-        obs_curr <- as.numeric(c(t(obs[, , obs_index])))
-      }
-      else if(da_freq == 6){
-        idx <- which(!(dates %in% seq(first(dates),last(dates), by=30)))
-        obs[idx, ,1] <- NA 
-        obs_curr <- as.numeric(c(t(obs[, , obs_index])))
-      }
-    }
-    else {
+    } else {
       obs_curr <- as.numeric(rep(NA, length(date)))
     }
     if (forecast_index > 0) {
       forecast_start_day <- full_time[forecast_index - 
                                         1]
       forecast_start_day_alpha <- 1
-    }
-    else {
+    } else {
       forecast_start_day <- dplyr::last(full_time)
       forecast_start_day_alpha <- 0
     }
@@ -107,7 +78,8 @@ plot_and_save <- function (file_name, target_file, ncore = 1, plot_profile = FAL
                                   forecast_mean = round(c(mean_var), 4), forecast_sd = round(c(sd_var), 4),
                                   forecast_upper_95 = round(c(upper_var), 4), forecast_lower_95 = round(c(lower_var),4),
                                   observed = round(obs_curr, 4), depth = rep(depths, length(full_time)), state = state_names[i], 
-                                  forecast_start_day = forecast_start_day) %>% dplyr::filter(depth %in% focal_depths_plotting)
+                                  forecast_start_day = forecast_start_day) %>%
+      dplyr::filter(depth %in% focal_depths_plotting)
     if (obs_csv) {
       only_with_obs <- curr_tibble #%>% dplyr::filter(!is.na(observed))
       evaluation_df <- dplyr::bind_rows(evaluation_df, 

@@ -1,6 +1,5 @@
-library(tidyverse)
+library(magrittr)
 library(lubridate)
-
 
 message("Beginning generate targets")
 

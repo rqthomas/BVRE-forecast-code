@@ -1,4 +1,4 @@
-library(tidyverse)
+library(magrittr)
 library(lubridate)
 lake_directory <- here::here()
 setwd(lake_directory)
@@ -64,7 +64,7 @@ if(noaa_ready){
   source(file.path(lake_directory, "workflows", config_set_name, "02_run_inflow_forecast.R"))
   
   for(da_freq in 1:length(date_list)) {
-    for(date in 1:length(daily[1:4])) {
+    for(date in 1:length(daily[1])) {
       
       if(date == 1) {
         config$run_config$forecast_start_datetime <- format(daily[date], "%Y-%m-%d %H:%M:%S")
