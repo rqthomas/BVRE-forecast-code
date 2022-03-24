@@ -7,18 +7,14 @@ create_inflow_file <- function(realtime_file,
                         qaqc_file,
                         nldas_file){
 
-#packages
-if (!require("pacman"))install.packages("pacman")
-pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,raster,soilDB,rgdal,lattice,lubridate, tidyverse)
-
 lake_directory <- here::here()
 
 #soil data
-if(!file.exists(file.path(lake_directory,"configuration/forecast_model/t_m_water_balance/wss_aoi_2022-01-03_12-05-29"))){
+if(!file.exists(file.path(lake_directory,"configuration/DA_experiments/wss_aoi_2022-01-03_12-05-29"))){
   url <- "https://websoilsurvey.sc.egov.usda.gov/DSD/Download/AOI/kyhiens5ilrfk2x33jckqmbn/wss_aoi_2022-01-03_12-05-29.zip"
-  download.file(url,file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance", "wss_aoi_2022-01-03_12-05-29.zip"), method = "curl") #Note: will probably have to update wss_aoi date if it's been a while - go to wss homepage and click on start wss link on right of page
-  unzip(file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance", "wss_aoi_2022-01-03_12-05-29.zip"),
-        exdir= file.path(lake_directory, "configuration", "forecast_model", "t_m_water_balance"))            #zoom in to site, use define aoi tool to select desired area, go to download soils data tab, click "create download link", right click and copy link address, paste on url line above
+  download.file(url,file.path(lake_directory, "configuration", "DA_experiments", "wss_aoi_2022-01-03_12-05-29.zip"), method = "curl") #Note: will probably have to update wss_aoi date if it's been a while - go to wss homepage and click on start wss link on right of page
+  unzip(file.path(lake_directory, "configuration", "DA_experiments", "wss_aoi_2022-01-03_12-05-29.zip"),
+        exdir= file.path(lake_directory, "configuration", "DA_experiments"))            #zoom in to site, use define aoi tool to select desired area, go to download soils data tab, click "create download link", right click and copy link address, paste on url line above
 }
 
 #Using ROANOKE RIVER AT NIAGARA, VA  usgs gage to use as a template (will write over with BVR-specific data) 
@@ -49,7 +45,7 @@ met_realtime[,names(met)[18:43]] <- NA
 met <- rbind(met,met_realtime)
 
 #only select first entry for each hour
-met_hourly <- met %>% select(c(DateTime,ShortwaveRadiationUp_Average_W_m2,InfaredRadiationUp_Average_W_m2,
+met_hourly <- met %>% select(c(DateTime,ShortwaveRadiationUp_Average_W_m2,InfraredRadiationUp_Average_W_m2,
                                AirTemp_Average_C,RH_percent,WindSpeed_Average_m_s,Rain_Total_mm)) %>% 
                       mutate(DateTime = ymd_hms(DateTime), dt = as_date(DateTime), hr = hour(DateTime)) %>% 
                       group_by(dt, hr) %>% filter(DateTime == min(DateTime)) %>% filter(DateTime <=as.Date("2019-12-31")) 
@@ -113,11 +109,11 @@ mybbox = matrix(c(
   myflowgage$declat - degdist, myflowgage$declat + degdist), 
   ncol = 2, byrow = TRUE)
 
-if(!file.exists(file.path(lake_directory,"configuration/forecast_model/t_m_water_balance/soils"))){
+if(!file.exists(file.path(lake_directory,"configuration/DA_experiments/soils"))){
 mysoil <- mapunit_geom_by_ll_bbox(mybbox)
 writeOGR(obj=mysoil, dsn="soils", layer="mysoil", driver="ESRI Shapefile")
 }else(
-mysoil <- readOGR(file.path(lake_directory,"configuration/forecast_model/t_m_water_balance/soils"))
+mysoil <- readOGR(file.path(lake_directory,"configuration/DA_experiments/soils"))
 )
 
 # Associate mukey with cokey from component

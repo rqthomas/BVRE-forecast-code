@@ -1,5 +1,7 @@
-library(magrittr)
-library(lubridate)
+#packages
+if (!require("pacman"))install.packages("pacman")
+pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,raster,soilDB,rgdal,lattice,lubridate, tidyverse, magrittr,zoo)
+
 
 message("Beginning generate targets")
 
@@ -61,7 +63,7 @@ FLAREr::get_git_repo(lake_directory,
 
 #' Download files from EDI
 
-FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/eml/edi/389/6/35d8d3f9390408f12d39e44e3f03abbe",
+FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/389/6/a5524c686e2154ec0fd0459d46a7d1eb",
              file = config_obs$met_raw_obs_fname[2],
              lake_directory)
 
@@ -87,7 +89,7 @@ FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi
 
 #' INFLOW - functions to create and qaqc the inflow data using the TMWB model 
 
-if(file.exists(file.path(config_obs$file_path$targets_directory, "bvre/bvre-targets-inflow.csv"))){
+if(!file.exists(file.path(config_obs$file_path$targets_directory, "bvre/bvre-targets-inflow.csv"))){
 create_inflow_file(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[1]),
                       qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[2]),
                       nldas_file = file.path(config_obs$file_path$data_directory, config_obs$nldas))
@@ -110,11 +112,13 @@ download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/BVR_spil
 
 
 #' Clean up observed meteorology
-#cleaned_met_file <- met_qaqc(realtime_file = file.path(lake_directory, "data_raw", config_obs$met_raw_obs_fname[1]),
-#                             qaqc_file = file.path(lake_directory, "data_raw", config_obs$met_raw_obs_fname[2]),
-#                             cleaned_met_file = file.path(lake_directory, "targets", config_obs$site_id, paste0("observed-met_",config_obs$site_id,".nc")),
-#                             input_file_tz = "EST",
-#                             nldas = NULL)
+if(!file.exists(file.path(config_obs$file_path$targets_directory, "bvre/observed-met_bvre.nc"))){
+cleaned_met_file <- met_qaqc(realtime_file = file.path(lake_directory, "data_raw", config_obs$met_raw_obs_fname[1]),
+                             qaqc_file = file.path(lake_directory, "data_raw", config_obs$met_raw_obs_fname[2]),
+                             cleaned_met_file = file.path(lake_directory, "targets", config_obs$site_id, paste0("observed-met_",config_obs$site_id,".nc")),
+                             input_file_tz = "EST",
+                             nldas = NULL)
+}
 
 #' Clean up observed insitu measurements
 cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(lake_directory,"data_raw", config_obs$insitu_obs_fname),
