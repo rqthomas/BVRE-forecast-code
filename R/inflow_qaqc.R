@@ -1,6 +1,5 @@
 inflow_qaqc <- function(inflow_file,
                         qaqc_file,
-                        realtime_file,
                         nutrients_file,
                         silica_file,
                         ghg_file,
@@ -22,23 +21,6 @@ inflow_qaqc <- function(inflow_file,
     dplyr::filter(time > as.POSIXct("2015-07-07") & time < as.POSIXct("2021-01-07")) %>% 
     group_by(time) %>% 
     summarise(TEMP=mean(TEMP)) #gives averaged daily temp in C
-  
-  #read in 2021 temp data 
-  temp_21 <- read.csv(realtime_file) 
-  temp_21$DateTime = as.POSIXct(strptime(temp_21$DateTime,"%Y-%m-%d", tz="EST"))
-  temp_21 <- temp_21 %>% dplyr::filter(Reservoir =="FCR") %>%
-    dplyr::filter(Site=="100") %>%
-    select(DateTime, Temp_C) %>% 
-    rename(time=DateTime, TEMP=Temp_C) %>%
-    dplyr::filter(time > as.POSIXct("2021-01-06") & time < as.POSIXct("2021-12-01")) %>% 
-    group_by(time) %>% 
-    summarise(TEMP=mean(TEMP)) #gives averaged daily temp in C
-  
-  #now take the ysi temp and adjust based on lm of fcr ysi 100 vs fcr pressure transducer at weir
-  temp_21$TEMP <-(0.824 *temp_21$TEMP) +2.91
-  
-  #combine both temp datasets
-  temp <- rbind(temp,temp_21)
   
   # Merge inflow and inflow temp datasets
   inflow <- merge(inflow,temp,by="time",all=TRUE) 

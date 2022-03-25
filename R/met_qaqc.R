@@ -49,8 +49,8 @@ met_qaqc <- function(realtime_file,
                                            WindDir_degrees  = readr::col_double(),
                                            ShortwaveRadiationUp_Average_W_m2  = readr::col_double(),
                                            ShortwaveRadiationDown_Average_W_m2  = readr::col_double(),
-                                           InfaredRadiationUp_Average_W_m2  = readr::col_double(),
-                                           InfaredRadiationDown_Average_W_m2  = readr::col_double(),
+                                           InfraredRadiationUp_Average_W_m2  = readr::col_double(),
+                                           InfraredRadiationDown_Average_W_m2  = readr::col_double(),
                                            Albedo_Average_W_m2  = readr::col_double(),
                                            Flag_PAR_Average_umol_s_m2 = readr::col_integer(),
                                            Note_PAR_Average_umol_s_m2  = readr::col_character(),
@@ -72,10 +72,10 @@ met_qaqc <- function(realtime_file,
                                            Note_ShortwaveRadiationUp_Average_W_m2  = readr::col_character(),
                                            Flag_ShortwaveRadiationDown_Average_W_m2 = readr::col_integer(),
                                            Note_ShortwaveRadiationDown_Average_W_m2  = readr::col_character(),
-                                           Flag_InfaredRadiationUp_Average_W_m2 = readr::col_integer(),
-                                           Note_InfaredRadiationUp_Average_W_m2  = readr::col_character(),
-                                           Flag_InfaredRadiationDown_Average_W_m2 = readr::col_integer(),
-                                           Note_InfaredRadiationDown_Average_W_m2  = readr::col_character(),
+                                           Flag_InfraredRadiationUp_Average_W_m2 = readr::col_integer(),
+                                           Note_InfraredRadiationUp_Average_W_m2  = readr::col_character(),
+                                           Flag_InfraredRadiationDown_Average_W_m2 = readr::col_integer(),
+                                           Note_InfraredRadiationDown_Average_W_m2  = readr::col_character(),
                                            Flag_Albedo_Average_W_m2 = readr::col_integer(),
                                            Note_Albedo_Average_W_m2  = readr::col_character()))
     
@@ -93,7 +93,7 @@ met_qaqc <- function(realtime_file,
     #d3$TIMESTAMP <- with_tz(TIMESTAMP_in,tz = local_tzone)
     
     d1 <- data.frame(time = d1$TIMESTAMP, ShortWave = d1$SR01Up_Avg, LongWave = d1$IR01UpCo_Avg, AirTemp = d1$AirTC_Avg, RelHum = d1$RH, WindSpeed = d1$WS_ms_Avg, Rain = d1$Rain_mm_Tot, pressure = d1$BP_kPa_Avg)
-    d2 <- data.frame(time = d2$TIMESTAMP, ShortWave = d2$ShortwaveRadiationUp_Average_W_m2, LongWave = d2$InfaredRadiationUp_Average_W_m2, AirTemp = d2$AirTemp_Average_C, RelHum = d2$RH_percent, WindSpeed = d2$WindSpeed_Average_m_s, Rain = d2$Rain_Total_mm, pressure = d2$BP_Average_kPa)
+    d2 <- data.frame(time = d2$TIMESTAMP, ShortWave = d2$ShortwaveRadiationUp_Average_W_m2, LongWave = d2$InfraredRadiationUp_Average_W_m2, AirTemp = d2$AirTemp_Average_C, RelHum = d2$RH_percent, WindSpeed = d2$WindSpeed_Average_m_s, Rain = d2$Rain_Total_mm, pressure = d2$BP_Average_kPa)
     
     d1 <- d1[which(d1$time > d2$time[nrow(d2)] | d1$time < d2$time[1]), ]
     

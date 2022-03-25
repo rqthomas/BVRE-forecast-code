@@ -33,6 +33,7 @@ nldas: BVR_GLM_NLDAS_010113_123119_GMTadjusted.csv
 
 #specified_inflow1: .na #manual-data/FCR_weir_inflow_2013_2019_20200624_allfractions_2poolsDOC.csv
 inflow_raw_file1: BVR_inflow_2014_2019_20200917_allfractions_2poolsDOC_withch4_nldasInflow.csv
+inflow_temp: Inflow_2013_2021.csv
 #specified_inflow2: .na #manual-data/FCR_wetland_inflow_2013_2019_20200713_allfractions_2DOCpools.csv
 #specified_outflow1: .na #manual-data/FCR_spillway_outflow_SUMMED_WeirWetland_2013_2019_20200615.csv
 

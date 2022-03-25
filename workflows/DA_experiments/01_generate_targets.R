@@ -1,6 +1,6 @@
 #packages
 if (!require("pacman"))install.packages("pacman")
-pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,raster,soilDB,rgdal,lattice,lubridate, tidyverse, magrittr,zoo)
+pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,raster,soilDB,rgdal,lattice,lubridate, tidyverse, magrittr,zoo, rMR, aws.s3)
 
 
 message("Beginning generate targets")
@@ -51,9 +51,6 @@ FLAREr::get_git_repo(lake_directory,
 #download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/BVR_GLM_NLDAS_010113_123119_GMTadjusted.csv?raw=true",
 #              "data_raw/BVR_GLM_NLDAS_010113_123119_GMTadjusted.csv")
 
-#download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/inflow_for_EDI_2013_06Mar2020.csv?raw=true",
-#              "data_raw/inflow_for_EDI_2013_06Mar2020.csv")
-
 #download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/FCR2014_Chemistry.csv?raw=true",
 #              "data_raw/FCR2014_Chemistry.csv")
 
@@ -62,6 +59,10 @@ FLAREr::get_git_repo(lake_directory,
 
 
 #' Download files from EDI
+
+FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/202/8/cc045f9fe32501138d5f4e1e7f40d492",
+                     file = config_obs$inflow_temp,
+                     lake_directory)
 
 FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/389/6/a5524c686e2154ec0fd0459d46a7d1eb",
              file = config_obs$met_raw_obs_fname[2],
@@ -95,8 +96,7 @@ create_inflow_file(realtime_file = file.path(config_obs$file_path$data_directory
                       nldas_file = file.path(config_obs$file_path$data_directory, config_obs$nldas))
 
 inflow_qaqc(inflow_file = file.path(lake_directory,"data_processed/BVR_flow_calcs_obs_met_2015_2021.csv"),
-            qaqc_file = file.path(config_obs$file_path$data_directory, "inflow_for_EDI_2013_06Mar2020.csv"),
-            realtime_file = file.path(config_obs$file_path$data_directory, "2021_YSI_PAR_profiles.csv"), #will need to change to pressure transducer sensor when available (currently ysi temp on local computer)
+            qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$inflow_temp),
             nutrients_file = file.path(config_obs$file_path$data_directory, config_obs$nutrients_fname),
             silica_file = file.path(config_obs$file_path$data_directory, "FCR2014_Chemistry.csv"),
             ghg_file = file.path(config_obs$file_path$data_directory, "BVR_GHG_Inflow_20200619.csv"),
