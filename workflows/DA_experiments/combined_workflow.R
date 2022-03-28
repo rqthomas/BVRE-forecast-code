@@ -63,6 +63,8 @@ if(noaa_ready){
   
   message("Generating inflow forecast")
   source(file.path(lake_directory, "workflows", config_set_name, "02_run_inflow_forecast.R"))
+  no_files_flag <- FALSE
+  idx <- 0
   
   for(da_freq in 1:length(date_list)) {
     for(date in 1:length(daily)) {
@@ -74,10 +76,46 @@ if(noaa_ready){
         config$run_config$end_datetime <- NA # format(daily[date]+35, "%Y-%m-%d %H:%M:%S")
       } else {
         config$run_config <- yaml::read_yaml("restart/bvre/bvre_DA_experiments_test/configure_run.yml")
+        if(no_files_flag) {
+          config$run_config$forecast_start_datetime <- format((as.Date(config$run_config$forecast_start_datetime) + idx), "%Y-%m-%d %H:%M:%S")
+        }
       }
       
       message("Prep flare forecast")
       source(file.path(lake_directory, "workflows", config_set_name, "2.5_prep_flare_forecast.R"))
+      print(forecast_dir)
+      
+      no_files_flag <- ifelse(length(list.files(forecast_dir)) == 0, TRUE, FALSE)
+      
+      if(no_files_flag) {
+        message("Skipping ", daily[date], " because no files in S3 bucket!")
+        idx <- idx + 1
+        next
+      } else {
+        idx <- 0
+      }
+      
+      #Download and process observations (already done)
+      FLAREr::get_stacked_noaa(lake_directory, config, averaged = TRUE)
+      
+      met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_path$noaa_directory, "noaa/NOAAGEFS_1hr_stacked_average", config$location$site_id, paste0("observed-met-noaa_",config$location$site_id,".nc")),
+                                                out_dir = config$file_path$execute_directory,
+                                                forecast_dir = forecast_dir,
+                                                config = config)
+      
+      met_out$filenames <- met_out$filenames[!stringr::str_detect(met_out$filenames, "ens00")]
+      
+      #met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".nc")),
+      #                                          out_dir = config$file_path$execute_directory,
+      #                                          forecast_dir = forecast_dir,
+      #                                          config = config)
+      
+      #Create observation matrix
+      obs <- FLAREr::create_obs_matrix(cleaned_observations_file_long = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-insitu.csv")),
+                                       obs_config = obs_config,
+                                       config)
+      
+      
       
       obs[1, , ]
       
@@ -116,4 +154,3 @@ if(noaa_ready){
     }
   }
 }
-

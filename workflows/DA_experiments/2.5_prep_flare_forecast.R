@@ -42,24 +42,4 @@ if(!is.null(noaa_forecast_path)){
 }else{
   forecast_dir <- NULL
 }
-
-#Download and process observations (already done)
-FLAREr::get_stacked_noaa(lake_directory, config, averaged = TRUE)
-
-met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_path$noaa_directory, "noaa/NOAAGEFS_1hr_stacked_average", config$location$site_id, paste0("observed-met-noaa_",config$location$site_id,".nc")),
-                                          out_dir = config$file_path$execute_directory,
-                                          forecast_dir = forecast_dir,
-                                          config = config)
-
-met_out$filenames <- met_out$filenames[!stringr::str_detect(met_out$filenames, "ens00")]
-
-#met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".nc")),
-#                                          out_dir = config$file_path$execute_directory,
-#                                          forecast_dir = forecast_dir,
-#                                          config = config)
-
-#Create observation matrix
-obs <- FLAREr::create_obs_matrix(cleaned_observations_file_long = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-insitu.csv")),
-                                 obs_config = obs_config,
-                                 config)
-
+list.files(forecast_dir)
