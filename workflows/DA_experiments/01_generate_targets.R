@@ -1,6 +1,6 @@
 #packages
 if (!require("pacman"))install.packages("pacman")
-pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,raster,soilDB,rgdal,lattice,lubridate, tidyverse, magrittr,zoo, rMR, aws.s3)
+pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,raster,soilDB,rgdal,lattice,lubridate, tidyverse, magrittr,zoo, rMR, aws.s3, tseries)
 
 
 message("Beginning generate targets")
@@ -135,13 +135,9 @@ cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(lake_directory,
 
 message("Successfully generated targets")
 
-#FLAREr::put_targets(site_id = config_obs$site_id,
-#            cleaned_insitu_file,
-#            cleaned_met_file,
-#            use_s3 = TRUE)
-
 FLAREr::put_targets(site_id = config_obs$site_id,
                     cleaned_insitu_file,
+                    cleaned_met_file,
                     use_s3 = FALSE)
 
 message("Successfully moved targets to s3 bucket")

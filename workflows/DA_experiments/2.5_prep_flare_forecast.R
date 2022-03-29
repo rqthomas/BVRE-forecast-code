@@ -42,4 +42,6 @@ if(!is.null(noaa_forecast_path)){
 }else{
   forecast_dir <- NULL
 }
+if(!is.null(forecast_dir)) {
 list.files(forecast_dir)
+}
