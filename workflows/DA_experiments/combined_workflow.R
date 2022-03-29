@@ -25,8 +25,8 @@ time_start_index <- 1
 num_forecasts <- 365 
 days_between_forecasts <- 1
 forecast_horizon <- 35 
-starting_date <- as_date("2020-12-02")
-second_date <- starting_date + months(1) - days(days_between_forecasts)
+starting_date <- as_date("2020-12-01")
+second_date <- starting_date + months(1) 
 
 start_dates <- rep(NA, num_forecasts)
 start_dates[1:2] <- c(starting_date, second_date)
@@ -59,6 +59,7 @@ yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", c
 message("Downloading NOAA data")
 cycle <- "00"
 
+
 if(!use_archive){
   FLAREr::get_stacked_noaa(lake_directory, config, averaged = TRUE)
 }
@@ -69,7 +70,7 @@ if(!is.na(config$run_config$restart_file)) {
 
 if(config$run_config$forecast_horizon > 0){
   noaa_forecast_path <- FLAREr::get_driver_forecast_path(config,
-                                                         forecast_model = config$met$forecast_met_model)
+                                forecast_model = config$met$forecast_met_model)
   if(!use_archive){
     FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
   }
@@ -81,10 +82,9 @@ if(config$run_config$forecast_horizon > 0){
 dir.create(file.path(lake_directory, "flare_tempdir", config$location$site_id,
                      config_set_name), recursive = TRUE, showWarnings = FALSE)
 
-
 if(start_from_scratch){
   if(use_s3){
-    FLAREr::delete_restart(site)
+    FLAREr::delete_restart(site, config_set_name)
   }
   if(file.exists(file.path(lake_directory, "restart", site, "DA_experiments",configure_run_file))){
     unlink(file.path(lake_directory, "restart", site, "DA_experiments", configure_run_file))
@@ -102,9 +102,6 @@ if(start_from_scratch){
     time_start_index <- grep(as.Date(config$run_config$forecast_start_datetime), forecast_start_dates)
   }
 
-dir.create(file.path(lake_directory, "flare_tempdir", site), recursive = TRUE, showWarnings = TRUE)
-
-
   
   message("Generating targets")
   source(file.path(lake_directory, "workflows", config_set_name, "01_generate_targets.R"))
@@ -115,17 +112,17 @@ dir.create(file.path(lake_directory, "flare_tempdir", site), recursive = TRUE, s
   #source(file.path(lake_directory, "workflows", config_set_name, "02_run_inflow_forecast.R"))
   
   for(da_freq in 1:length(date_list)) {
-    for(date in 19:23){ #time_start_index:length(forecast_start_dates)) {
+    for(date in time_start_index:length(forecast_start_dates)) {
       
-      if(date == 1) {
-        unlink(file.path(lake_directory, "restart", config$location$site_id, config_set_name, "configure_run.yml"))
-        config$run_config$forecast_start_datetime <- "2021-01-01 00:00:00" # format(daily[date], "%Y-%m-%d %H:%M:%S")
-        config$run_config$start_datetime <- "2020-12-01 00:00:00" # format((daily[date]-30), "%Y-%m-%d %H:%M:%S")
-        config$run_config$end_datetime <- NA # format(daily[date]+35, "%Y-%m-%d %H:%M:%S")
-      } else {
-        config$run_config <- yaml::read_yaml("restart/bvre/DA_experiments/configure_run.yml")
-        }
-      }
+   #   if(date == 1) {
+   #     unlink(file.path(lake_directory, "restart", config$location$site_id, config_set_name, "configure_run.yml"))
+   #     config$run_config$forecast_start_datetime <- "2021-01-01 00:00:00" # format(daily[date], "%Y-%m-%d %H:%M:%S")
+   #     config$run_config$start_datetime <- "2020-12-02 00:00:00" # format((daily[date]-30), "%Y-%m-%d %H:%M:%S")
+   #     config$run_config$end_datetime <- NA # format(daily[date]+35, "%Y-%m-%d %H:%M:%S")
+   #   } else {
+   #     config$run_config <- yaml::read_yaml("restart/bvre/DA_experiments/configure_run.yml")
+   #     }
+   #   }
       
      
       #Download and process observations (already done)
@@ -133,7 +130,6 @@ dir.create(file.path(lake_directory, "flare_tempdir", site), recursive = TRUE, s
                                                 out_dir = config$file_path$execute_directory,
                                                 forecast_dir = forecast_dir,
                                                 config = config)
-      met <- read.csv(met_out$filenames[1])
       
       met_out$filenames <- met_out$filenames[!stringr::str_detect(met_out$filenames, "ens00")]
       
@@ -189,7 +185,7 @@ dir.create(file.path(lake_directory, "flare_tempdir", site), recursive = TRUE, s
       
       FLAREr::update_run_config(config, lake_directory, configure_run_file, new_start_datetime = TRUE, day_advance =1)
       
-      unlink(forecast_dir, recursive = TRUE)
+      #unlink(forecast_dir, recursive = TRUE)
       setwd(lake_directory)
       unlink(file.path(lake_directory, "flare_tempdir", config$location$site_id, config_set_name), recursive = TRUE)
       if (config$run_config$use_s3) {
