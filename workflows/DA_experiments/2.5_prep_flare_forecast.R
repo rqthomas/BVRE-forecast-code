@@ -10,7 +10,7 @@ Sys.setenv("AWS_DEFAULT_REGION" = "s3",
            "AWS_S3_ENDPOINT" = "flare-forecast.org")
 
 #code to delete restart config file - useful when running multiple different forecast horizons instead of consecutive forecast days
-#unlink(file.path(getwd(),"restart/bvre/bvre_DA_experiments_test/configure_run.yml"))
+#unlink(file.path(getwd(),"restart/bvre/DA_experiments/configure_run.yml"))
 
 lake_directory <- here::here()
 update_run_config <- TRUE

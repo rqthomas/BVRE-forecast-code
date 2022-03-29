@@ -5,7 +5,7 @@ model_sd <- FLAREr::initiate_model_error(config, states_config)
 
 #change restart file directory for DA experiments
 if(!is.na(config$run_config$restart_file)){
-config$run_config$restart_file <- file.path(config$file_path$forecast_output_directory,basename(config$run_config$restart_file))
+config$run_config$restart_file <- file.path(config$file_path$forecast_output_directory,"DA_experiments",basename(config$run_config$restart_file))
 }
 
 init <- FLAREr::generate_initial_conditions(states_config,
