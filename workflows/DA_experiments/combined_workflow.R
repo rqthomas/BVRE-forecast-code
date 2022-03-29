@@ -43,44 +43,11 @@ forecast_start_dates <- as_date(c(NA, forecast_start_dates[-1]))
 #DA frequency vectors
 daily = seq.Date(as.Date("2020-12-01"), as.Date("2021-12-31"), by = 1) 
 date_list <- list(daily = daily,
-                 # daily_2 = daily[seq(1, length(daily), 2)],
-                 # daily_5 = daily[seq(1, length(daily), 5)],
+                  daily_2 = daily[seq(1, length(daily), 2)],
+                  daily_5 = daily[seq(1, length(daily), 5)],
                   weekly = daily[seq(1, length(daily), 7)],
                   fortnightly = daily[seq(1, length(daily), 14)],
                   monthly = daily[seq(1, length(daily), 30)]) 
-
-
-run_config <- yaml::read_yaml(file.path(lake_directory, "configuration", config_set_name, configure_run_file))
-run_config$configure_flare <- config_files
-run_config$use_s3 <- use_s3
-yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", config_set_name, configure_run_file))
-
-##` Download NOAA forecasts`
-message("Downloading NOAA data")
-cycle <- "00"
-
-
-if(!use_archive){
-  FLAREr::get_stacked_noaa(lake_directory, config, averaged = TRUE)
-}
-
-if(!is.na(config$run_config$restart_file)) {
-  config$run_config$restart_file <- basename(config$run_config$restart_file)
-}
-
-if(config$run_config$forecast_horizon > 0){
-  noaa_forecast_path <- FLAREr::get_driver_forecast_path(config,
-                                forecast_model = config$met$forecast_met_model)
-  if(!use_archive){
-    FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
-  }
-  forecast_dir <- file.path(config$file_path$noaa_directory, noaa_forecast_path)
-}else{
-  forecast_dir <- NULL
-}
-
-dir.create(file.path(lake_directory, "flare_tempdir", config$location$site_id,
-                     config_set_name), recursive = TRUE, showWarnings = FALSE)
 
 if(start_from_scratch){
   if(use_s3){
@@ -90,18 +57,23 @@ if(start_from_scratch){
     unlink(file.path(lake_directory, "restart", site, "DA_experiments", configure_run_file))
   }
   
-    config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
-    config$run_config$start_datetime <- as.character(paste0(start_dates[1], " 00:00:00"))
-    config$run_config$forecast_start_datetime <- as.character(paste0(start_dates[2], " 00:00:00"))
-    #config$run_config$forecast_horizon <- 0
-    config$run_config$restart_file <- NA
-    run_config <- config$run_config
-    yaml::write_yaml(run_config, file = file.path(config$file_path$configuration_directory, configure_run_file))
-  } else {
-    config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
-    time_start_index <- grep(as.Date(config$run_config$forecast_start_datetime), forecast_start_dates)
-  }
+  config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
+  config$run_config$start_datetime <- as.character(paste0(start_dates[1], " 00:00:00"))
+  config$run_config$forecast_start_datetime <- as.character(paste0(start_dates[2], " 00:00:00"))
+  config$run_config$forecast_horizon <- 0
+  config$run_config$restart_file <- NA
+  run_config <- config$run_config
+  yaml::write_yaml(run_config, file = file.path(config$file_path$configuration_directory, configure_run_file))
+} else {
+  config <- FLAREr::set_configuration(configure_run_file, lake_directory, config_set_name = config_set_name)
+  time_start_index <- grep(as.Date(config$run_config$forecast_start_datetime), forecast_start_dates)
+}
 
+
+run_config <- yaml::read_yaml(file.path(lake_directory, "configuration", config_set_name, configure_run_file))
+run_config$configure_flare <- config_files
+run_config$use_s3 <- use_s3
+yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", config_set_name, configure_run_file))
   
   message("Generating targets")
   source(file.path(lake_directory, "workflows", config_set_name, "01_generate_targets.R"))
@@ -113,19 +85,42 @@ if(start_from_scratch){
   
   for(da_freq in 1:length(date_list)) {
     for(date in time_start_index:length(forecast_start_dates)) {
-      
-   #   if(date == 1) {
-   #     unlink(file.path(lake_directory, "restart", config$location$site_id, config_set_name, "configure_run.yml"))
-   #     config$run_config$forecast_start_datetime <- "2021-01-01 00:00:00" # format(daily[date], "%Y-%m-%d %H:%M:%S")
-   #     config$run_config$start_datetime <- "2020-12-02 00:00:00" # format((daily[date]-30), "%Y-%m-%d %H:%M:%S")
-   #     config$run_config$end_datetime <- NA # format(daily[date]+35, "%Y-%m-%d %H:%M:%S")
-   #   } else {
-   #     config$run_config <- yaml::read_yaml("restart/bvre/DA_experiments/configure_run.yml")
-   #     }
-   #   }
-      
      
       #Download and process observations (already done)
+      cycle <- "00"
+      
+      if(!use_archive){
+        FLAREr::get_stacked_noaa(lake_directory, config, averaged = TRUE)
+      }
+      
+      if(!is.na(config$run_config$restart_file)) {
+        config$run_config$restart_file <- basename(config$run_config$restart_file)
+      }
+      
+      if(config$run_config$forecast_horizon > 0){
+        noaa_forecast_path <- FLAREr::get_driver_forecast_path(config,
+                                                               forecast_model = config$met$forecast_met_model)
+        if(!use_archive){
+          FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
+        }
+        forecast_dir <- file.path(config$file_path$noaa_directory, noaa_forecast_path)
+      }else{
+        forecast_dir <- NULL
+      }
+      
+      # Added check for NOAA files - if not present skips and moves forecast start date +1 day - TNM
+     if(time_start_index > 1){
+       file_chk <- list.files(forecast_dir)
+      if(length(file_chk) == 0) {
+        message("No NOAA forecast files for: ", forecast_start_dates[date])
+        config$run_config$forecast_start_datetime <- forecast_start_dates[date+1]
+        next
+      }
+     }
+      
+      dir.create(file.path(lake_directory, "flare_tempdir", config$location$site_id,
+                           config_set_name), recursive = TRUE, showWarnings = FALSE)
+      
       met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".nc")),
                                                 out_dir = config$file_path$execute_directory,
                                                 forecast_dir = forecast_dir,
@@ -145,16 +140,7 @@ if(start_from_scratch){
                                        config)
       obs[1, , ]
     
-      
-      #start_datetime <- lubridate::as_datetime(config$run_config$start_datetime)
-    #  if (is.na(config$run_config$forecast_start_datetime)) {
-    #    end_datetime <- lubridate::as_datetime(config$run_config$end_datetime)
-    #    forecast_start_datetime <- end_datetime
-    #  } else {
-    #    forecast_start_datetime <- lubridate::as_datetime(config$run_config$forecast_start_datetime)
-    #    end_datetime <- forecast_start_datetime + lubridate::days(config$run_config$forecast_horizon)
-    #  }
-      full_time <- seq(start_dates[2], last(start_dates), by = "1 day")
+      full_time <- seq(lubridate::as_datetime(config$run_config$start_datetime), lubridate::as_datetime(config$run_config$start_datetime) + lubridate::days(35), by = "1 day")
       full_time <- as.Date(full_time)
 
       idx <- which(!full_time %in% date_list[[da_freq]])
@@ -178,24 +164,31 @@ if(start_from_scratch){
       
       if(config$run_config$use_s3){
         success <- aws.s3::put_object(file = pdf_file, object = file.path(config$location$site_id, basename(pdf_file)), bucket = "analysis")
-        if(success){
-          unlink(pdf_file)
-        }
+    #    if(success){
+    #      unlink(pdf_file)
+    #    }
       }
       
-      FLAREr::update_run_config(config, lake_directory, configure_run_file, new_start_datetime = TRUE, day_advance =1)
+      #restart_date <- as.character(lubridate::as_datetime(config$run_config$forecast_start_datetime) + lubridate::days(1)) #to save each restart file
+      config <- FLAREr::update_run_config(config = config, lake_directory = lake_directory, configure_run_file = configure_run_file,
+                                       saved_file = saved_file, 
+                                       new_start_datetime = TRUE, day_advance =days_between_forecasts, new_horizon = forecast_horizon)
+      #file.copy(from = file.path(config$file_path$restart_directory,configure_run_file),
+      #          to = file.path(config$file_path$restart_directory, paste0("configure_run",restart_date,".yml")))
+      
       
       #unlink(forecast_dir, recursive = TRUE)
       setwd(lake_directory)
-      unlink(file.path(lake_directory, "flare_tempdir", config$location$site_id, config_set_name), recursive = TRUE)
+      #unlink(file.path(lake_directory, "flare_tempdir", config$location$site_id, config_set_name), recursive = TRUE)
       if (config$run_config$use_s3) {
         success <- aws.s3::put_object(file = saved_file, object = file.path(config$location$site_id,
                                                                             basename(saved_file)), bucket = "forecasts")
-        if (success) {
-          unlink(saved_file)
-        }
+       # if (success) {
+       #   unlink(saved_file)
+       # }
       }
     }
   }
 
+  
 

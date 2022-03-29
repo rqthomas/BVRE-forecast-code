@@ -1,6 +1,6 @@
 #packages
 if (!require("pacman"))install.packages("pacman")
-pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,raster,soilDB,rgdal,lattice,lubridate, tidyverse, magrittr,zoo, rMR, aws.s3)
+pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,raster,soilDB,rgdal,lattice,lubridate, tidyverse, magrittr,zoo, rMR, aws.s3, tseries)
 
 
 message("Beginning generate targets")
