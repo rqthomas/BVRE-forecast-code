@@ -36,6 +36,10 @@ temp_oxy_chla_qaqc <- function(realtime_file,
     bvrdata <- read_csv(realtime_file, skip=1, col_names = BVRDATA_COL_NAMES,
                          col_types = cols(.default = col_double(), DateTime = col_datetime()))
     
+    #drop rows when DateTime = NA and drop dups
+    bvrdata <- bvrdata[!is.na(bvrdata$DateTime),] %>%
+    distinct(DateTime, .keep_all= TRUE) #taking out the duplicate values 
+    
   ####################################################################################################################################### 
   #read in maintenance log
   log <- read_csv(maintenance_file,

@@ -19,8 +19,8 @@ if(use_archive){
   use_s3 <- FALSE
 }
 
-start_from_scratch <- TRUE
-time_start_index <- 1
+start_from_scratch <- FALSE
+time_start_index <- 278
 
 num_forecasts <- 365 
 days_between_forecasts <- 1
@@ -84,7 +84,7 @@ yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", c
   #source(file.path(lake_directory, "workflows", config_set_name, "02_run_inflow_forecast.R"))
   
   for(da_freq in 1:length(date_list)) {
-    for(date in time_start_index:length(forecast_start_dates)) {
+    for(date in time_start_index:length(forecast_start_dates)) { 
      
       #Download and process observations (already done)
       cycle <- "00"
@@ -96,6 +96,9 @@ yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", c
       if(!is.na(config$run_config$restart_file)) {
         config$run_config$restart_file <- basename(config$run_config$restart_file)
       }
+      # config$run_config$restart_file <- paste0("bvre-", forecast_start_dates[date-1], "-DA_experiments.nc")
+      # config$run_config$start_datetime <- forecast_start_dates[date-1]
+      # config$run_config$forecast_start_datetime <- forecast_start_dates[date]
       
       if(config$run_config$forecast_horizon > 0){
         noaa_forecast_path <- FLAREr::get_driver_forecast_path(config,
@@ -108,24 +111,27 @@ yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", c
         forecast_dir <- NULL
       }
       
-      # Added check for NOAA files - if not present skips and moves forecast start date +1 day - TNM
-     if(time_start_index > 1){
-       file_chk <- list.files(forecast_dir)
-      if(length(file_chk) == 0) {
-        message("No NOAA forecast files for: ", forecast_start_dates[date])
-        config$run_config$forecast_start_datetime <- forecast_start_dates[date+1]
-        next
-      }
-     }
-      
       dir.create(file.path(lake_directory, "flare_tempdir", config$location$site_id,
                            config_set_name), recursive = TRUE, showWarnings = FALSE)
       
-      met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".nc")),
-                                                out_dir = config$file_path$execute_directory,
-                                                forecast_dir = forecast_dir,
-                                                config = config)
+      # Added check for NOAA files - if not present skips and moves forecast start date +1 day - TNM
+     if(date > 1){
+       file_chk <- list.files(forecast_dir)
+     } else{
+       file_chk <- 0
+     }
       
+      if(length(file_chk) == 0) {
+        message("No NOAA forecast files for: ", forecast_start_dates[date])
+        config$run_config$forecast_start_datetime <- as.character(paste0(forecast_start_dates[date+1], " 00:00:00"))
+        next
+      }
+       
+       met_out <- FLAREr::generate_glm_met_files(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".nc")),
+                                                 out_dir = config$file_path$execute_directory,
+                                                 forecast_dir = forecast_dir,
+                                                 config = config)
+    
       met_out$filenames <- met_out$filenames[!stringr::str_detect(met_out$filenames, "ens00")]
       
       

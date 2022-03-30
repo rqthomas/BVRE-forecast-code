@@ -20,7 +20,7 @@ forecast_daily_avg <- read_csv(forecast_csv) %>%
   mutate(DA=names(date_list[da_freq])) 
 
 #create df with forecast evaluation metrics for each depth
-forecast_depth_skill <- data.frame(Depth=unique(forecast_depth$depth),RMSE=NA, pbias=NA, bias=NA, CRPS=NA, DA=names(date_list[da_freq]), day=forecast_start_dates[date])
+forecast_depth_skill <- data.frame(Depth=unique(forecast_depth$depth),RMSE=NA, pbias=NA, bias=NA, CRPS=NA, DA=names(date_list[da_freq]), day=as.Date(config$run_config$forecast_start_datetime))
 for(i in 1:length(unique(forecast_depth$depth))){
   forecast_depth_skill[i,2] <- hydroGOF::rmse(forecast_depth$forecast_mean[forecast_depth$depth[i]==unique(forecast_depth$depth)],forecast_depth$observed[forecast_depth$depth[i]==unique(forecast_depth$depth)])
   forecast_depth_skill[i,3]<- hydroGOF::pbias(forecast_depth$forecast_mean[forecast_depth$depth[i]==unique(forecast_depth$depth)],forecast_depth$observed[forecast_depth$depth[i]==unique(forecast_depth$depth)])
@@ -37,7 +37,7 @@ for(i in 1:length(unique(forecast_daily_avg$date))){
 }
 
 #save forecast_eval df
-readr::write_csv(forecast_depth_skill, file.path(paste0(lake_directory,"/forecasts/bvre/DA_experiments/",names(date_list)[da_freq],"/35d_depth_forecast_skill_",start_dates[date+1],".csv")))
+readr::write_csv(forecast_depth_skill, file.path(paste0(lake_directory,"/forecasts/bvre/DA_experiments/",names(date_list)[da_freq],"/35d_depth_forecast_skill_",as.Date(config$run_config$forecast_start_datetime),".csv")))
 
 #save daily rmse as csv
-readr::write_csv(forecast_daily_avg_skill, file.path(paste0(lake_directory,"/forecasts/bvre/DA_experiments/",names(date_list)[da_freq],"/35d_daily_forecast_skill_",start_dates[date+1],".csv")))
+readr::write_csv(forecast_daily_avg_skill, file.path(paste0(lake_directory,"/forecasts/bvre/DA_experiments/",names(date_list)[da_freq],"/35d_daily_forecast_skill_",as.Date(config$run_config$forecast_start_datetime),".csv")))
