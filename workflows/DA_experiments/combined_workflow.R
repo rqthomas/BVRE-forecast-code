@@ -1,5 +1,7 @@
 library(magrittr)
 library(lubridate)
+library(readr)
+library(hydroGOF)
 lake_directory <- here::here()
 setwd(lake_directory)
 forecast_site <- "bvre"
@@ -19,14 +21,14 @@ if(use_archive){
   use_s3 <- FALSE
 }
 
-start_from_scratch <- FALSE
-time_start_index <- 278
+start_from_scratch <- TRUE
+time_start_index <- 1
 
 num_forecasts <- 365 
 days_between_forecasts <- 1
 forecast_horizon <- 35 
-starting_date <- as_date("2020-12-01")
-second_date <- starting_date + months(1) 
+starting_date <- as_date("2020-11-27")
+second_date <- starting_date + months(1) + days(5) 
 
 start_dates <- rep(NA, num_forecasts)
 start_dates[1:2] <- c(starting_date, second_date)
@@ -39,9 +41,10 @@ site <- "bvre"
 start_dates <- as_date(start_dates)
 forecast_start_dates <- start_dates + days(days_between_forecasts)
 forecast_start_dates <- as_date(c(NA, forecast_start_dates[-1]))
+forecast_start_dates <- forecast_start_dates[1:length(forecast_start_dates)-1] #because no observtions on 12-31
 
 #DA frequency vectors
-daily = seq.Date(as.Date("2020-12-01"), as.Date("2021-12-31"), by = 1) 
+daily = seq.Date(as.Date("2020-11-27"), as.Date("2021-12-30"), by = 1) 
 date_list <- list(daily = daily,
                   daily_2 = daily[seq(1, length(daily), 2)],
                   daily_5 = daily[seq(1, length(daily), 5)],
@@ -76,15 +79,15 @@ run_config$use_s3 <- use_s3
 yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", config_set_name, configure_run_file))
   
   message("Generating targets")
-  source(file.path(lake_directory, "workflows", config_set_name, "01_generate_targets.R"))
+  #source(file.path(lake_directory, "workflows", config_set_name, "01_generate_targets.R")) #commenting out for now becasue vahid is working on the git files
   
   setwd(lake_directory)
   
   #message("Generating inflow forecast")
   #source(file.path(lake_directory, "workflows", config_set_name, "02_run_inflow_forecast.R"))
   
-  for(da_freq in 1:length(date_list)) {
-    for(date in time_start_index:length(forecast_start_dates)) { 
+  for(da_freq in 2:length(date_list)) { #starting at daily_2
+    for(date in time_start_index:length(forecast_start_dates)) { #note that 2021-11-23 does NOT want to run - get a GLM error saying "Day 2459559 (2021-12-10) not found" - manually restarting on 2021-11-24 
      
       #Download and process observations (already done)
       cycle <- "00"
@@ -96,9 +99,9 @@ yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", c
       if(!is.na(config$run_config$restart_file)) {
         config$run_config$restart_file <- basename(config$run_config$restart_file)
       }
-      # config$run_config$restart_file <- paste0("bvre-", forecast_start_dates[date-1], "-DA_experiments.nc")
-      # config$run_config$start_datetime <- forecast_start_dates[date-1]
-      # config$run_config$forecast_start_datetime <- forecast_start_dates[date]
+      # config$run_config$restart_file <- file.path(config$file_path$forecast_output_directory, paste0("bvre-", forecast_start_dates[date-1], "-DA_experiments.nc"))
+      # config$run_config$start_datetime <- as.character(paste0(forecast_start_dates[date-1], "00:00:00"))
+      # config$run_config$forecast_start_datetime <- as.character(paste0(forecast_start_dates[date+1], " 00:00:00"))
       
       if(config$run_config$forecast_horizon > 0){
         noaa_forecast_path <- FLAREr::get_driver_forecast_path(config,
@@ -148,7 +151,7 @@ yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", c
     
       full_time <- seq(lubridate::as_datetime(config$run_config$start_datetime), lubridate::as_datetime(config$run_config$start_datetime) + lubridate::days(35), by = "1 day")
       full_time <- as.Date(full_time)
-
+    
       idx <- which(!full_time %in% date_list[[da_freq]])
       obs[1, idx, ] <- NA
       
@@ -175,12 +178,12 @@ yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", c
     #    }
       }
       
-      #restart_date <- as.character(lubridate::as_datetime(config$run_config$forecast_start_datetime) + lubridate::days(1)) #to save each restart file
+      restart_date <- as.character(lubridate::as_datetime(config$run_config$forecast_start_datetime) + lubridate::days(1)) #to save each restart file
       config <- FLAREr::update_run_config(config = config, lake_directory = lake_directory, configure_run_file = configure_run_file,
                                        saved_file = saved_file, 
                                        new_start_datetime = TRUE, day_advance =days_between_forecasts, new_horizon = forecast_horizon)
-      #file.copy(from = file.path(config$file_path$restart_directory,configure_run_file),
-      #          to = file.path(config$file_path$restart_directory, paste0("configure_run",restart_date,".yml")))
+      file.copy(from = file.path(config$file_path$restart_directory,configure_run_file),
+                to = file.path(config$file_path$restart_directory, paste0("configure_run",restart_date,".yml")))
       
       
       #unlink(forecast_dir, recursive = TRUE)

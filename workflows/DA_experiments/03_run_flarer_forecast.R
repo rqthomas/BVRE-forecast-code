@@ -32,7 +32,8 @@ da_forecast_output <- FLAREr::run_da_forecast(states_init = init$states,
                                               obs_config = obs_config,
                                               management = NULL,
                                               da_method = config$da_setup$da_method,
-                                              par_fit_method = config$da_setup$par_fit_method)
+                                              par_fit_method = config$da_setup$par_fit_method,
+                                              debug = TRUE)
 
 # Save forecast
 saved_file <- FLAREr::write_forecast_netcdf(da_forecast_output = da_forecast_output,
