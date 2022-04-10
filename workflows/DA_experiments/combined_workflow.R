@@ -44,7 +44,7 @@ forecast_start_dates <- as_date(c(NA, forecast_start_dates[-1]))
 forecast_start_dates <- forecast_start_dates[1:length(forecast_start_dates)-1] #because no observtions on 12-31
 
 #DA frequency vectors
-daily = seq.Date(as.Date("2020-11-27"), as.Date("2021-12-30"), by = 1) 
+daily = seq.Date(as.Date("2020-11-27"), as.Date("2021-12-31"), by = 1) 
 date_list <- list(daily = daily,
                   daily_2 = daily[seq(1, length(daily), 2)],
                   daily_5 = daily[seq(1, length(daily), 5)],
@@ -86,7 +86,7 @@ yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", c
   #message("Generating inflow forecast")
   #source(file.path(lake_directory, "workflows", config_set_name, "02_run_inflow_forecast.R"))
   
-  for(da_freq in 2:length(date_list)) { #starting at daily_2
+  for(da_freq in 1:length(date_list)) { #starting at daily_2
     for(date in time_start_index:length(forecast_start_dates)) { #note that 2021-11-23 does NOT want to run - get a GLM error saying "Day 2459559 (2021-12-10) not found" - manually restarting on 2021-11-24 
      
       #Download and process observations (already done)

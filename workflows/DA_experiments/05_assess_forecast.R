@@ -30,11 +30,18 @@ for(i in 1:length(unique(forecast_depth$depth))){
 }
 
 #create df for forecast daily average
-forecast_daily_avg_skill <- data.frame(date=unique(forecast_daily_avg$date), RMSE=NA, DA=names(date_list[da_freq]), day=seq(0,35,by=1))
+forecast_daily_avg_skill <- data.frame(date=unique(forecast_daily_avg$date), RMSE=NA, pbias=NA, bias=NA, CRPS=NA, DA=names(date_list[da_freq]), day=seq(0,35,by=1))
 for(i in 1:length(unique(forecast_daily_avg$date))){
   forecast_daily_avg_skill[i,2] <- hydroGOF::rmse(forecast_daily_avg$avg_wc_temp[forecast_daily_avg$date[i]==unique(forecast_daily_avg$date)],
                                                  forecast_daily_avg$avg_wc_obs[forecast_daily_avg$date[i]==unique(forecast_daily_avg$date)])
-}
+  forecast_daily_avg_skill[i,3] <- hydroGOF::pbias(forecast_daily_avg$avg_wc_temp[forecast_daily_avg$date[i]==unique(forecast_daily_avg$date)],
+                                                   forecast_daily_avg$avg_wc_obs[forecast_daily_avg$date[i]==unique(forecast_daily_avg$date)])
+  forecast_daily_avg_skill[i,4] <- mean(forecast_daily_avg$avg_wc_temp[forecast_daily_avg$date[i]==unique(forecast_daily_avg$date)]) - 
+                                   mean(forecast_daily_avg$avg_wc_obs[forecast_daily_avg$date[i]==unique(forecast_daily_avg$date)])
+  forecast_daily_avg_skill[i,5] <- mean(scoringRules::crps_sample(forecast_daily_avg$avg_wc_obs[forecast_daily_avg$date[i]==unique(forecast_daily_avg$date)],
+                                                                  cbind(forecast_daily_avg$avg_wc_temp[forecast_daily_avg$date[i]==unique(forecast_daily_avg$date)],
+                                                                        forecast_daily_avg$forecast_sd[forecast_daily_avg$date[i]==unique(forecast_daily_avg$date)])))
+  }
 
 #save forecast_eval df
 readr::write_csv(forecast_depth_skill, file.path(paste0(lake_directory,"/forecasts/bvre/DA_experiments/",names(date_list)[da_freq],"/35d_depth_forecast_skill_",as.Date(config$run_config$forecast_start_datetime),".csv")))
