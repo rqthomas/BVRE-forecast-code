@@ -68,9 +68,8 @@ forecast_skill_depth <- plyr::ddply(all_DA_forecasts, c("phen", "depth", "DA"), 
 #order DA frequencies
 forecast_skill_depth$DA <- factor(forecast_skill_depth$DA, levels=c("Daily", "2Day", "5Day", "Weekly", "Fortnightly", "Monthly"))
 
-
-#forecast skill for each depth and horizon
-forecast_skill_depth_horizon <-  plyr::ddply(all_DA_forecasts, c("depth", "horizon", "DA"), function(x) {
+#forecast skill for each depth and date
+forecast_skill_depth_date <-  plyr::ddply(all_DA_forecasts, c("depth", "forecast_date", "DA"), function(x) {
   data.frame(
     RMSE = sqrt(mean((x$mean - x$obs)^2, na.rm = TRUE)),
     MAE = mean(abs(x$mean - x$obs), na.rm = TRUE),
@@ -78,6 +77,10 @@ forecast_skill_depth_horizon <-  plyr::ddply(all_DA_forecasts, c("depth", "horiz
     CRPS = verification::crps(x$obs, as.matrix(x[, 4:5]))$CRPS
   )
 }, .progress = plyr::progress_text(), .parallel = FALSE) 
+
+##add in mixed/stratified period
+forecast_skill_depth_date$phen <- ifelse(forecast_skill_depth_date$forecast_date <= as.Date(strat_date) & 
+                                           forecast_skill_depth_date$forecast_date >="2021-03-19","Stratified", "Mixed")
 
 
 #averaging across depths and horizons
@@ -129,6 +132,20 @@ forecast_horizon_avg <- plyr::ddply(all_DA_forecasts, c("horizon", "DA", "phen")
 
 #order DA frequencies
 forecast_horizon_avg$DA <- factor(forecast_horizon_avg$DA, levels=c("Daily", "2Day", "5Day", "Weekly", "Fortnightly", "Monthly"))
+
+
+#df with averaged forecast skill for all days (group by horizon, DA, phen, and depth)
+forecast_horizon_depth_avg <- plyr::ddply(all_DA_forecasts, c("horizon", "DA", "phen", "depth"), function(x) {
+  data.frame(
+    RMSE = sqrt(mean((x$mean - x$obs)^2, na.rm = TRUE)),
+    MAE = mean(abs(x$mean - x$obs), na.rm = TRUE),
+    pbias = 100 * (sum(x$mean - x$obs, na.rm = TRUE) / sum(x$obs, na.rm = TRUE)),
+    CRPS = verification::crps(x$obs, as.matrix(x[, 4:5]))$CRPS
+  )
+}, .progress = plyr::progress_text(), .parallel = FALSE) 
+
+#order DA frequencies
+forecast_horizon_depth_avg$DA <- factor(forecast_horizon_depth_avg$DA, levels=c("Daily", "2Day", "5Day", "Weekly", "Fortnightly", "Monthly"))
 
 
 #------------------------------------------------------------------------------#
@@ -226,6 +243,11 @@ ggplot(forecast_skill_depth, aes(RMSE, depth, color=DA)) +geom_path(size=1.5) + 
   scale_y_reverse() + scale_color_manual(values=cb_friendly_2) + guides(color=guide_legend(title="DA frequency"))
 ggsave(file.path(lake_directory,"analysis/figures/DepthvsRMSE_allfreqs_phen.jpg"))
 
+ggplot(subset(forecast_skill_depth_date, depth==10), aes(DA, RMSE, fill=DA)) + geom_boxplot() +  xlab("10m") +
+  theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank()) +
+  facet_wrap(~phen) + scale_fill_manual(values=cb_friendly_2) + guides(fill=guide_legend(title="DA frequency")) 
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_10m.jpg"))
+
 #depth by horizon (no stratified vs. mixed)
 #ggplot(forecast_skill_depth_horizon, aes(RMSE, depth, color=DA, horizon==35)) +geom_path(size=1.5) +
 #  theme_bw() + theme(panel.grid.major = element_blank(),panel.grid.minor = element_blank()) + ylab("Depth (m)") +
@@ -247,6 +269,7 @@ ggsave(file.path(lake_directory,"analysis/figures/RMSEvsfreq_phen_1day.jpg"))
 
 #round rmse to nearest 0.5 for tile plot below
 forecast_horizon_avg$RMSE_bins <- round_any(forecast_horizon_avg$RMSE,0.5) 
+forecast_horizon_depth_avg$RMSE_bins <- round_any(forecast_horizon_depth_avg$RMSE,0.5) 
 
 #figure for horizon vs frequency to compare forecast skill
 ggplot(forecast_horizon_avg, aes(DA, horizon, fill=RMSE_bins)) + geom_tile(color="black") + xlab("") +
@@ -255,6 +278,15 @@ ggplot(forecast_horizon_avg, aes(DA, horizon, fill=RMSE_bins)) + geom_tile(color
                 axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=10), panel.grid.major = element_blank(),panel.grid.minor = element_blank()) +
   guides(fill=guide_legend(title="RMSE")) +  scale_fill_gradientn(colors = hcl.colors(5, "BuPu")) 
 ggsave(file.path(lake_directory,"analysis/figures/HorizonvsDA_tileplot.jpg")) 
+
+#tile plot by depth
+ggplot(subset(forecast_horizon_depth_avg,depth==9), aes(DA, horizon, fill=RMSE_bins)) + geom_tile(color="black") + xlab("9m") +
+  ylab("Horizon (days)") + theme_bw() + facet_wrap(~phen) +
+  theme(text = element_text(size=14), axis.text = element_text(size=14, color="black"),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=10), panel.grid.major = element_blank(),panel.grid.minor = element_blank()) +
+  guides(fill=guide_legend(title="RMSE")) +  scale_fill_gradientn(colors = hcl.colors(5, "BuPu")) 
+ggsave(file.path(lake_directory,"analysis/figures/HorizonvsDA_tileplot_9m.jpg")) 
+
 
 #RMSE vs forecast period
 ggplot(forecast_skill_avg, aes(date, RMSE, color=DA)) +geom_path(size=1.5) + xlab("") +
