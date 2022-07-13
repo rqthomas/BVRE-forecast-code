@@ -1,7 +1,7 @@
 #creating figs using the summary csv files from analysis folder
 
 #read in packages
-pacman::p_load(dplyr,readr,ggplot2)
+pacman::p_load(dplyr,readr,ggplot2, FSA, AnalystHelper, rcompanion)
 
 #set wd
 lake_directory <- here::here()
@@ -210,31 +210,108 @@ ggplot(res, aes(forecast_date, predict, color=DA)) + geom_point() + theme_bw() +
 ggplot(res, aes(forecast_date, predict, color=DA)) + geom_boxplot() + theme_bw() + 
   facet_wrap(~DA) + scale_color_manual(values=cb_friendly) 
 
+#------------------------------------------------------------------------------#
+# Forecast Skill Figs and stats
+
+
+#test significance of da frequencies in stratified period (anova)
+qqnorm(forecast_horizon_avg$RMSE)
+qqline(forecast_horizon_avg$RMSE) #data does not follow normal distribution
+bartlett.test(forecast_horizon_avg$RMSE, forecast_horizon_avg$DA) #variances are not the same
+
+#using kruskal wallis because data do not meet anova assumptions
+kruskal.test(forecast_horizon_avg$RMSE[forecast_horizon_avg$phen=="Stratified"] ~ forecast_horizon_avg$DA[forecast_horizon_avg$phen=="Stratified"])
+# p-value = 0.000026 so rmse DOES differ between DA frequencies
+kruskal.test(forecast_horizon_avg$RMSE[forecast_horizon_avg$phen=="Mixed"] ~ forecast_horizon_avg$DA[forecast_horizon_avg$phen=="Mixed"])
+#not significant
+
+#now dunn test to determine which groups are different 
+dunn_strat <- dunnTest(forecast_horizon_avg$RMSE[forecast_horizon_avg$phen=="Stratified"] ~ forecast_horizon_avg$DA[forecast_horizon_avg$phen=="Stratified"], method="bonferroni")
+#daily-fortnightly, 2day-weekly, 5day-weekly, daily-weekly have p<0.05
+
+rslt_strat=toupper(cldList(P.adj ~ Comparison, data=dunn_strat$res, threshold = 0.05)$Letter)
+
+
+ann_text <- data.frame(DA=c("Daily","2Day","5Day","Weekly","Fortnightly","Monthly"),RMSE=c(2.38,2.15,2.3,1.8,1.85,1.95),lab = c("a","ab","ab","c","bc","abc"),
+                       phen = factor("Stratified",levels = c("Mixed","Stratified")))
+
 #horizon and depth averaged skill for mixed vs strat
 ggplot(forecast_horizon_avg, aes(DA, RMSE, fill=DA)) +geom_boxplot() + xlab("") +
   theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), panel.grid.major = element_blank(),panel.grid.minor = element_blank()) +
-  facet_wrap(~phen) + scale_fill_manual(values=cb_friendly_2) + guides(fill=guide_legend(title="DA frequency"))
+  facet_wrap(~phen) + scale_fill_manual(values=cb_friendly_2) + guides(fill=guide_legend(title="DA frequency")) +
+  geom_text(data = ann_text,label = as.factor(ann_text$lab), hjust = 0.5, vjust =-1.5)
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_phen.jpg"))
+
 
 ggplot(forecast_horizon_avg, aes(DA, CRPS, fill=DA)) + geom_boxplot() + xlab("") +
   theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), panel.grid.major = element_blank(),panel.grid.minor = element_blank()) +
   facet_wrap(~phen) + scale_fill_manual(values=cb_friendly_2) +   guides(fill=guide_legend(title="DA frequency"))
 ggsave(file.path(lake_directory,"analysis/figures/pbiasvsDAfreq_phen.jpg"))
 
+
 #skill across different horizons
+
+#kruskal wallis and dunn tests for 1 day ahead
+kruskal.test(forecast_skill_horizon$RMSE[forecast_skill_horizon$phen=="Stratified" & forecast_skill_horizon$horizon==1] ~ forecast_skill_horizon$DA[forecast_skill_horizon$phen=="Stratified"& forecast_skill_horizon$horizon==1])
+dunn_strat_1d <- dunnTest(forecast_skill_horizon$RMSE[forecast_skill_horizon$phen=="Stratified"& forecast_skill_horizon$horizon==1] ~ forecast_skill_horizon$DA[forecast_skill_horizon$phen=="Stratified"& forecast_skill_horizon$horizon==1], method="bonferroni")
+rslt_strat_1d=toupper(cldList(P.adj ~ Comparison, data=dunn_strat_1d$res, threshold = 0.05)$Letter)
+ann_text_1d_strat <- data.frame(DA=c("2Day","5Day","Daily","Fortnightly","Monthly","Weekly"),RMSE=c(0.6,0.7,0.5,0.9,1.3,0.7),lab = c("ab","ac","b","d","e","c"),
+                                phen = factor("Stratified",levels = c("Mixed","Stratified")))
+
+
+kruskal.test(forecast_skill_horizon$RMSE[forecast_skill_horizon$phen=="Mixed" & forecast_skill_horizon$horizon==1] ~ forecast_skill_horizon$DA[forecast_skill_horizon$phen=="Mixed"& forecast_skill_horizon$horizon==1])
+dunn_mix_1d <- dunnTest(forecast_skill_horizon$RMSE[forecast_skill_horizon$phen=="Mixed"& forecast_skill_horizon$horizon==1] ~ forecast_skill_horizon$DA[forecast_skill_horizon$phen=="Mixed"& forecast_skill_horizon$horizon==1], method="bonferroni")
+rslt_mix_1d=toupper(cldList(P.adj ~ Comparison, data=dunn_mix_1d$res, threshold = 0.05)$Letter)
+ann_text_1d_mixed <- data.frame(DA=c("2Day","5Day","Daily","Fortnightly","Monthly","Weekly"),RMSE=c(0.4,0.5,0.4,0.5,0.7,0.5),lab = c("ab","a","b","a","c","ab"),
+                                phen = factor("Mixed",levels = c("Mixed","Stratified")))
+
 ggplot(subset(forecast_skill_horizon, horizon==1), aes(DA, RMSE, fill=DA)) + geom_boxplot() +  xlab("") +
   theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank()) +
-  facet_wrap(~phen) + scale_fill_manual(values=cb_friendly_2) +   guides(fill=guide_legend(title="DA frequency"))
+  facet_wrap(~phen) + scale_fill_manual(values=cb_friendly_2) +   guides(fill=guide_legend(title="DA frequency")) +
+geom_text(data = ann_text_1d_mixed,label = as.factor(ann_text_1d_mixed$lab), hjust = 1.7, vjust =-1.5) +
+geom_text(data = ann_text_1d_strat,label = as.factor(ann_text_1d_strat$lab), hjust = 1.7, vjust =-1.5)
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_phen_1day.jpg"))
+
+
+#kruskal wallis and dunn tests for 7days ahead
+kruskal.test(forecast_skill_horizon$RMSE[forecast_skill_horizon$phen=="Stratified" & forecast_skill_horizon$horizon==7] ~ forecast_skill_horizon$DA[forecast_skill_horizon$phen=="Stratified"& forecast_skill_horizon$horizon==7])
+dunn_strat_7d <- dunnTest(forecast_skill_horizon$RMSE[forecast_skill_horizon$phen=="Stratified"& forecast_skill_horizon$horizon==7] ~ forecast_skill_horizon$DA[forecast_skill_horizon$phen=="Stratified"& forecast_skill_horizon$horizon==7], method="bonferroni")
+rslt_strat_7d=toupper(cldList(P.adj ~ Comparison, data=dunn_strat_7d$res, threshold = 0.05)$Letter)
+ann_text_7d_strat <- data.frame(DA=c("2Day","5Day","Daily","Fortnightly","Monthly","Weekly"),RMSE=c(1.4,1.6,1.5,1.4,1.6,1.2),lab = c("ab","ac","b","d","e","c"),
+                                phen = factor("Stratified",levels = c("Mixed","Stratified")))
+
+
+kruskal.test(forecast_skill_horizon$RMSE[forecast_skill_horizon$phen=="Mixed" & forecast_skill_horizon$horizon==7] ~ forecast_skill_horizon$DA[forecast_skill_horizon$phen=="Mixed"& forecast_skill_horizon$horizon==7])
+dunn_mix_7d <- dunnTest(forecast_skill_horizon$RMSE[forecast_skill_horizon$phen=="Mixed"& forecast_skill_horizon$horizon==7] ~ forecast_skill_horizon$DA[forecast_skill_horizon$phen=="Mixed"& forecast_skill_horizon$horizon==7], method="bonferroni")
+rslt_mix_7d=toupper(cldList(P.adj ~ Comparison, data=dunn_mix_7d$res, threshold = 0.05)$Letter)
+ann_text_7d_mixed <- data.frame(DA=c("2Day","5Day","Daily","Fortnightly","Monthly","Weekly"),RMSE=c(1,0.9,0.9,0.9,1,0.8),lab = c("ab","a","b","a","c","ab"),
+                                phen = factor("Mixed",levels = c("Mixed","Stratified")))
 
 ggplot(subset(forecast_skill_horizon, horizon==7), aes(DA, RMSE, fill=DA)) + geom_boxplot() +  xlab("") +
   theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank()) +
-  facet_wrap(~phen) + scale_fill_manual(values=cb_friendly_2) +   guides(fill=guide_legend(title="DA frequency"))
+  facet_wrap(~phen) + scale_fill_manual(values=cb_friendly_2) +   guides(fill=guide_legend(title="DA frequency")) +
+  geom_text(data = ann_text_7d_strat,label = as.factor(ann_text_7d_strat$lab), hjust = 1.7, vjust =-1.5) #mixed is not sig different
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_phen_7day.jpg"))
+
+
+#kruskal wallis and dunn tests for 30 days ahead
+kruskal.test(forecast_skill_horizon$RMSE[forecast_skill_horizon$phen=="Stratified" & forecast_skill_horizon$horizon==30] ~ forecast_skill_horizon$DA[forecast_skill_horizon$phen=="Stratified"& forecast_skill_horizon$horizon==30])
+dunn_strat_30d <- dunnTest(forecast_skill_horizon$RMSE[forecast_skill_horizon$phen=="Stratified"& forecast_skill_horizon$horizon==30] ~ forecast_skill_horizon$DA[forecast_skill_horizon$phen=="Stratified"& forecast_skill_horizon$horizon==30], method="bonferroni")
+rslt_strat_30d=toupper(cldList(P.adj ~ Comparison, data=dunn_strat_30d$res, threshold = 0.05)$Letter)
+ann_text_30d_strat <- data.frame(DA=c("2Day","5Day","Daily","Fortnightly","Monthly","Weekly"),RMSE=c(2.6,2.7,2.8,2.2,2.2,2.1),lab = c("a","b","b","cd","ac","d"),
+                                phen = factor("Stratified",levels = c("Mixed","Stratified")))
+
+
+kruskal.test(forecast_skill_horizon$RMSE[forecast_skill_horizon$phen=="Mixed" & forecast_skill_horizon$horizon==30] ~ forecast_skill_horizon$DA[forecast_skill_horizon$phen=="Mixed"& forecast_skill_horizon$horizon==30])
+dunn_mix_30d <- dunnTest(forecast_skill_horizon$RMSE[forecast_skill_horizon$phen=="Mixed"& forecast_skill_horizon$horizon==30] ~ forecast_skill_horizon$DA[forecast_skill_horizon$phen=="Mixed"& forecast_skill_horizon$horizon==30], method="bonferroni")
+rslt_mix_30d=toupper(cldList(P.adj ~ Comparison, data=dunn_mix_30d$res, threshold = 0.05)$Letter)
+ann_text_30d_mixed <- data.frame(DA=c("2Day","5Day","Daily","Fortnightly","Monthly","Weekly"),RMSE=c(1,0.9,0.9,0.9,1,0.8),lab = c("ab","a","b","a","c","ab"),
+                                phen = factor("Mixed",levels = c("Mixed","Stratified")))
 
 ggplot(subset(forecast_skill_horizon, horizon==30), aes(DA, RMSE, fill=DA)) + geom_boxplot() +  xlab("") +
   theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank()) +
-  facet_wrap(~phen) + scale_fill_manual(values=cb_friendly_2) + guides(fill=guide_legend(title="DA frequency"))
+  facet_wrap(~phen) + scale_fill_manual(values=cb_friendly_2) + guides(fill=guide_legend(title="DA frequency")) +
+  geom_text(data = ann_text_30d_strat,label = as.factor(ann_text_30d_strat$lab), hjust = 1.7, vjust =-1.5) #mixed is not sig different
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_phen_30day.jpg"))
 
 #depth forecasts
