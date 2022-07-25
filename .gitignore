@@ -17,3 +17,4 @@ restart/*
 automation/bvre.log
 BVRE-forecast-code.Rproj
 analysis/figures/*
+analysis/summary_files/*
