@@ -11,28 +11,38 @@ daily_forecasts <- list.files(file.path(lake_directory,"analysis/summary_files/d
 daily_forecasts <- lapply(daily_forecasts, read_csv) %>% bind_rows() %>% mutate(DA = "Daily")
 
 daily_reruns <- list.files(file.path(lake_directory,"analysis/summary_files/daily_24nov_start"), pattern="csv", full.names=TRUE)
-daily_reruns <- lapply(daily_reruns, read_csv) %>% bind_rows() %>% mutate(DA = "Daily_rerun")
+daily_reruns <- lapply(daily_reruns, read_csv) %>% bind_rows() %>% mutate(DA = "Daily")
 
 day2_forecasts <- list.files(file.path(lake_directory,"analysis/summary_files/daily_2"), pattern="csv", full.names=TRUE)
 day2_forecasts <- lapply(day2_forecasts, read_csv) %>% bind_rows() %>% mutate(DA = "2Day")
 
 day2_reruns <- list.files(file.path(lake_directory,"analysis/summary_files/daily_2_24nov_start"), pattern="csv", full.names=TRUE)
-day2_reruns <- lapply(day2_reruns, read_csv) %>% bind_rows() %>% mutate(DA = "2Day_rerun")
+day2_reruns <- lapply(day2_reruns, read_csv) %>% bind_rows() %>% mutate(DA = "2Day")
 
 day5_forecasts <- list.files(file.path(lake_directory,"analysis/summary_files/daily_5"), pattern="csv", full.names=TRUE)
 day5_forecasts <- lapply(day5_forecasts, read_csv) %>% bind_rows() %>% mutate(DA = "5Day")
+
+day5_reruns <- list.files(file.path(lake_directory,"analysis/summary_files/daily_5_24nov_start"), pattern="csv", full.names=TRUE)
+day5_reruns <- lapply(day5_reruns, read_csv) %>% bind_rows() %>% mutate(DA = "5Day")
 
 weekly_forecasts <- list.files(file.path(lake_directory,"analysis/summary_files/weekly"), pattern="csv", full.names=TRUE)
 weekly_forecasts <- lapply(weekly_forecasts, read_csv) %>% bind_rows() %>% mutate(DA = "Weekly")
 
 weekly_reruns <- list.files(file.path(lake_directory,"analysis/summary_files/weekly_24nov_start"), pattern="csv", full.names=TRUE)
-weekly_reruns <- lapply(weekly_reruns, read_csv) %>% bind_rows() %>% mutate(DA = "Weekly_rerun")
+weekly_reruns <- lapply(weekly_reruns, read_csv) %>% bind_rows() %>% mutate(DA = "Weekly")
 
 fortnightly_forecasts <- list.files(file.path(lake_directory,"analysis/summary_files/fortnightly"), pattern="csv", full.names=TRUE)
 fortnightly_forecasts <- lapply(fortnightly_forecasts, read_csv) %>% bind_rows() %>% mutate(DA = "Fortnightly")
 
+fortnightly_reruns <- list.files(file.path(lake_directory,"analysis/summary_files/fortnightly_24nov_start"), pattern="csv", full.names=TRUE)
+fortnightly_reruns <- lapply(fortnightly_reruns, read_csv) %>% bind_rows() %>% mutate(DA = "Fortnightly")
+
 monthly_forecasts <- list.files(file.path(lake_directory,"analysis/summary_files/monthly"), pattern="csv", full.names=TRUE)
 monthly_forecasts <- lapply(monthly_forecasts, read_csv) %>% bind_rows() %>% mutate(DA = "Monthly")
+
+monthly_reruns <- list.files(file.path(lake_directory,"analysis/summary_files/monthly_24nov_start"), pattern="csv", full.names=TRUE)
+monthly_reruns <- lapply(monthly_reruns, read_csv) %>% bind_rows() %>% mutate(DA = "Monthly")
+
 
 detach(dplyr)
 library(plyr)
@@ -40,7 +50,7 @@ library(plyr)
 all_DA_forecasts <- rbind(daily_forecasts, day2_forecasts, day5_forecasts, weekly_forecasts,
                           fortnightly_forecasts, monthly_forecasts)
 
-#all_DA_forecasts <- rbind(daily_reruns, day2_reruns, weekly_reruns)
+#all_DA_forecasts <- rbind(daily_reruns, day2_reruns, day5_reruns, weekly_reruns, fortnightly_reruns, monthly_reruns)
 
 
 #round depths to nearest m
@@ -265,7 +275,7 @@ rslt_strat=toupper(cldList(P.adj ~ Comparison, data=dunn_strat$res, threshold = 
 
 
 ann_text <- data.frame(DA=cldList(P.adj ~ Comparison, data=dunn_strat$res, threshold = 0.05)$Group,
-                       RMSE=c(2.05,2.2,2,1.8,1.7,1.95),
+                       RMSE=c(2.05,2.2,2.25,1.8,1.9,1.7),
                        lab = cldList(P.adj ~ Comparison, data=dunn_strat$res, threshold = 0.05)$Letter,
                        phen = factor("Stratified",levels = c("Mixed","Stratified")))
 
@@ -308,7 +318,7 @@ ggplot(subset(forecast_skill_horizon, horizon==1), aes(DA, RMSE, fill=DA)) + geo
   facet_wrap(~phen) + scale_fill_manual(values=cb_friendly_2) +   guides(fill=guide_legend(title="DA frequency")) +
 geom_text(data = ann_text_1d_mixed,label = as.factor(ann_text_1d_mixed$lab), hjust = 1, vjust =-1, size=3) +
 geom_text(data = ann_text_1d_strat,label = as.factor(ann_text_1d_strat$lab), hjust = 1, vjust =-1, size=3)
-ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_phen_1day.jpg"))
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_phen_1day_RERUN.jpg"))
 
 
 #kruskal wallis and dunn tests for 7days ahead
@@ -329,7 +339,7 @@ ggplot(subset(forecast_skill_horizon, horizon==7), aes(DA, RMSE, fill=DA)) + geo
   theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank()) +
   facet_wrap(~phen) + scale_fill_manual(values=cb_friendly_2) +   guides(fill=guide_legend(title="DA frequency")) +
   geom_text(data = ann_text_7d_strat,label = as.factor(ann_text_7d_strat$lab), hjust = 1, vjust =-1, size=3) #mixed is not sig different
-ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_phen_7day.jpg"))
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_phen_7day_RERUN.jpg"))
 
 
 #kruskal wallis and dunn tests for 30 days ahead
@@ -350,7 +360,7 @@ ggplot(subset(forecast_skill_horizon, horizon==30), aes(DA, RMSE, fill=DA)) + ge
   theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank()) +
   facet_wrap(~phen) + scale_fill_manual(values=cb_friendly_2) + guides(fill=guide_legend(title="DA frequency")) +
   geom_text(data = ann_text_30d_strat,label = as.factor(ann_text_30d_strat$lab), hjust = 1, vjust =-1, size=3) #mixed is not sig different
-ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_phen_30day.jpg"))
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_phen_30day_RERUN.jpg"))
 
 #depth forecasts
 ggplot(forecast_skill_depth, aes(RMSE, depth, color=DA)) +geom_path(size=1.5) + facet_wrap(~phen)+
@@ -402,7 +412,7 @@ ggplot(subset(forecast_skill_depth_date, depth==9), aes(DA, RMSE, fill=DA)) + ge
   theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank()) +
   facet_wrap(~phen) + scale_fill_manual(values=cb_friendly_2) + guides(fill=guide_legend(title="DA frequency")) +
 geom_text(data = ann_text_9m_strat,label = as.factor(ann_text_9m_strat$lab), hjust = 1, vjust =-1, size=3)
-ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_9m.jpg"))
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_9m_RERUN.jpg"))
 
 #looking at horizon and depth specific skill
 
@@ -426,12 +436,17 @@ forecast_skill_depth_horizon %>% filter(depth %in% c(1,9) & horizon %in% c(1,7,3
 ggplot(aes(DA, value2, fill=as.factor(horizon))) +  ylab("RMSE") +
   geom_boxplot(outlier.shape = NA) + theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank()) +
   facet_grid(depth~phen, scales="free") + scale_fill_manual(values=c("#81A665","#E0CB48","#D08151")) + guides(fill=guide_legend(title="Horizon (days)")) 
-ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets.jpg"))
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_RERUN.jpg"))
 
-ggplot(subset(forecast_skill_depth_horizon, depth %in% c(1,9) & horizon %in% c(1,7,35)), aes(DA, RMSE, fill=as.factor(depth))) +
+
+forecast_skill_depth_horizon %>% filter(depth %in% c(1,9) & horizon %in% c(1,7,35) & 
+                                          DA %in% c("Daily","Weekly","Fortnightly","Monthly")) %>%
+  group_by(DA,depth,horizon) %>%  # do the same calcs for each box
+  mutate(value2 = filter_lims(RMSE)) %>%
+ggplot(aes(DA, value2, fill=as.factor(depth))) +  ylab("RMSE") +
   geom_boxplot() + theme_bw() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank()) +
   facet_grid(horizon~phen, scales="free") + scale_fill_manual(values=c("#FFCC99","#006699")) + guides(fill=guide_legend(title="Depth (m)")) 
-ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_horizon_facets.jpg"))
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_horizon_facets_RERUN.jpg"))
 
 
 #horizon forecast figs

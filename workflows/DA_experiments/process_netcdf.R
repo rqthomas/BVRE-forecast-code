@@ -5,7 +5,7 @@ library(ggplot2)
 
 lake_directory <- here::here()
 
-da_freq <- c("daily_24nov_start","daily_2_24nov_start")#c("daily", "daily_2", "daily_5", "fortnightly", "monthly", "weekly") # Add names for your DA_freq
+da_freq <- c("fortnightly_24nov_start","monthly_24nov_start")#c("daily", "daily_2", "daily_5", "fortnightly", "monthly", "weekly") # Add names for your DA_freq
 config_set_name <- "DA_experiments"
 configure_run_file <- "configure_run.yml"
 
