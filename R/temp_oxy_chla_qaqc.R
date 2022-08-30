@@ -513,31 +513,32 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   if(!is.na(realtime_file)){
     #Different lakes are going to have to modify this for their temperature data format
     
-    d1 <- bvrdata
+    d1_og <- bvrdata
     
     if(!is.na(qaqc_file)){
       d2 <- read.csv(qaqc_file, na.strings = 'NA', stringsAsFactors = FALSE)
       
       #subset d1 to only dates in d2
-      d1 <- d1[d1$DateTime %in% d2$DateTime,]
+      d1 <- d1_og[d1_og$DateTime %in% d2$DateTime,]
       d2 <- d2[d2$DateTime %in% d1$DateTime,]
     }
     
-    d1$TIMESTAMP <- as_datetime(d1$DateTime,tz = "UTC")
+    d1_og$DateTime <- as_datetime(d1_og$DateTime,tz = "UTC")
+    d1$TIMESTAMP <- as_datetime(d1$DateTime,tz = "UTC") 
     
-    d3 <-  data.frame(TIMESTAMP = d1$TIMESTAMP, 
-                      wtr_1 = d1$ThermistorTemp_C_1, wtr_2 = d1$ThermistorTemp_C_2,
-                      wtr_3 = d1$ThermistorTemp_C_3, wtr_4 = d1$ThermistorTemp_C_4,
-                      wtr_5 = d1$ThermistorTemp_C_5, wtr_6 = d1$ThermistorTemp_C_6,
-                      wtr_7 = d1$ThermistorTemp_C_7, wtr_8 = d1$ThermistorTemp_C_8,
-                      wtr_9 = d1$ThermistorTemp_C_9, wtr_10 = d1$ThermistorTemp_C_10,
-                      wtr_11 = d1$ThermistorTemp_C_11, wtr_12 = d1$ThermistorTemp_C_12,
-                      wtr_13 = d1$ThermistorTemp_C_13, wtr_1_5_exo = d1$EXOTemp_C_1_5,
-                      wtr_6_do = d1$RDOTemp_C_6, wtr_13_do = d1$RDOTemp_C_13,
-                      Chla_1_5 = d1$EXOChla_ugL_1_5, doobs_1_5 = d1$EXODO_mgL_1_5,
-                      doobs_6 = d1$RDO_mgL_6, doobs_13 = d1$RDO_mgL_13,
-                      fDOM_1_5 = d1$EXOfDOM_QSU_1_5, bgapc_1_5 = d1$EXOBGAPC_ugL_1_5,
-                      depth_1_5 = d1$EXO_depth_m, Depth_m_13=d1$Depth_m_13)
+    d3 <-  data.frame(TIMESTAMP = d1_og$DateTime, 
+                      wtr_1 = d1_og$ThermistorTemp_C_1, wtr_2 = d1_og$ThermistorTemp_C_2,
+                      wtr_3 = d1_og$ThermistorTemp_C_3, wtr_4 = d1_og$ThermistorTemp_C_4,
+                      wtr_5 = d1_og$ThermistorTemp_C_5, wtr_6 = d1_og$ThermistorTemp_C_6,
+                      wtr_7 = d1_og$ThermistorTemp_C_7, wtr_8 = d1_og$ThermistorTemp_C_8,
+                      wtr_9 = d1_og$ThermistorTemp_C_9, wtr_10 = d1_og$ThermistorTemp_C_10,
+                      wtr_11 = d1_og$ThermistorTemp_C_11, wtr_12 = d1_og$ThermistorTemp_C_12,
+                      wtr_13 = d1_og$ThermistorTemp_C_13, wtr_1_5_exo = d1_og$EXOTemp_C_1_5,
+                      wtr_6_do = d1_og$RDOTemp_C_6, wtr_13_do = d1_og$RDOTemp_C_13,
+                      Chla_1_5 = d1_og$EXOChla_ugL_1_5, doobs_1_5 = d1_og$EXODO_mgL_1_5,
+                      doobs_6 = d1_og$RDO_mgL_6, doobs_13 = d1_og$RDO_mgL_13,
+                      fDOM_1_5 = d1_og$EXOfDOM_QSU_1_5, bgapc_1_5 = d1_og$EXOBGAPC_ugL_1_5,
+                      depth_1_5 = d1_og$EXO_depth_m, Depth_m_13=d1_og$Depth_m_13)
     
     if(!is.na(qaqc_file)){
       d2$TIMESTAMP <- as_datetime(d2$DateTime,tz = "UTC")
