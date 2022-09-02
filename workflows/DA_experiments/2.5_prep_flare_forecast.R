@@ -37,7 +37,7 @@ obs_config <- readr::read_csv(file.path(config$file_path$configuration_directory
 states_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$states_config_file), col_types = readr::cols())
 
 if(!is.null(noaa_forecast_path)){
-  FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
+  FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path, config)
   forecast_dir <- file.path(config$file_path$noaa_directory, noaa_forecast_path)
 }else{
   forecast_dir <- NULL
