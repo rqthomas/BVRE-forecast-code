@@ -47,7 +47,7 @@ fortnightly_fixed <- list.files(file.path(lake_directory,"analysis/summary_files
 fortnightly_fixed <- lapply(fortnightly_fixed, read_csv) %>% bind_rows() %>% mutate(DA = "Fortnightly")
 
 fortnightly_1.04 <- list.files(file.path(lake_directory,"analysis/summary_files/inflat_1.04/fortnightly"), pattern="csv", full.names=TRUE)
-fortnightly_1.04 <- lapply(fortnightly_1.04, read_csv) %>% bind_rows() %>% mutate(DA = "Fortnightlyy")
+fortnightly_1.04 <- lapply(fortnightly_1.04, read_csv) %>% bind_rows() %>% mutate(DA = "Fortnightly")
 
 monthly_27nov <- list.files(file.path(lake_directory,"analysis/summary_files/27nov_start/monthly"), pattern="csv", full.names=TRUE)
 monthly_27nov <- lapply(monthly_27nov, read_csv) %>% bind_rows() %>% mutate(DA = "Monthly")
@@ -183,8 +183,13 @@ forecast_skill_depth_horizon_1.04$DA <- factor(forecast_skill_depth_horizon_1.04
 forecast_skill_depth_horizon_27nov$da_start_date <- "27nov"
 forecast_skill_depth_horizon_24nov$da_start_date <- "24nov"
 forecast_skill_depth_horizon_22nov$da_start_date <- "22nov"
+forecast_skill_depth_horizon_fixed$da_start_date <- "27nov"
+forecast_skill_depth_horizon_1.04$da_start_date <- "27nov"
+
 
 forecast_skill_depth_horizon_27nov$param <- "1.02"
+forecast_skill_depth_horizon_24nov$param <- "1.02"
+forecast_skill_depth_horizon_22nov$param <- "1.02"
 forecast_skill_depth_horizon_fixed$param <- "fixed"
 forecast_skill_depth_horizon_1.04$param <- "1.04"
 
@@ -202,9 +207,10 @@ start_dates %>% filter(depth %in% c(1,5,9)) %>%
   mutate(value2 = filter_lims(RMSE)) %>%
   ggplot(aes(DA, value2, fill=as.factor(da_start_date))) +  ylab("RMSE") + xlab("")+
   geom_boxplot(outlier.shape = NA) + theme_bw() + guides(fill=guide_legend(title="DA Start Date")) +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.77,0.27), legend.background = element_blank(),
-        legend.title = element_text(size = 4),legend.text  = element_text(size = 4),legend.key.size = unit(0.5, "lines"), legend.direction = "horizontal",
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank()) +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.75,0.25), legend.background = element_blank(),
+        legend.title = element_text(size = 2.5),legend.text  = element_text(size = 2.5),legend.key.size = unit(0.5, "lines"), legend.direction = "horizontal",
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank(),
+        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),panel.spacing=unit(0.1, "cm")) +
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48","#D08151")) 
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_start_dates.jpg"))
 
@@ -212,10 +218,11 @@ params %>% filter(depth %in% c(1,5,9)) %>%
   group_by(DA,depth,horizon) %>%  # do the same calcs for each box
   mutate(value2 = filter_lims(RMSE)) %>%
   ggplot(aes(DA, value2, fill=as.factor(param))) +  ylab("RMSE") + xlab("")+
-  geom_boxplot(outlier.shape = NA) + theme_bw() + guides(fill=guide_legend(title="Parameters")) +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.77,0.27), legend.background = element_blank(),
-        legend.title = element_text(size = 4),legend.text  = element_text(size = 4),legend.key.size = unit(0.5, "lines"), legend.direction = "horizontal",
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank()) +
+  geom_boxplot(outlier.shape = NA) + theme_bw() + guides(fill=guide_legend(title="Params")) +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.75,0.25), legend.background = element_blank(),
+        legend.title = element_text(size = 2.5),legend.text  = element_text(size = 2.5),legend.key.size = unit(0.5, "lines"), legend.direction = "horizontal",
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank(),
+        plot.margin = unit(c(0,0.05,-0.2,0), "cm"), panel.spacing=unit(0.1, "cm")) +
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48","#D08151")) 
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_parameters.jpg"))
 
