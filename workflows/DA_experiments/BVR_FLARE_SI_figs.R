@@ -1,5 +1,8 @@
 #BVR FLARE SI figs
 
+#load libraries
+pacman::p_load(reshape2)
+
 #inflation parameter figs (fixed, 1.02, 1.04)
 #and different start days (27nov, 24nov, 22nov)
 
@@ -225,6 +228,69 @@ params %>% filter(depth %in% c(1,5,9)) %>%
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"), panel.spacing=unit(0.1, "cm")) +
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48","#D08151")) 
 ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_parameters.jpg"))
+
+#------------------------------------------------------------------------------------------------#
+#parameter evolution figs
+
+source(file.path(lake_directory,"R/read_flare_params.R"))
+
+forecasts_daily_nc <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/27_nov_start/daily"), pattern=".nc", full.names=TRUE)[-c(1)] #ignoring first file because this is the DA period
+forecasts_weekly_nc <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/27_nov_start/weekly"), pattern=".nc", full.names=TRUE)[-c(1)]
+forecasts_fortnightly_nc <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/27_nov_start/fortnightly"), pattern=".nc", full.names=TRUE)[-c(1)]
+forecasts_monthly_nc <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/27_nov_start/monthly"), pattern=".nc", full.names=TRUE)[-c(1)]
+
+#summary stats for first forecast of each
+daily <- read_flare_params(files = forecasts_daily_nc, type = "forecast", summary = TRUE) %>% mutate(DA="Daily")
+weekly <- read_flare_params(files = forecasts_weekly_nc, type = "forecast", summary = TRUE) %>% mutate(DA="Weekly")
+fortnightly <- read_flare_params(files = forecasts_fortnightly_nc, type = "forecast", summary = TRUE) %>% mutate(DA="Fortnightly")
+monthly <- read_flare_params(files = forecasts_monthly_nc, type = "forecast", summary = TRUE) %>% mutate(DA="Monthly")
+
+#combine all parameter dfs
+parameters <- rbind(daily, weekly, fortnightly, monthly)
+
+#change DA factor order
+parameters$DA <- factor(parameters$DA, levels = c("Daily", "Weekly","Fortnightly","Monthly"))
+
+#rename zone1temp so more informative facet label in fig
+parameters <- parameters %>% mutate(parameter = recode(parameter, "zone1temp" = "Sediment Temperature"))
+
+#visualize how parameters change over time
+ggplot(subset(parameters, parameter=="Sediment Temperature"), aes(datetime, mean, color=DA, group=DA)) + theme_bw() +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.background = element_blank(),
+        legend.title = element_text(size = 4),legend.text  = element_text(size = 4),legend.key.size = unit(0.5, "lines"), 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank(),
+        plot.margin = unit(c(0,0.05,-0.2,0), "cm"), panel.spacing=unit(0.1, "cm"))+ scale_color_manual(values=cb_friendly_2) +
+  facet_wrap(~parameter, scales="free_y")  + scale_fill_manual(values=cb_friendly_2) + ylim(4.7,10.2) +
+  scale_x_date(date_labels = "%b") + ylab(expression("Temperature ("*~degree*C*")")) + xlab("")  +
+  geom_ribbon(aes(y = mean, ymin = mean-sd, ymax = mean+sd, color=DA, fill=DA), alpha=0.5) +
+  guides(fill = guide_legend(title="DA frequency"), color = guide_legend(title="DA frequency"))
+ggsave(file.path(lake_directory,"analysis/figures/paramRMSEvsHorizon.jpg"))
+
+#figuring out the date that DA parameters diverge
+mean(parameters$mean[parameters$parameter=="Sediment Temperature" & parameters$DA=="Daily" & parameters$datetime >= "2021-05-01"])
+
+mean(parameters$mean[parameters$parameter=="Sediment Temperature" & parameters$DA=="Weekly" & parameters$datetime >= "2021-05-01"])
+mean(parameters$mean[parameters$parameter=="Sediment Temperature" & parameters$DA=="Fortnightly" & parameters$datetime >= "2021-05-01"])
+mean(parameters$mean[parameters$parameter=="Sediment Temperature" & parameters$DA=="Monthly" & parameters$datetime >= "2021-05-01"])
+
+mean(c(last(parameters$mean[parameters$parameter=="Sediment Temperature" & parameters$DA=="Weekly"]),
+       last(parameters$mean[parameters$parameter=="Sediment Temperature" & parameters$DA=="Fortnightly"]),
+       last(parameters$mean[parameters$parameter=="Sediment Temperature" & parameters$DA=="Monthly"])))
+
+#2021 phenology: 2021-03-08 is first time when >3 consecutive days had difference between surface and bottom >1C
+#code for calculating strat/mixed periods
+# bvr_temps <- temp_long %>% filter(temp_long$Variable=="temperature" & DateTime>= "2021-01-01") %>% select(DateTime, Reading, Depth) %>%
+#   mutate(DateTime = as.Date(DateTime))  %>% mutate(Depth = round(Depth,0))
+# 
+# 
+# bvr_surf_bot_temps <- bvr_temps %>% group_by(DateTime, Depth) %>% summarise(Temp = mean(Reading)) %>% 
+#   group_by(DateTime)  %>% filter(Depth== min(Depth) | Depth== max(Depth)) %>%
+#   mutate(diff = abs(last(Temp)-first(Temp))) %>% mutate(diff = round(diff,0))
+# 
+# plot(bvr_surf_bot_temps$DateTime, bvr_surf_bot_temps$diff)
+# 
+# mix <- bvr_surf_bot_temps[bvr_surf_bot_temps$diff<1,] 
+# strat <- bvr_surf_bot_temps[bvr_surf_bot_temps$diff>=1,]
 
 
 
