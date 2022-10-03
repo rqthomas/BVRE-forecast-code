@@ -52,6 +52,10 @@ ggplot(sub) +   theme_bw() +
   guides(color = guide_legend("Depth (m)"), fill= guide_legend(order = 1, override.aes= list(color="black")))
 #ggsave(file.path(lake_directory,"analysis/figures/2021_watertemp_mixedVstratified.jpg"))
 
+#min(sub$value[which(sub$Date>="2021-11-08" | sub$Date<="2021-03-12")])
+#max(sub$value[which(sub$Date>="2021-11-08" | sub$Date<="2021-03-12")]) #mixed
+#min(sub$value[which(sub$Date>="2021-03-13" & sub$Date<="2021-11-09")])
+#max(sub$value[which(sub$Date>="2021-03-13" & sub$Date<="2021-11-09")]) #mixed
 
 for(m in seq_len(length(da_freq))) {
 

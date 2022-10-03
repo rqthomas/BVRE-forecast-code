@@ -240,20 +240,20 @@ median_mix_9m_monthly <- c(median(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & k
 
 
 #create table to export mixed and stratified p-vals across depths (aggregated over horizon)
-pvals_horizon_aggregated <- data.frame("depth"= c(rep(1,6),rep(5,6),rep(9,6)), 
-                                                  "comparison" = c(dunn_mix_1m$res$Comparison,dunn_mix_5m$res$Comparison,dunn_mix_9m$res$Comparison),
+pvals_horizon_aggregated <- data.frame("Depth_m"= c(rep(1,6),rep(5,6),rep(9,6)), 
+                                                  "Comparison" = c(dunn_mix_1m$res$Comparison,dunn_mix_5m$res$Comparison,dunn_mix_9m$res$Comparison),
                                                   #"Z" = c(dunn_mix_1m$res$Z,dunn_mix_5m$res$Z,dunn_mix_9m$res$Z),
-                                                  "mixed_pvalue" = c(dunn_mix_1m$res$P.adj,dunn_mix_5m$res$P.adj,dunn_mix_9m$res$P.adj),
-                                                  "stratified_pvalue" = c(dunn_strat_1m$res$P.adj,dunn_strat_5m$res$P.adj,dunn_strat_9m$res$P.adj))
+                                                  "Mixed_pvalue" = c(dunn_mix_1m$res$P.adj,dunn_mix_5m$res$P.adj,dunn_mix_9m$res$P.adj),
+                                                  "Stratified_pvalue" = c(dunn_strat_1m$res$P.adj,dunn_strat_5m$res$P.adj,dunn_strat_9m$res$P.adj))
 
-#write.csv(mixed_pvals_horizon_aggregated,file.path(lake_directory,"analysis/data/pvals_horizon_aggregatred.csv"),row.names = FALSE)
+#write.csv(pvals_horizon_aggregated,file.path(lake_directory,"analysis/data/pvals_horizon_aggregatred.csv"),row.names = FALSE)
 
 #median RMSE table
-median_RMSE_horizon <- data.frame("depth" = c(rep(1,24),rep(5,24),rep(9,24)),
-                                  "DA" = c(rep("Daily",3), rep("Weekly",3),rep("Fortnightly",3),rep("Monthly",3),6),
-                                  "horizon" = rep(c(1,7,35),24),
-                                  "phen" = rep(c(rep("Mixed",12),rep("Stratified",12)),3),
-                                  "RMSE" = c(median_mix_1m_daily,median_mix_1m_weekly,median_mix_1m_fortnightly,median_mix_1m_monthly,
+median_RMSE_horizon <- data.frame("Depth_m" = c(rep(1,24),rep(5,24),rep(9,24)),
+                                  "DA" = rep(c(rep("Daily",3), rep("Weekly",3),rep("Fortnightly",3),rep("Monthly",3)),6),
+                                  "Horizon_days" = rep(c(1,7,35),24),
+                                  "TempRegime" = rep(c(rep("Mixed",12),rep("Stratified",12)),3),
+                                  "RMSE_C" = c(median_mix_1m_daily,median_mix_1m_weekly,median_mix_1m_fortnightly,median_mix_1m_monthly,
                                              median_strat_1m_daily,median_strat_1m_weekly,median_strat_1m_fortnightly,median_strat_1m_monthly,
                                              median_mix_5m_daily,median_mix_5m_weekly,median_mix_5m_fortnightly,median_mix_5m_monthly,
                                              median_strat_5m_daily,median_strat_5m_weekly,median_strat_5m_fortnightly,median_strat_5m_monthly,
@@ -486,41 +486,23 @@ rslt_mix_monthly_9m_max <- c(quantile(kw_horizons$RMSE[kw_horizons$phen=="Mixed"
                            quantile(kw_horizons$RMSE[kw_horizons$phen=="Mixed" & kw_horizons$depth==9 & kw_horizons$DA == "Monthly" & kw_horizons$horizon ==35], probs=.75))
 
 #create table to export mixed and stratified p-vals across depths, horizons, and DA freq
-pvals <- data.frame("depth (m)"= c(rep(1,12),rep(5,12),rep(9,12)), 
+pvals <- data.frame("Depth_m"= c(rep(1,12),rep(5,12),rep(9,12)), 
                                "DA" = rep(c(rep("daily",3),rep("weekly",3),rep("fortnightly",3),rep("monthly",3)),3),
-                               "comparison" = rep(c(dunn_mix_daily_1m$res$Comparison),12),
+                               "Comparison" = rep(c(dunn_mix_daily_1m$res$Comparison),12),
                               # "Z" = c(dunn_mix_daily_1m$res$Z,dunn_mix_weekly_1m$res$Z,dunn_mix_fortnightly_1m$res$Z,dunn_mix_monthly_1m$res$Z,
                               #         dunn_mix_daily_5m$res$Z,dunn_mix_weekly_5m$res$Z,dunn_mix_fortnightly_5m$res$Z,dunn_mix_monthly_5m$res$Z,
                               #         dunn_mix_daily_9m$res$Z,dunn_mix_weekly_9m$res$Z,dunn_mix_fortnightly_9m$res$Z,dunn_mix_monthly_9m$res$Z),
-                               "mixed_pvalue" = c(dunn_mix_daily_1m$res$P.adj,dunn_mix_weekly_1m$res$P.adj,dunn_mix_fortnightly_1m$res$P.adj,dunn_mix_monthly_1m$res$P.adj,
+                               "Mixed_pvalue" = c(dunn_mix_daily_1m$res$P.adj,dunn_mix_weekly_1m$res$P.adj,dunn_mix_fortnightly_1m$res$P.adj,dunn_mix_monthly_1m$res$P.adj,
                                              dunn_mix_daily_5m$res$P.adj,dunn_mix_weekly_5m$res$P.adj,dunn_mix_fortnightly_5m$res$P.adj,dunn_mix_monthly_5m$res$P.adj,
                                              dunn_mix_daily_9m$res$P.adj,dunn_mix_weekly_9m$res$P.adj,dunn_mix_fortnightly_9m$res$P.adj,dunn_mix_monthly_9m$res$P.adj),
-                               "stratified_pvalue" = c(dunn_strat_daily_1m$res$P.adj,dunn_strat_weekly_1m$res$P.adj,dunn_strat_fortnightly_1m$res$P.adj,dunn_strat_monthly_1m$res$P.adj,
+                               "Stratified_pvalue" = c(dunn_strat_daily_1m$res$P.adj,dunn_strat_weekly_1m$res$P.adj,dunn_strat_fortnightly_1m$res$P.adj,dunn_strat_monthly_1m$res$P.adj,
                                              dunn_strat_daily_5m$res$P.adj,dunn_strat_weekly_5m$res$P.adj,dunn_strat_fortnightly_5m$res$P.adj,dunn_strat_monthly_5m$res$P.adj,
                                              dunn_strat_daily_9m$res$P.adj,dunn_strat_weekly_9m$res$P.adj,dunn_strat_fortnightly_9m$res$P.adj,dunn_strat_monthly_9m$res$P.adj))
 
 #write.csv(pvals,file.path(lake_directory,"analysis/data/pvals.csv"),row.names = FALSE)
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-#### FIGURE 3 ####
-
-for(i in 1:length(4)){
-forecast_skill_depth_horizon %>% filter(depth %in% c(1,5,9) & 
-                                          DA %in% c("Daily","Weekly","Fortnightly","Monthly")) %>%
-  group_by(DA,depth) %>%  # do the same calcs for each box
-  mutate(value2 = filter_lims(RMSE)) %>%
-  ggplot(aes(DA, value2, fill=as.factor(depth))) +  ylab("RMSE") + xlab("") +
-  geom_boxplot(outlier.shape = NA) + theme_bw() + 
-    theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = "none",
-    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank()) +
-  facet_grid(depth~phen, scales="free_y") + scale_fill_manual(values=c("#81A665","#E0CB48","#D08151")) 
-  #geom_text(x=1, y=2, label= d[i]) 
-}
-
-ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_fig3.jpg"))
-
-#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-#### FIGURE 4: 1,5,9m depth facets for each DA frequency for 1,7,and 35-day ahead forecasts  ####
+#### FIGURE 3: 1,5,9m depth facets for each DA frequency for 1,7,and 35-day ahead forecasts  ####
 
 #new df with letters for each horizon
 #letters <- data.frame("depth"= c(rep(1,24),rep(5,24),rep(9,24)),
@@ -569,11 +551,11 @@ kw_horizons %>%
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=4), axis.text.y = element_text(size=4)) +
   geom_text(data=letters,aes(x=DA,y=0.2+max.RMSE,label=letters$letter),hjust=0.1,vjust = -0.1, size=1.5) +
   facet_grid(depth~phen, scales="free_y",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48","#D08151")) 
-ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_fig4.jpg"))
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_fig3.jpg"))
 
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-#### FIGURE 5: mixed and stratified RMSE tileplots aggregated across all depths  ####
+#### FIGURE 4: mixed and stratified RMSE tileplots aggregated across all depths  ####
 
 #round rmse to nearest 0.5 for tile plot below
 forecast_horizon_avg$RMSE_bins <- round_any(forecast_horizon_avg$RMSE,0.5) 
@@ -586,12 +568,10 @@ ggplot(subset(forecast_horizon_avg, DA %in% c("Daily","Weekly","Fortnightly","Mo
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), 
         panel.grid.major = element_blank(),panel.grid.minor = element_blank())+
   guides(fill=guide_legend(title="RMSE")) +  scale_fill_gradientn(colors = hcl.colors(5, "BuPu")) 
-ggsave(file.path(lake_directory,"analysis/figures/HorizonvsDA_tileplot_fig5.jpg"))
-
-
+ggsave(file.path(lake_directory,"analysis/figures/HorizonvsDA_tileplot_fig4.jpg"))
 
 #------------------------------------------------------------------------------------------------#
-# Data assimilation figure
+# Data assimilation figure 5
 forecasts_daily_da <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/27_nov_start/daily"), pattern="experiments.csv", full.names=TRUE) 
 forecasts_daily_da <- lapply(forecasts_daily_da, read_csv) %>% bind_rows() %>% mutate(DA = "Daily")
 
@@ -630,11 +610,22 @@ DA$depth <- ceiling(DA$depth)
 #pull out 2 horizons for fig 6 (mixed vs stratified)
 DA_sub <- DA[(DA$date >="2021-01-01" & DA$date <="2021-02-08") | (DA$date >="2021-06-01" & DA$date <="2021-07-10"),]
 
-#add in phen column
-DA_sub$phen <- "Stratified" 
-DA_sub$phen[DA_sub$date >="2021-01-01" & DA_sub$date <="2021-02-08"] <- "Mixed"
+#summary df to average the forecasts for each DA freq, horizon, depth, forecast_start_day, and date
+DA_sub_final <- plyr::ddply(DA_sub, c("depth", "forecast_start_day","horizon", "DA","date"), function(x) {
+  data.frame(
+    forecast_mean = mean(x$forecast_mean, na.rm = TRUE),
+    forecast_sd = mean(x$forecast_sd, na.rm = TRUE),
+    forecast_upper_95 = mean(x$forecast_upper_95, na.rm=TRUE),
+    forecast_lower_95 = mean(x$forecast_lower_95, na.rm=TRUE),
+    observed = mean(x$observed, na.rm=TRUE)
+  )
+}, .progress = plyr::progress_text(), .parallel = FALSE) 
 
-ggplot(subset(DA_sub, DA %in% c("Daily","Weekly","Fortnightly","Monthly") & horizon==1 & depth %in% c(1,5,9)), aes(date, forecast_mean, color=DA)) + 
+#add in phen column
+DA_sub_final$phen <- "Stratified" 
+DA_sub_final$phen[DA_sub_final$date >="2021-01-01" & DA_sub_final$date <="2021-02-08"] <- "Mixed"
+
+ggplot(subset(DA_sub_final, DA %in% c("Daily","Weekly","Fortnightly","Monthly") & horizon==1 & depth %in% c(1,5,9)), aes(date, forecast_mean, color=DA)) + 
   geom_ribbon(aes(y = forecast_mean, ymin = forecast_mean-forecast_sd, ymax = forecast_mean+forecast_sd, color=DA, fill=DA, linetype=NA),alpha=0.4,show.legend = F) +
   geom_line(size=0.5) + theme_bw() + facet_wrap(depth~phen, scales = "free", labeller = labeller(depth=depths,.multi_line = FALSE),ncol = 2) + scale_x_date() +
   theme(text = element_text(size=4), axis.text = element_text(size=2, color="black"), legend.key = element_rect(colour = NA, fill = NA),
@@ -645,6 +636,6 @@ ggplot(subset(DA_sub, DA %in% c("Daily","Weekly","Fortnightly","Monthly") & hori
         panel.spacing=unit(0.1, "cm"))+
   ylab(expression("Temperature ("*~degree*C*")")) + xlab("")  + scale_color_manual(values=cb_friendly_2) + scale_fill_manual(values=cb_friendly_2) +
   guides(color = guide_legend(title="DA frequency",override.aes=list(fill=NA)), fill= "none")
-ggsave(file.path(lake_directory,"analysis/figures/AssimilationVSdatafreq_fig6.jpg")) 
+ggsave(file.path(lake_directory,"analysis/figures/AssimilationVSdatafreq_fig5.jpg")) 
 
 
