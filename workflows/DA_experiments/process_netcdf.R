@@ -3,6 +3,7 @@
 
 library(magrittr)
 library(ggplot2)
+library(rLakeAnalyzer)
 
 lake_directory <- here::here()
 
@@ -36,15 +37,20 @@ phen <- plyr::ddply(sub, "Date", function(x) {
 })
 
 #round depths up
-sub$depth <- ceiling(sub$depth)
+sub$depth <- floor(sub$depth)
 
+#add thermocline depth
+thermocline_depths <- sub %>% group_by(Date) %>% 
+  summarize(thermo = thermo.depth(value,depth))
 
-# SI phenology plot w/ temp at different depths 
+ggplot(thermocline_depths,aes(Date,thermo)) + geom_line() + theme_bw()
+
+# Fig 3 - phenology plot w/ temp at different depths 
 ggplot(sub) +   theme_bw() +
   geom_rect(data = phen, aes(fill = "Mixed"), xmin=-Inf ,xmax = as.Date("2021-03-12"), ymin = -Inf, ymax = Inf, inherit.aes = FALSE) + 
   geom_rect(data = phen, aes(fill = "Stratified"), xmin=as.Date("2021-03-13") ,xmax = as.Date("2021-11-07"), ymin = -Inf, ymax = Inf, inherit.aes = FALSE)+
   geom_rect(data = phen, aes(fill = "Mixed"), xmin=as.Date("2021-11-08") ,xmax = Inf, ymin = -Inf, ymax = Inf, inherit.aes = FALSE) +
-  geom_line(aes(Date, as.numeric(value), color = factor(depth))) + ylab(expression("Temperature ("*~degree*C*")")) + xlab("") +
+  geom_line(aes(Date, as.numeric(value), color = factor(depth)), size=0.2) + ylab(expression("Temperature ("*~degree*C*")")) + xlab("") +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.11,0.59), legend.background = element_blank(),
         legend.key = element_blank(), legend.key.height = unit(0.3,"cm"), legend.key.width = unit(0.4,"cm"), legend.spacing.y = unit(0.01,"cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank())+

@@ -69,6 +69,9 @@ strat_date<- "2021-11-07"
 all_DA_forecasts$phen <- ifelse(all_DA_forecasts$date <= as.Date(strat_date) & 
                                   all_DA_forecasts$date >="2021-03-13","Stratified", "Mixed")
 
+#remove n=6 days with ice-cover 
+all_DA_forecasts <- all_DA_forecasts[!(all_DA_forecasts$forecast_date %in% c(as.Date("2021-01-10"), as.Date("2021-01-11"),as.Date("2021-01-30"),
+                                    as.Date("2021-02-13"),as.Date("2021-02-14"),as.Date("2021-02-15"))),]
 
 #------------------------------------------------------------------------------#
 #calculate forecast skill metrics
@@ -103,7 +106,6 @@ forecast_horizon_avg <- plyr::ddply(all_DA_forecasts, c("horizon", "DA", "phen")
 
 #order DA frequencies
 forecast_horizon_avg$DA <- factor(forecast_horizon_avg$DA, levels=c("Daily", "2Day", "5Day", "Weekly", "Fortnightly", "Monthly"))
-
 
 #------------------------------------------------------------------------------#
 #FIGURES
@@ -253,7 +255,7 @@ pvals_horizon_aggregated <- data.frame("Depth_m"= c(rep(1,6),rep(5,6),rep(9,6)),
 median_RMSE_horizon <- data.frame("Depth_m" = c(rep(1,24),rep(5,24),rep(9,24)),
                                   "DA" = rep(c(rep("Daily",3), rep("Weekly",3),rep("Fortnightly",3),rep("Monthly",3)),6),
                                   "Horizon_days" = rep(c(1,7,35),24),
-                                  "TempRegime" = rep(c(rep("Mixed",12),rep("Stratified",12)),3),
+                                  "TempDynamics" = rep(c(rep("Mixed",12),rep("Stratified",12)),3),
                                   "RMSE_C" = c(median_mix_1m_daily,median_mix_1m_weekly,median_mix_1m_fortnightly,median_mix_1m_monthly,
                                              median_strat_1m_daily,median_strat_1m_weekly,median_strat_1m_fortnightly,median_strat_1m_monthly,
                                              median_mix_5m_daily,median_mix_5m_weekly,median_mix_5m_fortnightly,median_mix_5m_monthly,
@@ -262,34 +264,34 @@ median_RMSE_horizon <- data.frame("Depth_m" = c(rep(1,24),rep(5,24),rep(9,24)),
                                              median_strat_9m_daily,median_strat_9m_weekly,median_strat_9m_fortnightly,median_strat_9m_monthly))
 #write.csv(median_RMSE_horizon,file.path(lake_directory,"analysis/data/median_RMSE_depth_horizon_DA.csv"),row.names = FALSE)
 
-#max(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==1 & median_RMSE_horizon$phen=="Stratified"]) - 
-#  min(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==1 & median_RMSE_horizon$phen=="Stratified"])
-#max(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==5 & median_RMSE_horizon$phen=="Stratified"]) -
-#  min(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==5 & median_RMSE_horizon$phen=="Stratified"])
-#max(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==9 & median_RMSE_horizon$phen=="Stratified"]) -
-#  min(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==9 & median_RMSE_horizon$phen=="Stratified"])
+#max(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Stratified"]) - 
+#  min(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==1 & median_RMSE_horizon$TempDynamics=="Stratified"])
+#max(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==5 & median_RMSE_horizon$TempDynamics=="Stratified"]) -
+#  min(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==5 & median_RMSE_horizon$TempDynamics=="Stratified"])
+#max(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==9 & median_RMSE_horizon$TempDynamics=="Stratified"]) -
+#  min(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==9 & median_RMSE_horizon$TempDynamics=="Stratified"])
 
 #calcualte percent difference of 35 and 1 day RMSE for mixed vs. stratified
-(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$horizon==35 & median_RMSE_horizon$phen=="Mixed"]) -
-  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$horizon==1 & median_RMSE_horizon$phen=="Mixed"])) /
-  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$phen=="Mixed"]) *100
+(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Mixed"]) -
+  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Mixed"])) /
+  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$TempDynamics=="Mixed"]) *100
 
-(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$horizon==35 & median_RMSE_horizon$phen=="Stratified"]) -
-  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$horizon==1 & median_RMSE_horizon$phen=="Stratified"])) /
-  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$phen=="Stratified"]) *100
+(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Horizon_days==35 & median_RMSE_horizon$TempDynamics=="Stratified"]) -
+  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Horizon_days==1 & median_RMSE_horizon$TempDynamics=="Stratified"])) /
+  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$TempDynamics=="Stratified"]) *100
 
 #mixed vs stratified rmse across depths
-(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==1 & median_RMSE_horizon$phen=="Stratified"]) - 
-mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==1 & median_RMSE_horizon$phen=="Mixed"])) /
-  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==1]) *100
+(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Stratified"]) - 
+mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==1 & median_RMSE_horizon$TempDynamics=="Mixed"])) /
+  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==1]) *100
 
-(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==5 & median_RMSE_horizon$phen=="Stratified"]) - 
-mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==5 & median_RMSE_horizon$phen=="Mixed"])) /
-  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==5]) *100
+(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Stratified"]) - 
+mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==5 & median_RMSE_horizon$TempDynamics=="Mixed"])) /
+  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==5]) *100
 
-(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==9 & median_RMSE_horizon$phen=="Stratified"]) -
-mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==9 & median_RMSE_horizon$phen=="Mixed"])) /
-  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$depth==9]) *100
+(mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Stratified"]) -
+mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==9 & median_RMSE_horizon$TempDynamics=="Mixed"])) /
+  mean(median_RMSE_horizon$RMSE[median_RMSE_horizon$Depth_m==9]) *100
 
 
 #kruskal wallis and dunn tests for 1m stratified rmse across horizon and DA freq
@@ -532,7 +534,7 @@ pvals <- data.frame("Depth_m"= c(rep(1,12),rep(5,12),rep(9,12)),
 #write.csv(pvals,file.path(lake_directory,"analysis/data/pvals.csv"),row.names = FALSE)
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-#### FIGURE 3: 1,5,9m depth facets for each DA frequency for 1,7,and 35-day ahead forecasts  ####
+#### FIGURE 4: 1,5,9m depth facets for each DA frequency for 1,7,and 35-day ahead forecasts  ####
 
 #new df with letters for each horizon
 #letters <- data.frame("depth"= c(rep(1,24),rep(5,24),rep(9,24)),
@@ -573,22 +575,22 @@ names(depths) <- c("1","5","9")
 kw_horizons$DA <- factor(kw_horizons$DA, levels = c("Daily", "Weekly", "Fortnightly", "Monthly"))
 
 kw_horizons %>%
-  group_by(DA,depth,horizon) %>%  # do the same calcs for each box
+  group_by(DA,depth,horizon,phen) %>%  # do the same calcs for each box
   mutate(value2 = filter_lims(RMSE)) %>%
   ggplot(aes(DA, value2, fill=as.factor(horizon))) +  ylab("RMSE") + xlab("")+
   geom_boxplot(outlier.shape = NA) + theme_bw() + guides(fill=guide_legend(title="Horizon (days)")) +
-  geom_hline(yintercept=2, linetype='dashed', col = 'black') +
-  theme(text = element_text(size=4), axis.text = element_text(size=6, color="black"), legend.position = c(0.77,0.25),
+  geom_hline(yintercept=2, linetype='dashed', col = 'black', size=0.3) +
+  theme(text = element_text(size=4), axis.text = element_text(size=6, color="black"), legend.position = c(0.77,0.29),
         legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
         plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
-        legend.title = element_text(size = 3),legend.text  = element_text(size = 3), 
+        legend.title = element_text(size = 3),legend.text  = element_text(size = 3), panel.spacing=unit(0, "cm"),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=4), axis.text.y = element_text(size=4)) +
   geom_text(data=letters,aes(x=DA,y=0.2+max.RMSE,label=letters$letter),hjust=0.1,vjust = -0.1, size=1.5) +
   facet_grid(depth~phen, scales="free_y",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48","#D08151")) 
-ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_fig3.jpg"))
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_fig4.jpg"))
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-#### FIGURE 4: mixed and stratified RMSE tileplots aggregated across all depths  ####
+#### FIGURE 5: mixed and stratified RMSE tileplots aggregated across all depths  ####
 
 #round rmse to nearest 0.5 for tile plot below
 forecast_horizon_avg$RMSE_bins <- round_any(forecast_horizon_avg$RMSE,0.5) 
@@ -598,7 +600,7 @@ forecast_horizon_depth_avg$RMSE_bins <- round_any(forecast_horizon_depth_avg$RMS
 ggplot(subset(forecast_horizon_avg, DA %in% c("Daily","Weekly","Fortnightly","Monthly")), aes(DA, horizon, fill=RMSE_bins)) + 
   ylab("Horizon (days)") + theme_bw() + facet_wrap(~phen) + geom_tile(width=0.8) + xlab("") +
   theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), 
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), , panel.spacing=unit(0, "cm"),
         panel.grid.major = element_blank(),panel.grid.minor = element_blank())+
   guides(fill=guide_legend(title="RMSE")) +  scale_fill_gradientn(colors = hcl.colors(5, "BuPu")) 
 ggsave(file.path(lake_directory,"analysis/figures/HorizonvsDA_tileplot_fig4.jpg"))
@@ -608,7 +610,7 @@ mean(forecast_horizon_avg$RMSE_bins[forecast_horizon_avg$phen=="Mixed" & forecas
 mean(forecast_horizon_avg$RMSE_bins[forecast_horizon_avg$phen=="Stratified" & forecast_horizon_avg$horizon==13 & forecast_horizon_avg$DA=="Daily"])
 
 #------------------------------------------------------------------------------------------------#
-# Data assimilation figure 5
+# Data assimilation figure 6
 forecasts_daily_da <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/27_nov_start/daily"), pattern="experiments.csv", full.names=TRUE) 
 forecasts_daily_da <- lapply(forecasts_daily_da, read_csv) %>% bind_rows() %>% mutate(DA = "Daily")
 
@@ -674,7 +676,7 @@ ggplot(subset(DA_sub_final, DA %in% c("Daily","Weekly","Fortnightly","Monthly") 
         legend.title = element_text(size = 2),legend.text  = element_text(size = 2),legend.key.size = unit(0.3, "lines"), legend.direction = "horizontal", 
         panel.grid.major = element_blank(),panel.grid.minor = element_blank(), legend.background = element_blank(), 
         strip.text.x = element_text(margin = margin(.1, 0, .1, 0, "cm")), plot.margin = unit(c(0,0.05,-0.2,0), "cm"),
-        panel.spacing=unit(0.1, "cm"))+
+        panel.spacing=unit(0, "cm"))+
   ylab(expression("Temperature ("*~degree*C*")")) + xlab("")  + scale_color_manual(values=rev(cb_friendly_2)) + scale_fill_manual(values=rev(cb_friendly_2)) +
   guides(color = guide_legend(title="DA frequency",override.aes=list(fill=NA), reverse = TRUE), fill= "none")
 ggsave(file.path(lake_directory,"analysis/figures/AssimilationVSdatafreq_fig5.jpg")) 

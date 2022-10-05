@@ -277,6 +277,56 @@ mean(c(last(parameters$mean[parameters$parameter=="Sediment Temperature" & param
        last(parameters$mean[parameters$parameter=="Sediment Temperature" & parameters$DA=="Fortnightly"]),
        last(parameters$mean[parameters$parameter=="Sediment Temperature" & parameters$DA=="Monthly"])))
 
+
+#--------------------------------------------------------------------------------------------#
+# Figure comparing Mixed w/ ice-cover data and Mixed w/o ice-cover data
+# ice-on/off dates for BVR 2021: 10Jan/12Jan, 30Jan/31Jan 13Feb/16Feb
+
+#creating smaller dataset for kw test w/ 1,5,9m and 1,7,35 days
+kw_horizons <- forecast_skill_depth_horizon_27nov[forecast_skill_depth_horizon_27nov$depth %in% c(1,5,9) & forecast_skill_depth_horizon_27nov$horizon %in% c(1,7,35) & 
+                                              forecast_skill_depth_horizon_27nov$DA %in% c("Daily","Weekly","Fortnightly","Monthly"),]
+
+#only select mixed period
+kw_horizons_mixed <- kw_horizons[kw_horizons$phen=="Mixed",]
+
+
+#create new df with all mixed days AND mixed days w/o ice
+kw_horizons_mixed_sub <-   rbind(
+  cbind(kw_horizons_mixed, faceter = "all"),
+  cbind(kw_horizons_mixed[!(kw_horizons_mixed$forecast_date %in% 
+                              c(as.Date("2021-01-10"), as.Date("2021-01-11"),as.Date("2021-01-30"),
+                                as.Date("2021-02-13"),as.Date("2021-02-14"),as.Date("2021-02-15"))),],
+        faceter = "no ice")
+)
+
+
+#rename depth and ice facets
+faceter <- c("Mixed with ice","Mixed without ice")
+names(faceter) <- c("all","no ice")
+
+depths <- c("1m","5m","9m")
+names(depths) <- c("1","5","9")
+
+#order factor levels
+kw_horizons_mixed_sub$DA <- factor(kw_horizons_mixed_sub$DA, levels = c("Daily", "Weekly", "Fortnightly", "Monthly"))
+
+kw_horizons_mixed_sub %>%
+  group_by(DA,depth,horizon,faceter) %>%  # do the same calcs for each box
+  mutate(value2 = filter_lims(RMSE)) %>%
+  ggplot(aes(DA, value2, fill=as.factor(horizon))) +  ylab("RMSE") + xlab("")+
+  geom_boxplot(outlier.shape = NA) + theme_bw() + guides(fill=guide_legend(title="Horizon (days)")) +
+  geom_hline(yintercept=2, linetype='dashed', col = 'black') +
+  theme(text = element_text(size=4), axis.text = element_text(size=6, color="black"), legend.position = c(0.77,0.24),
+        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
+        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
+        legend.title = element_text(size = 3),legend.text  = element_text(size = 3), panel.spacing=unit(0, "cm"),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=4), axis.text.y = element_text(size=4)) +
+  #geom_text(data=letters,aes(x=DA,y=0.2+max.RMSE,label=letters$letter),hjust=0.1,vjust = -0.1, size=1.5) +
+  facet_grid(depth~faceter, scales="free_y",labeller = labeller(faceter = faceter, depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48","#D08151")) 
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_IcevsNoice.jpg"))
+
+
+
 #2021 phenology: 2021-03-08 is first time when >3 consecutive days had difference between surface and bottom >1C
 #code for calculating strat/mixed periods
 # bvr_temps <- temp_long %>% filter(temp_long$Variable=="temperature" & DateTime>= "2021-01-01") %>% select(DateTime, Reading, Depth) %>%
