@@ -209,25 +209,27 @@ start_dates %>% filter(depth %in% c(1,5,9)) %>%
   group_by(DA,depth,horizon) %>%  # do the same calcs for each box
   mutate(value2 = filter_lims(RMSE)) %>%
   ggplot(aes(DA, value2, fill=as.factor(da_start_date))) +  ylab("RMSE") + xlab("")+
-  geom_boxplot(outlier.shape = NA) + theme_bw() + guides(fill=guide_legend(title="DA Start Date")) +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.75,0.25), legend.background = element_blank(),
-        legend.title = element_text(size = 2.5),legend.text  = element_text(size = 2.5),legend.key.size = unit(0.5, "lines"), legend.direction = "horizontal",
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank(),
-        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),panel.spacing=unit(0.1, "cm")) +
+  geom_boxplot(outlier.shape = NA) + theme_bw() + guides(fill=guide_legend(title="")) +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.75,0.31),
+        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
+        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
+        legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48","#D08151")) 
-ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_start_dates.jpg"))
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_start_dates.jpg"),width=3.5, height=4)
 
 params %>% filter(depth %in% c(1,5,9)) %>%
   group_by(DA,depth,horizon) %>%  # do the same calcs for each box
   mutate(value2 = filter_lims(RMSE)) %>%
   ggplot(aes(DA, value2, fill=as.factor(param))) +  ylab("RMSE") + xlab("")+
   geom_boxplot(outlier.shape = NA) + theme_bw() + guides(fill=guide_legend(title="Params")) +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.75,0.25), legend.background = element_blank(),
-        legend.title = element_text(size = 2.5),legend.text  = element_text(size = 2.5),legend.key.size = unit(0.5, "lines"), legend.direction = "horizontal",
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank(),
-        plot.margin = unit(c(0,0.05,-0.2,0), "cm"), panel.spacing=unit(0.1, "cm")) +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.75,0.31),
+        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
+        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
+        legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
   facet_grid(depth~phen, scales="free",labeller = labeller(depth = depths)) + scale_fill_manual(values=c("#81A665","#E0CB48","#D08151")) 
-ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_parameters.jpg"))
+ggsave(file.path(lake_directory,"analysis/figures/RMSEvsDAfreq_depth_facets_parameters.jpg"),width=3.5, height=4)
 
 #------------------------------------------------------------------------------------------------#
 #parameter evolution figs
@@ -239,43 +241,121 @@ forecasts_weekly_nc <- list.files(file.path(lake_directory,"forecasts/bvre/DA_ex
 forecasts_fortnightly_nc <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/27_nov_start/fortnightly"), pattern=".nc", full.names=TRUE)[-c(1)]
 forecasts_monthly_nc <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/27_nov_start/monthly"), pattern=".nc", full.names=TRUE)[-c(1)]
 
+forecasts_daily_nc_24nov <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/24_nov_start/daily"), pattern=".nc", full.names=TRUE)[-c(1)] #ignoring first file because this is the DA period
+forecasts_weekly_nc_24nov <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/24_nov_start/weekly"), pattern=".nc", full.names=TRUE)[-c(1)]
+forecasts_fortnightly_nc_24nov <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/24_nov_start/fortnightly"), pattern=".nc", full.names=TRUE)[-c(1)]
+forecasts_monthly_nc_24nov <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/24_nov_start/monthly"), pattern=".nc", full.names=TRUE)[-c(1)]
+
+forecasts_daily_nc_22nov <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/22_nov_start/daily"), pattern=".nc", full.names=TRUE)[-c(1)] #ignoring first file because this is the DA period
+forecasts_weekly_nc_22nov <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/22_nov_start/weekly"), pattern=".nc", full.names=TRUE)[-c(1)]
+forecasts_fortnightly_nc_22nov <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/22_nov_start/fortnightly"), pattern=".nc", full.names=TRUE)[-c(1)]
+forecasts_monthly_nc_22nov <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/22_nov_start/monthly"), pattern=".nc", full.names=TRUE)[-c(1)]
+
+forecasts_daily_nc_1.04 <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/inflat_1.04/daily"), pattern=".nc", full.names=TRUE)[-c(1)] #ignoring first file because this is the DA period
+forecasts_weekly_nc_1.04 <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/inflat_1.04/weekly"), pattern=".nc", full.names=TRUE)[-c(1)]
+forecasts_fortnightly_nc_1.04 <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/inflat_1.04/fortnightly"), pattern=".nc", full.names=TRUE)[-c(1)]
+forecasts_monthly_nc_1.04 <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/inflat_1.04/monthly"), pattern=".nc", full.names=TRUE)[-c(1)]
+
+forecasts_daily_nc_fixed <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/fixed_params/daily"), pattern=".nc", full.names=TRUE)[-c(1)] #ignoring first file because this is the DA period
+forecasts_weekly_nc_fixed <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/fixed_params/weekly"), pattern=".nc", full.names=TRUE)[-c(1)]
+forecasts_fortnightly_nc_fixed <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/fixed_params/fortnightly"), pattern=".nc", full.names=TRUE)[-c(1)]
+forecasts_monthly_nc_fixed <- list.files(file.path(lake_directory,"forecasts/bvre/DA_experiments/fixed_params/monthly"), pattern=".nc", full.names=TRUE)[-c(1)]
+
+
+
 #summary stats for first forecast of each
 daily <- read_flare_params(files = forecasts_daily_nc, type = "forecast", summary = TRUE) %>% mutate(DA="Daily")
 weekly <- read_flare_params(files = forecasts_weekly_nc, type = "forecast", summary = TRUE) %>% mutate(DA="Weekly")
 fortnightly <- read_flare_params(files = forecasts_fortnightly_nc, type = "forecast", summary = TRUE) %>% mutate(DA="Fortnightly")
 monthly <- read_flare_params(files = forecasts_monthly_nc, type = "forecast", summary = TRUE) %>% mutate(DA="Monthly")
 
+daily_24nov <- read_flare_params(files = forecasts_daily_nc_24nov, type = "forecast", summary = TRUE) %>% mutate(DA="Daily")
+weekly_24nov <- read_flare_params(files = forecasts_weekly_nc_24nov, type = "forecast", summary = TRUE) %>% mutate(DA="Weekly")
+fortnightly_24nov <- read_flare_params(files = forecasts_fortnightly_nc_24nov, type = "forecast", summary = TRUE) %>% mutate(DA="Fortnightly")
+monthly_24nov <- read_flare_params(files = forecasts_monthly_nc_24nov, type = "forecast", summary = TRUE) %>% mutate(DA="Monthly")
+
+daily_22nov <- read_flare_params(files = forecasts_daily_nc_22nov, type = "forecast", summary = TRUE) %>% mutate(DA="Daily")
+weekly_22nov <- read_flare_params(files = forecasts_weekly_nc_22nov, type = "forecast", summary = TRUE) %>% mutate(DA="Weekly")
+fortnightly_22nov <- read_flare_params(files = forecasts_fortnightly_nc_22nov, type = "forecast", summary = TRUE) %>% mutate(DA="Fortnightly")
+monthly_22nov <- read_flare_params(files = forecasts_monthly_nc_22nov, type = "forecast", summary = TRUE) %>% mutate(DA="Monthly")
+
+daily_1.04 <- read_flare_params(files = forecasts_daily_nc_1.04, type = "forecast", summary = TRUE) %>% mutate(DA="Daily")
+weekly_1.04 <- read_flare_params(files = forecasts_weekly_nc_1.04, type = "forecast", summary = TRUE) %>% mutate(DA="Weekly")
+fortnightly_1.04 <- read_flare_params(files = forecasts_fortnightly_nc_1.04, type = "forecast", summary = TRUE) %>% mutate(DA="Fortnightly")
+monthly_1.04 <- read_flare_params(files = forecasts_monthly_nc_1.04, type = "forecast", summary = TRUE) %>% mutate(DA="Monthly")
+
+#fixed parameters --> zone1temp set to 5.54
+
+
 #combine all parameter dfs
 parameters <- rbind(daily, weekly, fortnightly, monthly)
+parameters$inflat <- 1.02
+
+parameters_1.04 <- rbind(daily_1.04, weekly_1.04, fortnightly_1.04, monthly_1.04)
+parameters_1.04$inflat <- 1.04
+
+params_inflat <- rbind(parameters,parameters_1.04)
+
+parameters_24nov <- rbind(daily_24nov, weekly_24nov, fortnightly_24nov, monthly_24nov)
+parameters_22nov <- rbind(daily_22nov, weekly_22nov, fortnightly_22nov, monthly_22nov)
+
+parameters_24nov$inflat <- 1.02
+parameters_22nov$inflat <- 1.02
+
+parameters$start_date <- "27nov"
+parameters_24nov$start_date <- "24nov"
+parameters_22nov$start_date <- "22nov"
+
+params_startdate <- rbind(parameters,parameters_22nov,parameters_24nov)
 
 #change DA factor order
-parameters$DA <- factor(parameters$DA, levels = c("Daily", "Weekly","Fortnightly","Monthly"))
+params_inflat$DA <- factor(params_inflat$DA, levels = c("Daily", "Weekly","Fortnightly","Monthly"))
+params_startdate$DA <- factor(params_startdate$DA, levels = c("Daily", "Weekly","Fortnightly","Monthly"))
 
 #rename zone1temp so more informative facet label in fig
-parameters <- parameters %>% mutate(parameter = recode(parameter, "zone1temp" = "Sediment Temperature"))
+params_inflat <- params_inflat %>% mutate(parameter = recode(parameter, "zone1temp" = "Sediment Temperature"))
+params_startdate <- params_startdate %>% mutate(parameter = recode(parameter, "zone1temp" = "Sediment Temperature"))
 
 #visualize how parameters change over time
-ggplot(subset(parameters, parameter=="Sediment Temperature"), aes(datetime, mean, color=DA, group=DA)) + theme_bw() +
-  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.background = element_blank(),
-        legend.title = element_text(size = 4),legend.text  = element_text(size = 4),legend.key.size = unit(0.5, "lines"), 
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),panel.grid.major = element_blank(),panel.grid.minor = element_blank(),
-        plot.margin = unit(c(0,0.05,-0.2,0), "cm"), panel.spacing=unit(0.1, "cm"))+ scale_color_manual(values=cb_friendly_2) +
-  facet_wrap(~parameter, scales="free_y")  + scale_fill_manual(values=cb_friendly_2) + ylim(4.7,10.2) +
+ggplot(subset(params_inflat, parameter=="Sediment Temperature"), aes(datetime, mean, color=DA)) + theme_bw() +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.59,0.03),
+        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
+        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
+        legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
+  scale_color_manual(values=cb_friendly_2) +
+  facet_wrap(~inflat, scales="free_y", ncol=1)  + scale_fill_manual(values=cb_friendly_2) +
   scale_x_date(date_labels = "%b") + ylab(expression("Temperature ("*~degree*C*")")) + xlab("")  +
   geom_ribbon(aes(y = mean, ymin = mean-sd, ymax = mean+sd, color=DA, fill=DA), alpha=0.5) +
   guides(fill = guide_legend(title="DA frequency"), color = guide_legend(title="DA frequency"))
-ggsave(file.path(lake_directory,"analysis/figures/paramRMSEvsHorizon.jpg"))
+ggsave(file.path(lake_directory,"analysis/figures/paramRMSEvsHorizon_inflat.jpg"),width=3.5, height=4)
+
+ggplot(subset(params_startdate, parameter=="Sediment Temperature"), aes(datetime, mean, color=DA)) + theme_bw() +
+  theme(text = element_text(size=8), axis.text = element_text(size=6, color="black"), legend.position = c(0.59,0.03),
+        legend.background = element_blank(),legend.direction = "horizontal", panel.grid.minor = element_blank(),
+        plot.margin = unit(c(0,0.05,-0.2,0), "cm"),legend.key.size = unit(0.5, "lines"), panel.grid.major = element_blank(),
+        legend.title = element_text(size = 6),legend.text  = element_text(size = 6), panel.spacing=unit(0, "cm"),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1,size=6), axis.text.y = element_text(size=6)) +
+  scale_color_manual(values=cb_friendly_2) +
+  facet_wrap(~start_date, scales="free_y", ncol=1)  + scale_fill_manual(values=cb_friendly_2) +
+  scale_x_date(date_labels = "%b") + ylab(expression("Temperature ("*~degree*C*")")) + xlab("")  +
+  geom_ribbon(aes(y = mean, ymin = mean-sd, ymax = mean+sd, color=DA, fill=DA), alpha=0.5) +
+  guides(fill = guide_legend(title="DA frequency"), color = guide_legend(title="DA frequency"))
+ggsave(file.path(lake_directory,"analysis/figures/paramRMSEvsHorizon_start_date.jpg"),width=3.5, height=4)
+
+
+
 
 #figuring out the date that DA parameters diverge
-mean(parameters$mean[parameters$parameter=="Sediment Temperature" & parameters$DA=="Daily" & parameters$datetime >= "2021-05-01"])
+mean(parameters$mean[parameters$parameter=="zone1temp" & parameters$DA=="Daily" & parameters$datetime >= "2021-05-01"])
 
-mean(parameters$mean[parameters$parameter=="Sediment Temperature" & parameters$DA=="Weekly" & parameters$datetime >= "2021-05-01"])
-mean(parameters$mean[parameters$parameter=="Sediment Temperature" & parameters$DA=="Fortnightly" & parameters$datetime >= "2021-05-01"])
-mean(parameters$mean[parameters$parameter=="Sediment Temperature" & parameters$DA=="Monthly" & parameters$datetime >= "2021-05-01"])
+mean(parameters$mean[parameters$parameter=="zone1temp" & parameters$DA=="Weekly" & parameters$datetime >= "2021-05-01"])
+mean(parameters$mean[parameters$parameter=="zone1temp" & parameters$DA=="Fortnightly" & parameters$datetime >= "2021-05-01"])
+mean(parameters$mean[parameters$parameter=="zone1temp" & parameters$DA=="Monthly" & parameters$datetime >= "2021-05-01"])
 
-mean(c(last(parameters$mean[parameters$parameter=="Sediment Temperature" & parameters$DA=="Weekly"]),
-       last(parameters$mean[parameters$parameter=="Sediment Temperature" & parameters$DA=="Fortnightly"]),
-       last(parameters$mean[parameters$parameter=="Sediment Temperature" & parameters$DA=="Monthly"])))
+mean(c(last(parameters$mean[parameters$parameter=="zone1temp" & parameters$DA=="Weekly"]),
+       last(parameters$mean[parameters$parameter=="zone1temp" & parameters$DA=="Fortnightly"]),
+       last(parameters$mean[parameters$parameter=="zone1temp" & parameters$DA=="Monthly"])))
 
 
 #--------------------------------------------------------------------------------------------#
