@@ -108,7 +108,7 @@ yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", c
         noaa_forecast_path <- FLAREr::get_driver_forecast_path(config,
                                                                forecast_model = config$met$forecast_met_model)
         if(!use_archive){
-          FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
+          FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path, config)
         }
         forecast_dir <- file.path(config$file_path$noaa_directory, noaa_forecast_path)
       }else{
@@ -148,7 +148,7 @@ yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", c
       obs <- FLAREr::create_obs_matrix(cleaned_observations_file_long = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-insitu.csv")),
                                        obs_config = obs_config,
                                        config)
-      obs[1, , ]
+      #obs[1, , ]
     
       full_time <- seq(lubridate::as_datetime(config$run_config$start_datetime), lubridate::as_datetime(config$run_config$start_datetime) + lubridate::days(35), by = "1 day")
       full_time <- as.Date(full_time)

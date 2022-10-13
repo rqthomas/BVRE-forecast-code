@@ -13,7 +13,6 @@ init <- FLAREr::generate_initial_conditions(states_config,
                                             pars_config,
                                             obs,
                                             config,
-                                            restart_file = config$run_config$restart_file,
                                             historical_met_error = met_out$historical_met_error)
 #Run EnKF
 da_forecast_output <- FLAREr::run_da_forecast(states_init = init$states,
@@ -35,19 +34,23 @@ da_forecast_output <- FLAREr::run_da_forecast(states_init = init$states,
                                               par_fit_method = config$da_setup$par_fit_method,
                                               debug = TRUE)
 
-# Save forecast
 saved_file <- FLAREr::write_forecast_netcdf(da_forecast_output = da_forecast_output,
                                             forecast_output_directory = config$file_path$forecast_output_directory,
                                             use_short_filename = TRUE)
 
-#Create EML Metadata
-eml_file_name <- FLAREr::create_flare_metadata(file_name = saved_file,
-                                               da_forecast_output = da_forecast_output)
+forecast_file <- FLAREr::write_forecast_csv(da_forecast_output = da_forecast_output,
+                                            forecast_output_directory = config$file_path$forecast_output_directory,
+                                            use_short_filename = TRUE)
 
-#Clean up temp files and large objects in memory
-#unlink(config$file_path$execute_directory, recursive = TRUE)
+if(config$run_config$forecast_horizon > 0){
+  dir.create(file.path(lake_directory, "scores", config$location$site_id, config$run_config$sim_name), recursive = TRUE, showWarnings = FALSE)
+  score_file <- FLAREr::generate_forecast_score(targets_file = file.path(config$file_path$qaqc_data_directory,paste0(config$location$site_id, "-targets-insitu.csv")),
+                                                forecast_file = forecast_file,
+                                                output_directory = file.path(lake_directory, "scores", config$location$site_id, config$run_config$sim_name))
+  FLAREr::put_score(saved_file = score_file, config)
+}
 
-FLAREr::put_forecast(saved_file, eml_file_name, config)
+FLAREr::put_forecast_csv(saved_file = forecast_file, config)
 
 rm(da_forecast_output)
 gc()

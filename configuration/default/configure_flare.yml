@@ -5,6 +5,28 @@ file_path:
    configuration_directory: .na
    execute_directory: .na
    forecast_output_directory: .na
+s3:
+  drivers:
+    endpoint: s3.flare-forecast.org
+    bucket: drivers
+  analysis:
+    endpoint: s3.flare-forecast.org
+    bucket: analysis
+  targets:
+    endpoint: s3.flare-forecast.org
+    bucket: targets
+  forecasts:
+    endpoint: s3.flare-forecast.org
+    bucket: forecasts
+  forecasts_csv:
+    endpoint: s3.flare-forecast.org
+    bucket: forecasts-csv
+  warm_start:
+    endpoint: s3.flare-forecast.org
+    bucket: restart
+  scores:
+    endpoint: s3.flare-forecast.org
+    bucket: scores
 location:
    site_id: bvre
    name: Beaverdam Reservoir
@@ -44,9 +66,7 @@ model_settings:
                     3.50, 4.00, 4.50, 5.00,
                     5.50, 6.00, 6.50, 7.00, 
                     7.50, 8.00, 8.50, 9.00,
-                    9.50, 10.00, 10.50, 11.00] #[1.00, 2.00,
-                #3.00, 4.00, 5.00,
-                #6.00, 7.00, 8.00] 
+                    9.50, 10.00, 10.50, 11.00] 
    par_config_file: parameter_calibration_config.csv
    obs_config_file: observations_config.csv
    states_config_file: states_config.csv
@@ -75,4 +95,4 @@ uncertainty:
    met_downscale: TRUE
    inflow_process: TRUE
 output_settings:
-   diagnostics_names:  [extc_coef]
+   diagnostics_names:  [extc]
