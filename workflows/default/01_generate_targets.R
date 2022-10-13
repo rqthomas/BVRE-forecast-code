@@ -13,16 +13,8 @@ Sys.setenv("AWS_DEFAULT_REGION" = "s3",
            "AWS_S3_ENDPOINT" = "flare-forecast.org")
 
 #' Source the R files in the repository
-
-source(file.path(lake_directory, "R", "met_qaqc.R"))
-source(file.path(lake_directory, "R", "in_situ_qaqc.R"))
-source(file.path(lake_directory, "R", "temp_oxy_chla_qaqc.R"))
-source(file.path(lake_directory, "R", "extract_CTD.R"))
-source(file.path(lake_directory, "R", "extract_secchi.R"))
-source(file.path(lake_directory, "R", "extract_nutrients.R"))
-source(file.path(lake_directory, "R", "extract_ch4.R"))
-source(file.path(lake_directory, "R", "inflow_qaqc.R"))
-source(file.path(lake_directory, "R", "TMWB_inflow_model.R"))
+files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
+sapply(files.sources[grepl(".R$", files.sources)], source)
 
 #' Generate the `config_obs` object and create directories if necessary
 
@@ -36,13 +28,13 @@ FLAREr::get_git_repo(lake_directory,
              directory = config_obs$realtime_insitu_location,
              git_repo = "https://github.com/FLARE-forecast/BVRE-data.git")
 
-#FLAREr::get_git_repo(lake_directory,
-#             directory = config_obs$realtime_insitu_location,
-#             git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
+FLAREr::get_git_repo(lake_directory,
+             directory = config_obs$realtime_insitu_location,
+             git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
 
-#FLAREr::get_git_repo(lake_directory,
-#             directory = config_obs$realtime_met_station_location,
-#             git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
+FLAREr::get_git_repo(lake_directory,
+             directory = config_obs$realtime_met_station_location,
+             git_repo = "https://github.com/FLARE-forecast/FCRE-data.git")
 
 
 #' Download various files from the BVR-GLM repo - get these onto the s3 bucket??
@@ -70,9 +62,9 @@ FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi
              file = config_obs$met_raw_obs_fname[2],
              lake_directory)
 
-#get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/271/5/c1b1f16b8e3edbbff15444824b65fe8f",
-#             file = config_obs$insitu_obs_fname[2],
-#             lake_directory)
+get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/271/5/c1b1f16b8e3edbbff15444824b65fe8f",
+             file = config_obs$insitu_obs_fname[2],
+             lake_directory)
 
 FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/198/8/336d0a27c4ae396a75f4c07c01652985",
              file = config_obs$secchi_fname,
@@ -110,11 +102,11 @@ download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/BVR_spil
 
 
 #' Clean up observed meteorology
-#cleaned_met_file <- met_qaqc(realtime_file = file.path(lake_directory, "data_raw", config_obs$met_raw_obs_fname[1]),
-#                             qaqc_file = file.path(lake_directory, "data_raw", config_obs$met_raw_obs_fname[2]),
-#                             cleaned_met_file = file.path(lake_directory, "targets", config_obs$site_id, paste0("observed-met_",config_obs$site_id,".nc")),
-#                             input_file_tz = "EST",
-#                             nldas = NULL)
+cleaned_met_file <- met_qaqc(realtime_file = file.path(lake_directory, "data_raw", config_obs$met_raw_obs_fname[1]),
+                             qaqc_file = file.path(lake_directory, "data_raw", config_obs$met_raw_obs_fname[2]),
+                             cleaned_met_file = file.path(lake_directory, "targets", config_obs$site_id, paste0("observed-met_",config_obs$site_id,".nc")),
+                             input_file_tz = "EST",
+                             nldas = NULL)
 
 #' Clean up observed insitu measurements
 cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(lake_directory,"data_raw", config_obs$insitu_obs_fname),
@@ -131,10 +123,10 @@ cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(lake_directory,
 
 message("Successfully generated targets")
 
-#FLAREr::put_targets(site_id = config_obs$site_id,
-#            cleaned_insitu_file,
-#            cleaned_met_file,
-#            use_s3 = TRUE)
+FLAREr::put_targets(site_id = config_obs$site_id,
+            cleaned_insitu_file,
+            cleaned_met_file,
+            use_s3 = TRUE)
 
 FLAREr::put_targets(site_id = config_obs$site_id,
                     cleaned_insitu_file,

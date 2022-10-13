@@ -72,8 +72,8 @@
    meteo_fl = '/Users/quinn/Dropbox/Research/SSC_forecasting/glm_aed_forecasts/model_output_historical/FCR_GLM_NLDAS_010113_123119_GMTadjusted.csv'
    subdaily = .true.
    wind_factor = 1.0
-   sw_factor = 1.0
-   lw_factor = 1.0
+   sw_factor = 1.0 !0.5323544=dec 2021 avg
+   lw_factor = 1.0 !1.0241495=dec 2021 avg
    at_factor = 1
    rh_factor = 1
    rain_factor = 1
@@ -115,7 +115,7 @@
    zone_heights = 6.0, 15.0
    sed_heat_Ksoil = 1.2, 1.2
    sed_temp_depth = 0.5, 0.5
-   sed_temp_mean = 6.85118961409541, 8.55391440004643
+   sed_temp_mean = 6.85118961409541, 8.55391440004643 !5.5360090, 11.1160685 = dec 2021 avg
    sed_temp_amplitude = 0, 0
    sed_temp_peak_doy = 256.374966392195, 275.567490968313
 /
