@@ -20,7 +20,7 @@ s3:
     bucket: forecasts
   forecasts_csv:
     endpoint: s3.flare-forecast.org
-    bucket: forecasts-csv
+    bucket: test-csv
   warm_start:
     endpoint: s3.flare-forecast.org
     bucket: restart
