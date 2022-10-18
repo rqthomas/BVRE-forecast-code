@@ -24,7 +24,7 @@ if (length(args)==0) {
 
 lake_directory <- here::here()
 setwd(lake_directory)
-forecast_site <- "fcre"
+forecast_site <- "bvre"
 update_run_config <- TRUE
 
 FLAREr::set_configuration(configure_run_file = configure_run_file,
@@ -44,10 +44,10 @@ if(noaa_ready){
     message("Generating targets")
     source(file.path(lake_directory,"workflows", config_set_name, "01_generate_targets.R"))
     
-    setwd(lake_directory)
+    #setwd(lake_directory)
     
-    message("Generating inflow forecast")
-    source(file.path(lake_directory,"workflows", config_set_name, "02_run_inflow_forecast.R"))
+    #message("Generating inflow forecast")
+    #source(file.path(lake_directory,"workflows", config_set_name, "02_run_inflow_forecast.R"))
     
     setwd(lake_directory)
     
@@ -62,9 +62,9 @@ if(noaa_ready){
   }else if(workflow_scripts == 1){
     message("Generating targets")
     source(file.path(lake_directory,"workflows", config_set_name, "01_generate_targets.R"))
-  }else if(workflow_scripts == 2){
-    message("Generating inflow forecast")
-    source(file.path(lake_directory,"workflows", config_set_name, "02_run_inflow_forecast.R"))
+ # }else if(workflow_scripts == 2){
+ #   message("Generating inflow forecast")
+ #   source(file.path(lake_directory,"workflows", config_set_name, "02_run_inflow_forecast.R"))
   }else if(workflow_scripts == 3){
     message("Generating forecast")
     source(file.path(lake_directory,"workflows", config_set_name, "03_run_flarer_forecast.R"))

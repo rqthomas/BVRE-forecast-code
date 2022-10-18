@@ -1,7 +1,6 @@
 library(tidyverse)
 library(lubridate)
 
-
 message("Beginning generate targets")
 
 #' Set the lake directory to the repository directory
@@ -62,7 +61,7 @@ FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi
              file = config_obs$met_raw_obs_fname[2],
              lake_directory)
 
-get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/271/5/c1b1f16b8e3edbbff15444824b65fe8f",
+FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi/271/5/c1b1f16b8e3edbbff15444824b65fe8f",
              file = config_obs$insitu_obs_fname[2],
              lake_directory)
 
@@ -112,12 +111,12 @@ cleaned_met_file <- met_qaqc(realtime_file = file.path(lake_directory, "data_raw
 cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(lake_directory,"data_raw", config_obs$insitu_obs_fname),
                                     data_location = file.path(lake_directory,"data_raw"),
                                     maintenance_file = file.path(lake_directory, "data_raw", config_obs$maintenance_file),
-                                    ctd_fname = NA,
-                                    nutrients_fname =  NA,
-                                    secchi_fname = NA,
+                                    ctd_fname = file.path(lake_directory, "data_raw", config_obs$ctd_fname),
+                                    nutrients_fname =  file.path(lake_directory, "data_raw", config_obs$nutrients_fname),
+                                    secchi_fname = file.path(lake_directory, "data_raw", config_obs$secchi_fname),
                                     cleaned_insitu_file = file.path(lake_directory,"targets", config_obs$site_id, paste0(config_obs$site_id,"-targets-insitu.csv")),
                                     site_id = config_obs$site_id,
-                                    config_obs = config_obs)
+                                    config = config_obs)
 
 #' Move targets to s3 bucket
 
@@ -126,11 +125,8 @@ message("Successfully generated targets")
 FLAREr::put_targets(site_id = config_obs$site_id,
             cleaned_insitu_file,
             cleaned_met_file,
-            use_s3 = TRUE)
+            use_s3 = FALSE)
 
-FLAREr::put_targets(site_id = config_obs$site_id,
-                    cleaned_insitu_file,
-                    use_s3 = FALSE)
 
 message("Successfully moved targets to s3 bucket")
 

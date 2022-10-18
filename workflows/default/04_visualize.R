@@ -31,7 +31,7 @@ if(config$run_config$use_s3){
 
 png_file_name <- manager_plot(file_name = config$run_config$restart_file,
                               target_file = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-insitu.csv")),
-                              focal_depths = c(1, 5, 8))
+                              focal_depths = c(1, 5, 10))
 
 if(config$run_config$use_s3 & !is.na(png_file_name)){
   success <- aws.s3::put_object(file = png_file_name,

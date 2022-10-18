@@ -34,21 +34,20 @@ noaa_forecast_path <- FLAREr::get_driver_forecast_path(config,
 inflow_forecast_path <- NULL
 
 if(!is.null(noaa_forecast_path)){
-  FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path)
+  FLAREr::get_driver_forecast(lake_directory, forecast_path = noaa_forecast_path, config)
   forecast_dir <- file.path(config$file_path$noaa_directory, noaa_forecast_path)
 }else{
   forecast_dir <- NULL
 }
 
 if(!is.null(inflow_forecast_path)){
-  FLAREr::get_driver_forecast(lake_directory, forecast_path = inflow_forecast_path)
+  FLAREr::get_driver_forecast(lake_directory, forecast_path = inflow_forecast_path, config)
   inflow_file_dir <- file.path(config$file_path$noaa_directory,inflow_forecast_path)
 }else{
   inflow_file_dir <- NULL
 }
 
 pars_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$par_config_file), col_types = readr::cols())
-pars_config <- pars_config[pars_config$model == config$model_settings$model, ]
 obs_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$obs_config_file), col_types = readr::cols())
 states_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$states_config_file), col_types = readr::cols())
 
@@ -83,8 +82,11 @@ init <- FLAREr::generate_initial_conditions(states_config,
                                             pars_config,
                                             obs,
                                             config,
-                                            restart_file = config$run_config$restart_file,
                                             historical_met_error = met_out$historical_met_error)
+
+#need to add this so glm3_initial.nml num_depths != 0
+config$modeled_depths <- config$model_settings$modeled_depths
+
 #Run EnKF
 da_forecast_output <- FLAREr::run_da_forecast(states_init = init$states,
                                               pars_init = init$pars,
@@ -102,7 +104,8 @@ da_forecast_output <- FLAREr::run_da_forecast(states_init = init$states,
                                               obs_config = obs_config,
                                               management = NULL,
                                               da_method = config$da_setup$da_method,
-                                              par_fit_method = config$da_setup$par_fit_method)
+                                              par_fit_method = config$da_setup$par_fit_method,
+                                              debug=TRUE)
 
 # Save forecast
 

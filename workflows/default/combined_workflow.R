@@ -8,7 +8,7 @@ forecast_site <- "bvre"
 configure_run_file <- "configure_run.yml"
 config_files <- "configure_flare.yml"
 update_run_config <- TRUE
-config_set_name <- "DA_experiments"
+config_set_name <- "default"
 sim_name <- config_set_name
 use_archive <- FALSE
 
@@ -21,14 +21,14 @@ if(use_archive){
   use_s3 <- FALSE
 }
 
-start_from_scratch <- FALSE
-time_start_index <- 334
+start_from_scratch <- TURE
+time_start_index <- 1
 
-num_forecasts <- 366
+num_forecasts <- 3
 days_between_forecasts <- 1
 forecast_horizon <- 35 
-starting_date <- as_date("2020-11-22") #changed from 11-27
-second_date <- starting_date + months(1) + days(10) #changed days to get back to 01-01
+starting_date <- as_date("2022-09-12") #changed from 11-27
+second_date <- starting_date + months(1)  #changed days to get back to 01-01
 
 start_dates <- rep(NA, num_forecasts)
 start_dates[1:2] <- c(starting_date, second_date)
@@ -42,15 +42,6 @@ start_dates <- as_date(start_dates)
 forecast_start_dates <- start_dates + days(days_between_forecasts)
 forecast_start_dates <- as_date(c(NA, forecast_start_dates[-1]))
 forecast_start_dates <- forecast_start_dates[1:length(forecast_start_dates)-1]
-
-#DA frequency vectors
-daily = seq.Date(as.Date("2020-11-22"), as.Date("2022-02-01"), by = 1) #changed this from 11-27 to see if the day of the week affects forecast skill
-date_list <- list(daily = daily,                                      #changing end to 2022-02-01 because need observations to evaluate forecasts
-                  daily_2 = daily[seq(1, length(daily), 2)],
-                  daily_5 = daily[seq(1, length(daily), 5)],
-                  weekly = daily[seq(1, length(daily), 7)],
-                  fortnightly = daily[seq(1, length(daily), 14)],
-                  monthly = daily[seq(1, length(daily), 30)]) 
 
 if(start_from_scratch){
   if(use_s3){
@@ -86,7 +77,6 @@ yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", c
   #message("Generating inflow forecast")
   #source(file.path(lake_directory, "workflows", config_set_name, "02_run_inflow_forecast.R"))
   
-  for(da_freq in 3:length(date_list)) { 
     for(date in time_start_index:length(forecast_start_dates)) { #note that 2021-11-24 does NOT want to run - get a GLM error saying "Day 2459559 (2021-12-10) not found" - manually restarting on 2021-11-24
                                                                 #wondwering if this error is because there are no 11-25-21 noaa forecasts? trying to start on 11-26 instead
      
@@ -198,10 +188,4 @@ yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", c
        # }
       }
     }
-  }
-
   
-
-#config$run_config$forecast_start_datetime <- "2021-11-30 00:00:00"
-#config$run_config$start_datetime <- "2021-11-29 00:00:00"
-#config$run_config$restart_file <- "bvre-2021-11-29-DA_experiments.nc"

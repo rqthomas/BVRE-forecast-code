@@ -53,12 +53,12 @@ da_setup:
     use_obs_constraint: TRUE
     da_method: enkf
     par_fit_method: inflate
-    ensemble_size: 100
+    ensemble_size: 20
     localization_distance: .na #distance in meters were covariances in the model error are used
     no_negative_states: TRUE
     assimilate_first_step: FALSE
 model_settings:
-   ncore: 3
+   ncore: 2
    model_name: glm #other is "null"
    base_GLM_nml: glm3.nml
    modeled_depths: [0.10, 0.50, 1.00,
@@ -93,6 +93,6 @@ uncertainty:
    initial_condition: TRUE
    parameter: TRUE
    met_downscale: TRUE
-   inflow_process: TRUE
+   inflow_process: FALSE
 output_settings:
    diagnostics_names:  [extc]

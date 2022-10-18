@@ -5,10 +5,7 @@ temp_oxy_chla_qaqc <- function(realtime_file,
                                qaqc_file,
                                maintenance_file,
                                offset_file,
-                               #input_file_tz,
-                               #focal_depths,
-                               #local_tzone,
-                               config_obs){
+                               config){
 
     
     #bvrdata=data_file
@@ -585,17 +582,17 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   }
   
   
-  d$fDOM_1_5 <- config_obs$exo_sensor_2_grab_sample_fdom[1] + config_obs$exo_sensor_2_grab_sample_fdom[2] * d$fDOM_1_5
+  d$fDOM_1_5 <- config$exo_sensor_2_grab_sample_fdom[1] + config$exo_sensor_2_grab_sample_fdom[2] * d$fDOM_1_5
   
   #oxygen unit conversion
   d$doobs_1_5 <- d$doobs_1_5*1000/32  #mg/L (obs units) -> mmol/m3 (glm units)
   d$doobs_6 <- d$doobs_6*1000/32  #mg/L (obs units) -> mmol/m3 (glm units)
   d$doobs_13 <- d$doobs_13*1000/32  #mg/L (obs units) -> mmol/m3 (glm units)
   
-  d$Chla_1_5 <-  config_obs$exo_sensor_2_ctd_chla[1] +  d$Chla_1_5 *  config_obs$exo_sensor_2_ctd_chla[2]
-  d$doobs_1_5 <- config_obs$exo_sensor_2_ctd_do_1_5[1]  +   d$doobs_1_5 * config_obs$exo_sensor_2_ctd_do_1[2]
-  d$doobs_6 <- config_obs$do_sensor_2_ctd_do_6[1] +   d$doobs_6 * config_obs$do_sensor_2_ctd_do_6[2]
-  d$doobs_13 <- config_obs$do_sensor_2_ctd_do_13[1] +   d$doobs_13 * config_obs$do_sensor_2_ctd_do_13[2]
+  d$Chla_1_5 <-  config$exo_sensor_2_ctd_chla[1] +  d$Chla_1_5 *  config$exo_sensor_2_ctd_chla[2]
+  d$doobs_1_5 <- config$exo_sensor_2_ctd_do_1_5[1]  +   d$doobs_1_5 * config$exo_sensor_2_ctd_do_1[2]
+  d$doobs_6 <- config$do_sensor_2_ctd_do_6[1] +   d$doobs_6 * config$do_sensor_2_ctd_do_6[2]
+  d$doobs_13 <- config$do_sensor_2_ctd_do_13[1] +   d$doobs_13 * config$do_sensor_2_ctd_do_13[2]
   
   ######################################################################################
   # END OF QAQC - now transform df from wide to long
@@ -633,76 +630,79 @@ temp_oxy_chla_qaqc <- function(realtime_file,
       "11.0" = wtr_11,
       "12.0" = wtr_12,
       "13.0" = wtr_13) %>%
-    tidyr::pivot_longer(cols = -c(timestamp,Depth_m_13), names_to = "depth", values_to = "value") %>%
+    tidyr::pivot_longer(cols = -c(timestamp,Depth_m_13), names_to = "depth", values_to = "observed") %>%
     dplyr::mutate(variable = "temperature",
                   method = "thermistor",
-                  value = ifelse(is.nan(value), NA, value))
+                  observed = ifelse(is.nan(observed), NA, observed))
   
   d_do_temp <- d %>% 
     dplyr::select(timestamp, wtr_6_do, wtr_13_do, Depth_m_13) %>%
     dplyr::rename("6.0" = wtr_6_do,
                   "13.0" = wtr_13_do) %>%
-    tidyr::pivot_longer(cols = -c(timestamp,Depth_m_13), names_to = "depth", values_to = "value") %>%
+    tidyr::pivot_longer(cols = -c(timestamp,Depth_m_13), names_to = "depth", values_to = "observed") %>%
     dplyr::mutate(variable = "temperature",
                   method = "do_sensor",
-                  value = ifelse(is.nan(value), NA, value))
+                  observed = ifelse(is.nan(observed), NA, observed))
   
   d_exo_temp <- d %>%
     dplyr::select(timestamp, wtr_1_5_exo, Depth_m_13) %>%
     dplyr::rename("1.5" = wtr_1_5_exo) %>%
-    tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "value") %>%
+    tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "observed") %>%
     mutate(variable = "temperature",
            method = "exo_sensor",
-           value = ifelse(is.nan(value), NA, value))
+           observed = ifelse(is.nan(observed), NA, observed))
   
   d_do_do <- d %>%
     dplyr::select(timestamp, doobs_6, doobs_13, Depth_m_13) %>%
     dplyr::rename("6.0" = doobs_6,
            "13.0" = doobs_13) %>%
-    tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "value") %>%
+    tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "observed") %>%
     mutate(variable = "oxygen",
            method = "do_sensor",
-           value = ifelse(is.nan(value), NA, value))
+           observed = ifelse(is.nan(observed), NA, observed))
   
   d_exo_do <- d %>%
     dplyr::select(timestamp, doobs_1_5, Depth_m_13) %>%
     dplyr::rename("1.5" = doobs_1_5) %>%
-    tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "value") %>%
+    tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "observed") %>%
     mutate(variable = "oxygen",
            method = "exo_sensor",
-           value = ifelse(is.nan(value), NA, value))
+           observed = ifelse(is.nan(observed), NA, observed))
   
   d_exo_fdom <- d %>%
     dplyr::select(timestamp, fDOM_1_5, Depth_m_13) %>%
     dplyr::rename("1.5" = fDOM_1_5) %>%
-    tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "value") %>%
+    tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "observed") %>%
     mutate(variable = "fdom",
            method = "exo_sensor",
-           value = ifelse(is.nan(value), NA, value))
+           observed = ifelse(is.nan(observed), NA, observed))
   
   d_exo_chla <- d %>%
     dplyr::select(timestamp, Chla_1_5, Depth_m_13) %>%
     dplyr::rename("1.5" = Chla_1_5) %>%
-    tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "value") %>%
+    tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "observed") %>%
     mutate(variable = "chla",
            method = "exo_sensor",
-           value = ifelse(is.nan(value), NA, value))
+           observed = ifelse(is.nan(observed), NA, observed))
   
   d_exo_bgapc <- d %>%
     dplyr::select(timestamp, bgapc_1_5, Depth_m_13) %>%
     dplyr::rename("1.5" = bgapc_1_5) %>%
-    tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "value") %>%
+    tidyr::pivot_longer(cols = -c(timestamp, Depth_m_13), names_to = "depth", values_to = "observed") %>%
     mutate(variable = "bgapc",
            method = "exo_sensor",
-           value = ifelse(is.nan(value), NA, value))
+           observed = ifelse(is.nan(observed), NA, observed))
   
   d <- rbind(d_therm,d_do_temp,d_exo_temp,d_do_do,d_exo_do,d_exo_fdom,
              d_exo_chla,d_exo_bgapc)
   
   d <- d %>% mutate(depth = depth) 
   
+  d <- d %>%
+    rename(time = timestamp)
+  
   #drop NA rows and negative depths
-  d <- d[!is.na(d$value),]
+  d <- d[!is.na(d$observed),]
   
   d <- d[d$depth >=0,]
   
@@ -726,12 +726,12 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   # and were re-secured about a meter a part from each other. Because of this we need to filter before 2021-04-05 13:20:00 EST
   # and after. The top two thermistors exact offset will have to be determined again when the water level is high enough again. 
   bvr_pre_05APR21=bvr_depths%>%
-    filter(timestamp<="2021-04-05 13:20")%>%
+    filter(time<="2021-04-05 13:20")%>%
     mutate(Sensor_depth=Depth_m_13-Offset_before_05APR21)%>% #this gives you the depth of the thermistors from the surface
     mutate(depth=round_any(Sensor_depth, 0.5))#Round to the nearest 0.5
   
   bvr_post_05APR21=bvr_depths%>%
-    filter(timestamp>"2021-04-05 13:20")%>%
+    filter(time>"2021-04-05 13:20")%>%
     mutate(Sensor_depth=Depth_m_13-Offset_after_05APR21)%>% #this gives you the depth of the thermistor from the surface
     mutate(depth=round_any(Sensor_depth, 0.5)) #Round to the nearest 0.5
   
@@ -742,12 +742,12 @@ temp_oxy_chla_qaqc <- function(realtime_file,
   # figure out the depth of the sensors. This will give you a depth for each sensor reading. 
   bvr_by_depth=bvr_pre_05APR21%>%
     rbind(.,bvr_post_05APR21)%>%
-    filter(!is.na(value))%>%
+    filter(!is.na(observed))%>%
     filter(!is.na(depth))%>%
     select(-Offset_before_05APR21, -Offset_after_05APR21, -Distance_above_sediments, -Depth_m_13, -Sensor_depth, -Position)
   
   #drop NA rows and negative depths
-  bvr_by_depth <- bvr_by_depth[!is.na(bvr_by_depth$value),]
+  bvr_by_depth <- bvr_by_depth[!is.na(bvr_by_depth$observed),]
   
   bvr_by_depth <- bvr_by_depth[bvr_by_depth$depth >=0,]
   

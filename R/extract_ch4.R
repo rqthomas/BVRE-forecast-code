@@ -1,6 +1,5 @@
 extract_ch4 <- function(fname,
                         input_file_tz,
-                        local_tzone,
                         focal_depths){
 
   d <- read_csv(fname, guess_max = 1000000,
@@ -14,12 +13,12 @@ extract_ch4 <- function(fname,
     dplyr::group_by(DateTime,Depth) %>%
     dplyr::summarise(CH4 = mean(CH4, na.rm = TRUE)) %>%
     dplyr::ungroup() %>%
-    dplyr::rename("timestamp" = DateTime,
+    dplyr::rename("time" = DateTime,
            "depth" = Depth) %>%
-    tidyr::pivot_longer(cols = -c(timestamp, depth), names_to = "variable", values_to = "value") %>%
+    tidyr::pivot_longer(cols = -c(time, depth), names_to = "variable", values_to = "observed") %>%
     dplyr::mutate(method = "grab_sample") %>%
-    dplyr::filter(!is.na(value)) %>%
-    dplyr::select(timestamp , depth, value, variable, method)
+    dplyr::filter(!is.na(observed)) %>%
+    dplyr::select(time , depth, observed, variable, method)
 
   if(!is.na(focal_depths)){
     d <- d %>% filter(depth %in% focal_depths)

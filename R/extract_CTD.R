@@ -1,6 +1,5 @@
 extract_CTD <- function(fname,
                         input_file_tz,
-                        local_tzone,
                         focal_depths,
                         config_obs){
 
@@ -12,6 +11,7 @@ extract_CTD <- function(fname,
                   Depth_m = readr::col_double(),
                   Temp_C = readr::col_double(),
                   DO_mgL = readr::col_double(),
+                  DO_pSat = readr::col_double(),
                   Cond_uScm = readr::col_double(),
                   Spec_Cond_uScm = readr::col_double(),
                   Chla_ugL = readr::col_double(),
@@ -41,18 +41,21 @@ extract_CTD <- function(fname,
     dplyr::mutate(oxygen = oxygen * 1000/32,
            chla = config_obs$ctd_2_exo_sensor_chla[1] + config_obs$ctd_2_exo_sensor_chla[2] * chla,
            oxygen = config_obs$ctd_2_exo_sensor_do[1] + config_obs$ctd_2_exo_sensor_do[2] * oxygen) %>%
-    tidyr::pivot_longer(cols = c("temperature", "oxygen", "chla"), names_to = "variable", values_to = "value") %>%
+    tidyr::pivot_longer(cols = c("temperature", "oxygen", "chla"), names_to = "variable", values_to = "observed") %>%
     dplyr::mutate(method = "ctd") %>%
-    dplyr::mutate(timestamp = lubridate::as_datetime(timestamp, tz = "UTC")) %>%
-    dplyr::select(timestamp , depth, value, variable, method) 
+    dplyr::mutate(time = lubridate::as_datetime(timestamp, tz = "UTC")) %>%
+    dplyr::select(time , depth, observed, variable, method) 
   
   #select every 0.5m
   d_ctd <- d_ctd %>%
     dplyr::mutate(rdepth = plyr::round_any(depth, 0.5)) %>% 
-    dplyr::group_by(timestamp, rdepth, variable) %>%
-    dplyr::summarise(value = mean(value)) %>% 
+    dplyr::group_by(time, rdepth, variable) %>%
+    dplyr::summarise(observed = mean(observed)) %>% 
     dplyr::mutate(method = "ctd") %>% 
     dplyr::rename(depth = rdepth) 
+  
+  #order columns
+  d_ctd <- d_ctd[,c("time","depth","observed","variable","method")]
   
   #add hour to 2019 data
   #  d_ctd <- d_ctd %>% mutate(timestamp = as.POSIXct(strptime(timestamp,"%Y-%m-%d"),formt="%Y-%m-%d %H:%M:%S")) %>%
