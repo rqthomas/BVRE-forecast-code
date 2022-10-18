@@ -3,7 +3,7 @@
 
 manager_plot <- function(file_name,
                          target_file,
-                         focal_depths = c(1, 5, 8)){
+                         focal_depths = c(1, 5, 10)){
   
   
   png_file_name <- paste0(tools::file_path_sans_ext(file_name),"_turnover.png")
@@ -36,7 +36,7 @@ manager_plot <- function(file_name,
     
     #PLOT OF TURNOVER PROBABILITY
     turnover_index_1 <- which(depths == 1)
-    turnover_index_2 <- which(depths == 8)
+    turnover_index_2 <- which(depths == 10)
     
     temp <- state_list[["temp"]]
     
@@ -75,7 +75,9 @@ manager_plot <- function(file_name,
         "sea green", 6.0,
         "DeepSkyBlue4", 7.0,
         "blue2", 8.0,
-        "blue4", 9.0)
+        "blue4", 9.0,
+        "#6600CC", 10.0,
+        "#000033", 11.0)
       
       full_time_local_plotting <-seq(full_time_local[1] - lubridate::days(5), max(full_time_local), by = "1 day")
       forecast_index <- which(full_time_local_plotting == full_time_local[which.max(forecast == 0)])
@@ -111,12 +113,12 @@ manager_plot <- function(file_name,
       text(full_time_local_plotting[forecast_index-2],30,'past')
       text(full_time_local[4],30.1,'future')
       
-      legend("left",c("0.0m","1m", "2m", "3m", "4m", "5m", "6m", "7m","8m", "9m"),
+      legend("left",c("0.0m","1m", "2m", "3m", "4m", "5m", "6m", "7m","8m", "9m", "10m","11"),
              text.col=c("firebrick4", "firebrick1", "DarkOrange1", "gold", "greenyellow", "medium sea green", "sea green",
-                        "DeepSkyBlue4", "blue2", "blue4"), cex=1, y.intersp=1, x.intersp=0.001, inset=c(0,0), xpd=T, bty='n')
+                        "DeepSkyBlue4", "blue2", "blue4", "#6600CC","#000033"), cex=1, y.intersp=1, x.intersp=0.001, inset=c(0,0), xpd=T, bty='n')
       legend('topright', c('mean','confidence bounds'), lwd=1.5, lty=c('solid','dotted'),bty='n',cex = 1)
       
-      mtext(paste0('Falling Creek Reservoir\n',lubridate::month(tmp_day),'/',lubridate::day(tmp_day),'/',lubridate::year(tmp_day)), side = 3, line = -2, outer = TRUE, font = 2)
+      mtext(paste0('Beaverdam Reservoir\n',lubridate::month(tmp_day),'/',lubridate::day(tmp_day),'/',lubridate::year(tmp_day)), side = 3, line = -2, outer = TRUE, font = 2)
       dev.off()
     }else{
       message("Forecast output did not have 16 forecast days.  Not generating manager plot")
