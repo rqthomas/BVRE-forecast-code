@@ -21,8 +21,8 @@ if(use_archive){
   use_s3 <- FALSE
 }
 
-start_from_scratch <- FALSE
-time_start_index <- 334
+start_from_scratch <- TRUE
+time_start_index <- 1
 
 num_forecasts <- 366
 days_between_forecasts <- 1
@@ -86,7 +86,7 @@ yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", c
   #message("Generating inflow forecast")
   #source(file.path(lake_directory, "workflows", config_set_name, "02_run_inflow_forecast.R"))
   
-  for(da_freq in 3:length(date_list)) { 
+  for(da_freq in 1:length(date_list)) { 
     for(date in time_start_index:length(forecast_start_dates)) { #note that 2021-11-24 does NOT want to run - get a GLM error saying "Day 2459559 (2021-12-10) not found" - manually restarting on 2021-11-24
                                                                 #wondwering if this error is because there are no 11-25-21 noaa forecasts? trying to start on 11-26 instead
      

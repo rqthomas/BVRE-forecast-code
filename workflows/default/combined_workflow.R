@@ -64,3 +64,4 @@ if(noaa_ready){
   FLAREr::update_run_config(config, lake_directory, configure_run_file, new_start_datetime = FALSE)
   
 }
+
