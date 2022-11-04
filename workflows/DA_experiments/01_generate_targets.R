@@ -23,13 +23,13 @@ source(file.path(lake_directory, "R", "extract_secchi.R"))
 source(file.path(lake_directory, "R", "extract_nutrients.R"))
 source(file.path(lake_directory, "R", "extract_ch4.R"))
 source(file.path(lake_directory, "R", "inflow_qaqc.R"))
-source(file.path(lake_directory, "R", "TMWB_inflow_model.R"))
+source(file.path(lake_directory, "R/old", "TMWB_inflow_model.R"))
 
 #' Generate the `config_obs` object and create directories if necessary
 
 config_obs <- FLAREr::initialize_obs_processing(lake_directory, observation_yml = "observation_processing.yml", config_set_name = config_set_name)
 dir.create(file.path(lake_directory, "targets", config_obs$site_id), showWarnings = FALSE)
-use_s3 <- TRUE
+use_s3 <- FALSE
 
 #' Clone or pull from data repositories
 

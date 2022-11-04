@@ -52,8 +52,8 @@ metadata:
 da_setup:
     use_obs_constraint: TRUE
     da_method: enkf
-    par_fit_method: inflate
-    ensemble_size: 200
+    par_fit_method: perturb_const
+    ensemble_size: 256
     localization_distance: .na #distance in meters were covariances in the model error are used
     no_negative_states: TRUE
     assimilate_first_step: FALSE
