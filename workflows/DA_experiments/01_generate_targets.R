@@ -1,6 +1,7 @@
 #packages
 if (!require("pacman"))install.packages("pacman")
-pacman::p_load(httr,EcoHydRology,GSODR,curl,elevatr,raster,soilDB,rgdal,lattice,lubridate, tidyverse, magrittr,zoo, rMR, aws.s3, tseries)
+pacman::p_load(httr,GSODR,curl,elevatr,raster,soilDB,rgdal,lattice,lubridate, tidyverse, magrittr,zoo, rMR, aws.s3, tseries) 
+#currently need EcoHydRology if I turn inflows on, but package no longer on CRAN so need to find alternative 
 
 
 message("Beginning generate targets")
@@ -23,7 +24,7 @@ source(file.path(lake_directory, "R", "extract_secchi.R"))
 source(file.path(lake_directory, "R", "extract_nutrients.R"))
 source(file.path(lake_directory, "R", "extract_ch4.R"))
 source(file.path(lake_directory, "R", "inflow_qaqc.R"))
-source(file.path(lake_directory, "R/old", "TMWB_inflow_model.R"))
+#source(file.path(lake_directory, "R/old", "TMWB_inflow_model.R"))
 
 #' Generate the `config_obs` object and create directories if necessary
 
