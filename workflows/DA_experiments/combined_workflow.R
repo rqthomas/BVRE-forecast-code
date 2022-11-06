@@ -20,12 +20,11 @@ if(use_archive){
   use_s3 <- FALSE
 }
 
-
 #DA frequency vectors
 daily <- seq.Date(as.Date("2020-11-22"), as.Date("2022-02-01"), by = 1) #changed this from 11-27 to see if the day of the week affects forecast skill
 date_list <- list(daily = daily,                                      #changing end to 2022-02-01 because need observations to evaluate forecasts
                   daily_2 = daily[seq(1, length(daily), 2)],
-                  daily_5 = daily[seq(1, length(daily), 5)],
+                  #daily_5 = daily[seq(1, length(daily), 5)],
                   weekly = daily[seq(1, length(daily), 7)],
                   fortnightly = daily[seq(1, length(daily), 14)],
                   monthly = daily[seq(1, length(daily), 30)]) 
@@ -68,18 +67,6 @@ sims$horizon[1:6] <- 0
 
 message("Generating targets")
 
-
-
-message("Beginning generate targets")
-
-#' Set the lake directory to the repository directory
-
-lake_directory <- here::here()
-config_set_name <- "DA_experiments"
-
-Sys.setenv("AWS_DEFAULT_REGION" = "s3",
-           "AWS_S3_ENDPOINT" = "flare-forecast.org")
-
 #' Source the R files in the repository
 
 source(file.path(lake_directory, "R", "met_qaqc_csv.R"))
@@ -96,7 +83,7 @@ source(file.path(lake_directory, "R", "inflow_qaqc.R"))
 
 config_obs <- FLAREr::initialize_obs_processing(lake_directory, observation_yml = "observation_processing.yml", config_set_name = config_set_name)
 dir.create(file.path(lake_directory, "targets", config_obs$site_id), showWarnings = FALSE)
-use_s3 <- FALSE
+
 
 #' Clone or pull from data repositories
 
@@ -163,12 +150,12 @@ for(i in starting_index:nrow(sims)){
   run_config <- yaml::read_yaml(file.path(lake_directory, "configuration", config_set_name, configure_run_file))
   run_config$configure_flare <- config_files
   run_config$sim_name <- sim_names
-  yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", config_set_name, configure_run_file))
+  yaml::write_yaml(run_config, file = file.path(lake_directory, "restart", sites[j], sim_names, configure_run_file))
   config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
   config$run_config$start_datetime <- as.character(paste0(sims$start_dates[i], " 00:00:00"))
   config$run_config$forecast_start_datetime <- as.character(paste0(sims$end_dates[i], " 00:00:00"))
   config$run_config$forecast_horizon <- sims$horizon[i]
-  if(i < 6){
+  if(i < length(models)){
     config$run_config$restart_file <- NA
   }else{
     config$run_config$restart_file <- paste0(config$location$site_id, "-", lubridate::as_date(config$run_config$start_datetime), "-", sim_names, ".nc")
@@ -178,7 +165,7 @@ for(i in starting_index:nrow(sims)){
   }
   
   run_config <- config$run_config
-  yaml::write_yaml(run_config, file = file.path(config$file_path$configuration_directory, configure_run_file))
+  yaml::write_yaml(run_config, file = file.path(lake_directory, "restart", sites[j], sim_names, configure_run_file))
   
   config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name, sim_name = sim_names)
   config$model_settings$model <- model
@@ -247,9 +234,6 @@ for(i in starting_index:nrow(sims)){
                                                 da_method = config$da_setup$da_method,
                                                 par_fit_method = config$da_setup$par_fit_method)
   
-  
-  # Save forecast
-  
   saved_file <- FLAREr::write_forecast_netcdf(da_forecast_output = da_forecast_output,
                                               forecast_output_directory = config$file_path$forecast_output_directory,
                                               use_short_filename = TRUE)
@@ -266,7 +250,8 @@ for(i in starting_index:nrow(sims)){
                                         use_s3 = use_s3,
                                         bucket = config$s3$scores$bucket,
                                         endpoint = config$s3$scores$endpoint,
-                                        local_directory = file.path(lake_directory, config$s3$scores$bucket))
+                                        local_directory = file.path(lake_directory, config$s3$scores$bucket),
+                                        variable_types = c("state","parameter"))
   
   #rm(da_forecast_output)
   #gc()
@@ -278,9 +263,9 @@ for(i in starting_index:nrow(sims)){
   
   FLAREr::put_forecast(saved_file, eml_file_name, config)
   
-  unlink(saved_file)
+  #unlink(saved_file)
   
-  unlink(config$run_config$restart_file)
+  #unlink(config$run_config$restart_file)
   
   rm(da_forecast_output)
   gc()
