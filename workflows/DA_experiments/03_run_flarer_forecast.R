@@ -3,11 +3,6 @@ states_config <- FLAREr::generate_states_to_obs_mapping(states_config, obs_confi
 
 model_sd <- FLAREr::initiate_model_error(config, states_config)
 
-#change restart file directory for DA experiments
-if(!is.na(config$run_config$restart_file)){
-config$run_config$restart_file <- file.path(config$file_path$forecast_output_directory, basename(config$run_config$restart_file))
-}
-
 init <- FLAREr::generate_initial_conditions(states_config,
                                             obs_config,
                                             pars_config,
@@ -31,35 +26,42 @@ da_forecast_output <- FLAREr::run_da_forecast(states_init = init$states,
                                               obs_config = obs_config,
                                               management = NULL,
                                               da_method = config$da_setup$da_method,
-                                              par_fit_method = config$da_setup$par_fit_method,
-                                              debug = TRUE)
+                                              par_fit_method = config$da_setup$par_fit_method)
+
+
+# Save forecast
 
 saved_file <- FLAREr::write_forecast_netcdf(da_forecast_output = da_forecast_output,
                                             forecast_output_directory = config$file_path$forecast_output_directory,
                                             use_short_filename = TRUE)
 
-forecast_file <- FLAREr::write_forecast_csv(da_forecast_output = da_forecast_output,
-                                            forecast_output_directory = config$file_path$forecast_output_directory,
-                                            use_short_filename = TRUE)
+forecast_df <- FLAREr::write_forecast_arrow(da_forecast_output = da_forecast_output,
+                                            use_s3 = use_s3,
+                                            bucket = config$s3$forecasts_parquet$bucket,
+                                            endpoint = config$s3$forecasts_parquet$endpoint,
+                                            local_directory = file.path(lake_directory, config$s3$forecasts_parquet$bucket))
 
-if(config$run_config$forecast_horizon > 0){
-  dir.create(file.path(lake_directory, "scores", config$location$site_id, config$run_config$sim_name), recursive = TRUE, showWarnings = FALSE)
-  score_file <- FLAREr::generate_forecast_score(targets_file = file.path(config$file_path$qaqc_data_directory,paste0(config$location$site_id, "-targets-insitu.csv")),
-                                                forecast_file = forecast_file,
-                                                output_directory = file.path(lake_directory, "scores", config$location$site_id, config$run_config$sim_name))
-  FLAREr::put_score(saved_file = score_file, config)
-}
 
-FLAREr::put_forecast_csv(saved_file = forecast_file, config)
+FLAREr::generate_forecast_score_arrow(targets_file = file.path(config$file_path$qaqc_data_directory,paste0(config$location$site_id, "-targets-insitu.csv")),
+                                      forecast_df = forecast_df,
+                                      use_s3 = use_s3,
+                                      bucket = config$s3$scores$bucket,
+                                      endpoint = config$s3$scores$endpoint,
+                                      local_directory = file.path(lake_directory, config$s3$scores$bucket))
+
+#rm(da_forecast_output)
+#gc()
+message("Generating plot")
+FLAREr::plotting_general_2(file_name = saved_file,
+                           target_file = file.path(config$file_path$qaqc_data_directory, paste0(config$location$site_id, "-targets-insitu.csv")),
+                           ncore = 2,
+                           obs_csv = FALSE)
+
+FLAREr::put_forecast(saved_file, eml_file_name, config)
+
+unlink(saved_file)
+
+unlink(config$run_config$restart_file)
 
 rm(da_forecast_output)
 gc()
-
-FLAREr::update_run_config(config, lake_directory, configure_run_file, saved_file, new_horizon = NA, day_advance = 1, new_start_datetime = TRUE)
-
-setwd(lake_directory)
-#unlink(config$run_config$restart_file)
-#unlink(forecast_dir, recursive = TRUE)
-#unlink(file.path(lake_directory, "flare_tempdir", config$location$site_id, config$run_config$sim_name), recursive = TRUE)
-
-message(paste0("successfully generated flare forecats for: ", basename(saved_file)))

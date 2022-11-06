@@ -16,7 +16,7 @@ Sys.setenv("AWS_DEFAULT_REGION" = "s3",
 
 #' Source the R files in the repository
 
-source(file.path(lake_directory, "R", "met_qaqc.R"))
+source(file.path(lake_directory, "R", "met_qaqc_csv.R"))
 source(file.path(lake_directory, "R", "in_situ_qaqc.R"))
 source(file.path(lake_directory, "R", "temp_oxy_chla_qaqc.R"))
 source(file.path(lake_directory, "R", "extract_CTD.R"))
@@ -91,35 +91,34 @@ FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi
 
 #' INFLOW - functions to create and qaqc the inflow data using the TMWB model 
 
-if(!file.exists(file.path(config_obs$file_path$targets_directory, "bvre/bvre-targets-inflow.csv"))){
-create_inflow_file(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[1]),
-                      qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[2]),
-                      nldas_file = file.path(config_obs$file_path$data_directory, config_obs$nldas))
+#if(!file.exists(file.path(config_obs$file_path$targets_directory, "bvre/bvre-targets-inflow.csv"))){
+#create_inflow_file(realtime_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[1]),
+#                      qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$met_raw_obs_fname[2]),
+#                      nldas_file = file.path(config_obs$file_path$data_directory, config_obs$nldas))
 
-inflow_qaqc(inflow_file = file.path(lake_directory,"data_processed/BVR_flow_calcs_obs_met_2015_2021.csv"),
-            qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$inflow_temp),
-            nutrients_file = file.path(config_obs$file_path$data_directory, config_obs$nutrients_fname),
-            silica_file = file.path(config_obs$file_path$data_directory, "FCR2014_Chemistry.csv"),
-            ghg_file = file.path(config_obs$file_path$data_directory, "BVR_GHG_Inflow_20200619.csv"),
-            cleaned_inflow_file = file.path(config_obs$file_path$targets_directory, "bvre/bvre-targets-inflow.csv"))
-}
+#inflow_qaqc(inflow_file = file.path(lake_directory,"data_processed/BVR_flow_calcs_obs_met_2015_2021.csv"),
+#            qaqc_file = file.path(config_obs$file_path$data_directory, config_obs$inflow_temp),
+#            nutrients_file = file.path(config_obs$file_path$data_directory, config_obs$nutrients_fname),
+#            silica_file = file.path(config_obs$file_path$data_directory, "FCR2014_Chemistry.csv"),
+#            ghg_file = file.path(config_obs$file_path$data_directory, "BVR_GHG_Inflow_20200619.csv"),
+#            cleaned_inflow_file = file.path(config_obs$file_path$targets_directory, "bvre/bvre-targets-inflow.csv"))
+#}
 
 
 
-#' OUTFLOW
-download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/BVR_spillway_outflow_2014_2019_20200917_nldasInflow.csv?raw=true",
-              "data_raw/BVR_spillway_outflow_2014_2019_20200917_nldasInflow.csv")
+##' OUTFLOW
+#download.file("https://github.com/CareyLabVT/BVR-GLM/blob/master/inputs/BVR_spillway_outflow_2014_2019_20200917_nldasInflow.csv?raw=true",
+#              "data_raw/BVR_spillway_outflow_2014_2019_20200917_nldasInflow.csv")
 
 
 
 #' Clean up observed meteorology
-if(!file.exists(file.path(config_obs$file_path$targets_directory, "bvre/observed-met_bvre.nc"))){
-cleaned_met_file <- met_qaqc(realtime_file = file.path(lake_directory, "data_raw", config_obs$met_raw_obs_fname[1]),
+cleaned_met_file <- met_qaqc_csv(realtime_file = file.path(lake_directory, "data_raw", config_obs$met_raw_obs_fname[1]),
                              qaqc_file = file.path(lake_directory, "data_raw", config_obs$met_raw_obs_fname[2]),
-                             cleaned_met_file = file.path(lake_directory, "targets", config_obs$site_id, paste0("observed-met_",config_obs$site_id,".nc")),
+                             cleaned_met_file = file.path(lake_directory, "targets", config_obs$site_id, paste0("observed-met_",config_obs$site_id,".csv")),
                              input_file_tz = "EST",
-                             nldas = NULL)
-}
+                             nldas = NULL,
+                             site_id = config_obs$site_id)
 
 #' Clean up observed insitu measurements
 cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(lake_directory,"data_raw", config_obs$insitu_obs_fname),
@@ -130,7 +129,7 @@ cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(lake_directory,
                                     secchi_fname = file.path(lake_directory, "data_raw", config_obs$secchi_fname),
                                     cleaned_insitu_file = file.path(lake_directory,"targets", config_obs$site_id, paste0(config_obs$site_id,"-targets-insitu.csv")),
                                     site_id = config_obs$site_id,
-                                    config_obs = config_obs)
+                                    config = config_obs)
 
 #' Move targets to s3 bucket
 

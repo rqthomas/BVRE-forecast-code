@@ -8,32 +8,29 @@ file_path:
 s3:
   drivers:
     endpoint: s3.flare-forecast.org
-    bucket: drivers
-  analysis:
-    endpoint: s3.flare-forecast.org
-    bucket: analysis
+    bucket: drivers/noaa/gefs-v12
   targets:
     endpoint: s3.flare-forecast.org
-    bucket: targets
+    bucket: targets/da_study
   forecasts:
     endpoint: s3.flare-forecast.org
-    bucket: forecasts
-  forecasts_csv:
+    bucket: forecasts/da_study/netcdf
+  forecasts_parquet:
     endpoint: s3.flare-forecast.org
-    bucket: forecasts-csv
+    bucket: forecasts/da_study/parquet
   warm_start:
     endpoint: s3.flare-forecast.org
-    bucket: restart
+    bucket: restart/da_study
   scores:
     endpoint: s3.flare-forecast.org
-    bucket: scores
+    bucket: scores/da_study
 location:
    site_id: bvre
    name: Beaverdam Reservoir
    latitude: 37.307   #Degrees North
    longitude: 79.81607  #Degrees West
 metadata:
-   generate_eml: TRUE
+   generate_eml: FALSE
    forecast_project_id: test
    abstract: "This is where a longer description of the forest can be added"
    forecast_title: FLARE
@@ -58,10 +55,10 @@ da_setup:
     no_negative_states: TRUE
     assimilate_first_step: FALSE
 model_settings:
-   ncore: 3
+   ncore: 4
    model_name: glm #other is "null"
    base_GLM_nml: glm3.nml
-   modeled_depths: [0.10, 0.50, 1.00,
+   modeled_depths: [0.00, 0.50, 1.00,
                     1.50, 2.00, 2.50, 3.00,
                     3.50, 4.00, 4.50, 5.00,
                     5.50, 6.00, 6.50, 7.00, 
