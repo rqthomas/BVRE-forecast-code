@@ -142,8 +142,8 @@ message("Successfully moved targets to s3 bucket")
 for(i in starting_index:nrow(sims)){
   
   message(paste0("index: ", i))
-  message(paste0("     Running model: ", sims$model[i]))
-  
+  message(paste0("     Running model: ", sims$model[i], " "))
+
   model <- sims$model[i]
   sim_names <- model
   
@@ -161,7 +161,7 @@ for(i in starting_index:nrow(sims)){
     }
   }
   run_config <- yaml::read_yaml(file.path(lake_directory, "configuration", config_set_name, configure_run_file))
-  run_config$configure_flare <- config_files[which(models == sims$model[i])]
+  run_config$configure_flare <- config_files
   run_config$sim_name <- sim_names
   yaml::write_yaml(run_config, file = file.path(lake_directory, "configuration", config_set_name, configure_run_file))
   config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
@@ -284,5 +284,9 @@ for(i in starting_index:nrow(sims)){
   
   rm(da_forecast_output)
   gc()
+  
+  sink('last_completed_index.txt')
+  print(i)
+  sink()
   
 }
