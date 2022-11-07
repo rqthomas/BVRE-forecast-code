@@ -9,7 +9,7 @@ config_files <- "configure_flare.yml"
 config_set_name <- "DA_experiments"
 use_archive <- FALSE
 
-starting_index <- 1
+starting_index <- 6
 
 if(use_archive){
   use_s3 <- FALSE
@@ -63,7 +63,7 @@ sims <- sims |>
   distinct_all() |>
   arrange(start_dates)
 
-sims$horizon[1:6] <- 0
+sims$horizon[1:length(models)] <- 0
 
 message("Generating targets")
 
@@ -155,7 +155,7 @@ for(i in starting_index:nrow(sims)){
   config$run_config$start_datetime <- as.character(paste0(sims$start_dates[i], " 00:00:00"))
   config$run_config$forecast_start_datetime <- as.character(paste0(sims$end_dates[i], " 00:00:00"))
   config$run_config$forecast_horizon <- sims$horizon[i]
-  if(i < length(models)){
+  if(i <= length(models)){
     config$run_config$restart_file <- NA
   }else{
     config$run_config$restart_file <- paste0(config$location$site_id, "-", lubridate::as_date(config$run_config$start_datetime), "-", sim_names, ".nc")
@@ -182,7 +182,7 @@ for(i in starting_index:nrow(sims)){
                                                   bucket = config$s3$drivers$bucket,
                                                   endpoint = config$s3$drivers$endpoint)
 
-  met_out$filenames <- met_out$filenames[!stringr::str_detect(met_out$filenames, "ens00")]
+  met_out$filenames <- met_out$filenames[!stringr::str_detect(met_out$filenames, "31")]
   
   pars_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$par_config_file), col_types = readr::cols())
   obs_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$obs_config_file), col_types = readr::cols())
