@@ -2,6 +2,8 @@ library(tidyverse)
 library(hydroGOF)
 library(lubridate)
 
+set.seed(100)
+
 lake_directory <- here::here()
 forecast_site <- "bvre"
 configure_run_file <- "configure_run.yml"
@@ -23,7 +25,7 @@ if(use_archive){
 #DA frequency vectors
 daily <- seq.Date(as.Date("2020-11-22"), as.Date("2022-02-01"), by = 1) #changed this from 11-27 to see if the day of the week affects forecast skill
 date_list <- list(daily = daily,                                      #changing end to 2022-02-01 because need observations to evaluate forecasts
-                  daily_2 = daily[seq(1, length(daily), 2)],
+                  #daily_2 = daily[seq(1, length(daily), 2)],
                   #daily_5 = daily[seq(1, length(daily), 5)],
                   weekly = daily[seq(1, length(daily), 7)],
                   fortnightly = daily[seq(1, length(daily), 14)],
