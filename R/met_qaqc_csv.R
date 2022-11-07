@@ -1,8 +1,9 @@
-met_qaqc <- function(realtime_file,
-                     qaqc_file,
-                     cleaned_met_file,
-                     input_file_tz,
-                     nldas = NULL){
+met_qaqc_csv <- function(realtime_file,
+                         qaqc_file,
+                         cleaned_met_file,
+                         input_file_tz,
+                         nldas = NULL,
+                         site_id){
   
   if(!is.na(qaqc_file)){
     d1 <- readr::read_csv(realtime_file,
@@ -267,7 +268,6 @@ met_qaqc <- function(realtime_file,
                 filled_air_press = mean(air_pressure, na.rm = TRUE),
                 .groups = "drop")
     
-    
     t <- seq(min(d$time), max(d$time), by = "1 hour")
     cont_time <- tibble(time = t)
     
@@ -290,51 +290,19 @@ met_qaqc <- function(realtime_file,
     
   }
   
-  lat <- 37.27
-  lon <- 360-79.9
-  start_time <- dplyr::first((d$time))
-  end_time <- dplyr::last((d$time))
-  cf_units <- cf_var_units1
-  
   output_file <- cleaned_met_file
   
   if(!dir.exists(dirname(cleaned_met_file))){
     dir.create(dirname(cleaned_met_file), recursive = TRUE)
   }
   
-  start_time <- min(d$time)
-  end_time <- max(d$time)
-  
   data <- d_full %>%
-    dplyr::select(-time)
-  
-  diff_time <- as.numeric(difftime(d_full$time, d_full$time[1], units = "hours"))
-  
-  cf_var_names <- names(data)
-  
-  time_dim <- ncdf4::ncdim_def(name="time",
-                               units = paste("hours since", format(start_time, "%Y-%m-%d %H:%M")),
-                               diff_time, #GEFS forecast starts 6 hours from start time
-                               create_dimvar = TRUE)
-  lat_dim <- ncdf4::ncdim_def("latitude", "degree_north", lat, create_dimvar = TRUE)
-  lon_dim <- ncdf4::ncdim_def("longitude", "degree_east", lon, create_dimvar = TRUE)
-  
-  dimensions_list <- list(time_dim, lat_dim, lon_dim)
-  
-  nc_var_list <- list()
-  for (i in 1:length(cf_var_names)) { #Each ensemble member will have data on each variable stored in their respective file.
-    nc_var_list[[i]] <- ncdf4::ncvar_def(cf_var_names[i], cf_units[i], dimensions_list, missval=NaN)
-  }
-  
-  nc_flptr <- ncdf4::nc_create(output_file, nc_var_list, verbose = FALSE, )
-  
-  #For each variable associated with that ensemble
-  for (j in 1:ncol(data)) {
-    # "j" is the variable number.  "i" is the ensemble number. Remember that each row represents an ensemble
-    ncdf4::ncvar_put(nc_flptr, nc_var_list[[j]], unlist(data[,j]))
-  }
-  
-  ncdf4::nc_close(nc_flptr)  #Write to the disk/storage
+    dplyr::select(time, dplyr::all_of(cf_var_names1)) |>
+    dplyr::rename(datetime = time) |>
+    tidyr::pivot_longer(-datetime, names_to = "variable", values_to = "observation") |>
+    dplyr::mutate(site_id = site_id) |>
+    dplyr::select(datetime, site_id, variable, observation) |>
+    readr::write_csv(cleaned_met_file)
   
   return(cleaned_met_file)
   
