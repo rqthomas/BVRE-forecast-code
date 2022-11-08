@@ -176,14 +176,20 @@ for(i in starting_index:nrow(sims)){
   
   da_freq <- which(names(date_list) == sims$model[i])
   
-  met_out <- FLAREr::generate_glm_met_files_arrow(obs_met_file = NULL,
-                                                  out_dir = config$file_path$execute_directory,
-                                                  forecast_dir = forecast_dir,
-                                                  config = config,
-                                                  use_s3 = TRUE,
-                                                  bucket = config$s3$drivers$bucket,
-                                                  endpoint = config$s3$drivers$endpoint)
-
+  met_out <- FLAREr::generate_met_files_arrow(obs_met_file = file.path(config$file_path$qaqc_data_directory, paste0("observed-met_",config$location$site_id,".csv")),
+                                              out_dir = config$file_path$execute_directory,
+                                              start_datetime = config$run_config$start_datetime,
+                                              end_datetime = config$run_config$end_datetime,
+                                              forecast_start_datetime = config$run_config$forecast_start_datetime,
+                                              forecast_horizon =  config$run_config$forecast_horizon,
+                                              site_id = config$location$site_id,
+                                              use_s3 = TRUE,
+                                              bucket = config$s3$drivers$bucket,
+                                              endpoint = config$s3$drivers$endpoint,
+                                              local_directory = NULL,
+                                              use_forecast = TRUE,
+                                              use_ler_vars = FALSE)
+  
   met_out$filenames <- met_out$filenames[!stringr::str_detect(met_out$filenames, "31")]
   
   pars_config <- readr::read_csv(file.path(config$file_path$configuration_directory, config$model_settings$par_config_file), col_types = readr::cols())
