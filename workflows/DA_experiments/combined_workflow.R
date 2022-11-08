@@ -1,5 +1,5 @@
 library(tidyverse)
-library(hydroGOF)
+#library(hydroGOF)
 library(lubridate)
 
 set.seed(100)
@@ -106,9 +106,9 @@ FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi
 cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(lake_directory,"data_raw", config_obs$insitu_obs_fname),
                                     data_location = file.path(lake_directory,"data_raw"),
                                     maintenance_file = file.path(lake_directory, "data_raw", config_obs$maintenance_file),
-                                    ctd_fname = file.path(lake_directory, "data_raw", config_obs$ctd_fname),
-                                    nutrients_fname =  file.path(lake_directory, "data_raw", config_obs$nutrients_fname),
-                                    secchi_fname = file.path(lake_directory, "data_raw", config_obs$secchi_fname),
+                                    ctd_fname = NA,
+                                    nutrients_fname =  NA,
+                                    secchi_fname = NA,
                                     cleaned_insitu_file = file.path(lake_directory,"targets", config_obs$site_id, paste0(config_obs$site_id,"-targets-insitu.csv")),
                                     site_id = config_obs$site_id,
                                     config = config_obs)
