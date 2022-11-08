@@ -1,5 +1,5 @@
 library(tidyverse)
-library(hydroGOF)
+#library(hydroGOF)
 library(lubridate)
 
 set.seed(100)
@@ -11,7 +11,7 @@ config_files <- "configure_flare.yml"
 config_set_name <- "DA_experiments"
 use_archive <- FALSE
 
-starting_index <- 6
+starting_index <- 1
 
 if(use_archive){
   use_s3 <- FALSE
@@ -23,10 +23,8 @@ if(use_archive){
 }
 
 #DA frequency vectors
-daily <- seq.Date(as.Date("2020-11-22"), as.Date("2022-02-01"), by = 1) #changed this from 11-27 to see if the day of the week affects forecast skill
-date_list <- list(daily = daily,                                      #changing end to 2022-02-01 because need observations to evaluate forecasts
-                  #daily_2 = daily[seq(1, length(daily), 2)],
-                  #daily_5 = daily[seq(1, length(daily), 5)],
+daily <- seq.Date(as.Date("2020-11-27"), as.Date("2022-02-01"), by = 1)#changing end to 2022-02-01 because need observations to evaluate forecasts 
+date_list <- list(daily = daily,                                      
                   weekly = daily[seq(1, length(daily), 7)],
                   fortnightly = daily[seq(1, length(daily), 14)],
                   monthly = daily[seq(1, length(daily), 30)]) 
@@ -36,8 +34,8 @@ num_forecasts <- 366 #* 3 - 3
 #num_forecasts <- 1#19 * 7 + 1
 days_between_forecasts <- 1
 forecast_horizon <- 35
-starting_date <- as_date("2020-11-22") #changed from 11-27
-second_date <- starting_date + months(1) + days(10) #changed days to get back to 01-01
+starting_date <- as_date("2020-11-27") 
+second_date <- starting_date + months(1) + days(5) 
 
 start_dates <- as_date(rep(NA, num_forecasts + 1))
 end_dates <- as_date(rep(NA, num_forecasts + 1))
@@ -108,9 +106,9 @@ FLAREr::get_edi_file(edi_https = "https://pasta.lternet.edu/package/data/eml/edi
 cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(lake_directory,"data_raw", config_obs$insitu_obs_fname),
                                     data_location = file.path(lake_directory,"data_raw"),
                                     maintenance_file = file.path(lake_directory, "data_raw", config_obs$maintenance_file),
-                                    ctd_fname = file.path(lake_directory, "data_raw", config_obs$ctd_fname),
-                                    nutrients_fname =  file.path(lake_directory, "data_raw", config_obs$nutrients_fname),
-                                    secchi_fname = file.path(lake_directory, "data_raw", config_obs$secchi_fname),
+                                    ctd_fname = NA,
+                                    nutrients_fname =  NA,
+                                    secchi_fname = NA,
                                     cleaned_insitu_file = file.path(lake_directory,"targets", config_obs$site_id, paste0(config_obs$site_id,"-targets-insitu.csv")),
                                     site_id = config_obs$site_id,
                                     config = config_obs)
