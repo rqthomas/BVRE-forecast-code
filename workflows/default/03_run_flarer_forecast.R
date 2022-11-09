@@ -10,6 +10,7 @@ if(file.exists("~/.aws")){
 lake_directory <- here::here()
 update_run_config <- TRUE
 files.sources <- list.files(file.path(lake_directory, "R"), full.names = TRUE)
+files.sources <- files.sources[!stringr::str_detect(files.sources, pattern = "old")]
 sapply(files.sources, source)
 
 configure_run_file <- "configure_run.yml"
