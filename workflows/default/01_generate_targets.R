@@ -51,9 +51,13 @@ cleaned_insitu_file <- in_situ_qaqc(insitu_obs_fname = file.path(lake_directory,
 
 message("Successfully generated targets")
 
+config <- FLAREr::set_configuration(configure_run_file,lake_directory, config_set_name = config_set_name)
+
+
 FLAREr::put_targets(site_id = config_obs$site_id,
                     cleaned_insitu_file,
                     cleaned_met_file,
-                    use_s3 = TRUE)
+                    use_s3 = TRUE,
+                    config = config)
 
 message("Successfully moved targets to s3 bucket")
