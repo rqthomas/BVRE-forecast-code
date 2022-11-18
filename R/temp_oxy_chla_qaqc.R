@@ -534,7 +534,13 @@ temp_oxy_chla_qaqc <- function(realtime_file,
                       depth_1_5 = d1_og$EXO_depth_m, Depth_m_13=d1_og$Depth_m_13)
     
     if(!is.na(qaqc_file)){
-      d2$TIMESTAMP <- lubridate::as_datetime(d2$DateTime,tz = "UTC")
+      TIMESTAMP_in <- as_datetime(d1$DateTime,tz = "EST")
+      d1$TIMESTAMP <- with_tz(TIMESTAMP_in,tz = "UTC")
+      
+      TIMESTAMP_in <- as_datetime(d2$DateTime,tz = "EST")
+      d2$TIMESTAMP <- with_tz(TIMESTAMP_in,tz = "UTC")
+      
+      
 
      d4 <- data.frame(TIMESTAMP = d2$TIMESTAMP, 
                       wtr_1 = d2$ThermistorTemp_C_1, wtr_2 = d2$ThermistorTemp_C_2,
